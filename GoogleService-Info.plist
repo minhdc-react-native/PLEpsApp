@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>271079129946-xxxxxxxxxx.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.271079129946-xxxxxxxxxx</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCsIuqEm2mlrWHDb0xBhnintqWMDYqho5w</string>
+	<key>GCM_SENDER_ID</key>
+	<string>271079129946</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.evn.eps.training</string>
+	<key>PROJECT_ID</key>
+	<string>eps-notification-f1634</string>
+	<key>STORAGE_BUCKET</key>
+	<string>eps-notification-f1634.firebasestorage.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:271079129946:ios:7a238ca01956cb5ef32963</string>
+</dict>
+</plist>

@@ -1,0 +1,21 @@
+export const EXAM_REGISTRATION_STATUS = {
+  PENDING: 0,
+  SIGNED: 1,
+  POSTPONED: 2,
+  REJECTED: 3,
+  ADDED: 4,
+} as const;
+
+export type ExamRegistrationStatus =
+  (typeof EXAM_REGISTRATION_STATUS)[keyof typeof EXAM_REGISTRATION_STATUS];
+
+export const EXAM_REGISTRATION_STATUS_LABELS: Record<
+  ExamRegistrationStatus,
+  string
+> = {
+  [EXAM_REGISTRATION_STATUS.PENDING]: "Chưa Xác Nhận",
+  [EXAM_REGISTRATION_STATUS.SIGNED]: "Tham Gia",
+  [EXAM_REGISTRATION_STATUS.REJECTED]: "Để Lại",
+  [EXAM_REGISTRATION_STATUS.POSTPONED]: "Hoãn Thi",
+  [EXAM_REGISTRATION_STATUS.ADDED]: "Bổ Sung",
+};

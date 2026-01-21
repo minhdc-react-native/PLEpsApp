@@ -1,0 +1,120 @@
+import { IEmployee } from "../employee/employee.model";
+import { IArea } from "../system/area.model";
+import { IPayroll } from "../system/payroll.model";
+import { IPosition } from "../system/position.model";
+import { IRank } from "../system/rank.model";
+import { IDecision, IFinalDecision } from "./decision.model";
+import { ExamRegistrationStatus } from "./enums/exam-registration-status.enum";
+import { ExamStatus } from "./enums/exam-status.enum";
+import { ExamType } from "./enums/exam-type.enum";
+import { ExamineeStage } from "./enums/examinee-stage.enum";
+import { ExamineeTakenExamStatus } from "./enums/taken-exam-status.enum";
+import { IExamineeConditionGroup } from "./examinee-condition.model";
+import { IExamineeTopic } from "./topic.model";
+
+export interface IExam {
+  id: string;
+  name: string;
+  type: ExamType;
+  round: IExamRound | null;
+  eventMonth: Date;
+  status: ExamStatus;
+  registrationStartDate: Date | null;
+  registrationEndDate: Date | null;
+  regApproval: Partial<IDecision>;
+  decision: Partial<IFinalDecision>;
+  schedules: {
+    safetyExam: IExamSubjectSchedule | null;
+    corporateCulture: IExamSubjectSchedule | null;
+    professional: IExamSubjectSchedule | null;
+  };
+  topicSchedule: {
+    startDate: Date | null;
+    endDate: Date | null;
+  };
+}
+
+export interface IExaminee extends IExamineeAttempt {
+  id: string;
+  employee: Partial<IEmployee>;
+  regStatus: IExamRegistrationRecord;
+  departmentRegStatus: IExamRegistrationRecord | null;
+  adminRegStatus: IExamRegistrationRecord | null;
+  finalRegStatus: IExamRegistrationRecord | null;
+  takenExamStatus: ExamineeTakenExamStatus;
+  schedules: {
+    practical: IExamSubjectSchedule | null;
+  };
+  isPass: boolean | null;
+  topic: IExamineeTopic;
+  scores: Partial<IExamScore>;
+  mentor: Partial<IEmployee> | null;
+  education: IExamineeEducation | null;
+  stage: ExamineeStage;
+}
+
+export interface IExamineeAttempt {
+  conditionDate: Date | null;
+  salaryPeriod: string;
+  salaryYear: number;
+  examRank: Partial<IRank>;
+  retake: boolean | null;
+  conditions: IExamineeConditionGroup[] | null;
+  examPosition: Partial<IPosition> | null;
+  examArea: Partial<IArea> | null;
+  examPayroll: Partial<IPayroll> | null;
+}
+
+export interface IExamRegistrationRecord {
+  status: ExamRegistrationStatus;
+  reason: string | null;
+  note: string | null;
+}
+
+export interface IExamineeEducation {
+  isPass: boolean;
+  evaluation: string | null;
+}
+
+export interface IExamScore {
+  safetyExamScore: number | null; // Điểm thi an toàn
+  corporateCultureScore: number | null; // Điểm phần văn hóa doanh nghiệp
+  professionalScore: number | null; // Điểm lý thuyết chuyên môn
+  practicalScore: number | null; // Điểm vấn đáp / thực hành
+  examiners: IExaminerScore[]; // Giám khảo
+  averageScore: number | null;
+}
+
+export interface IExaminerScore {
+  id: string;
+  employee: Partial<IEmployee> | null;
+  name: string | null;
+  score: number | null;
+  evaluation: string | null;
+  note: string | null;
+  noteVisible: boolean;
+}
+
+export interface IEmployeeExam {
+  exam: IExam;
+  examinee: IExaminee;
+}
+
+export interface IEmployeeExamHistory extends IEmployeeExam {
+  id: string;
+  active: boolean;
+}
+
+export interface IExamSubjectSchedule {
+  startDate: Date | null;
+  endDate: Date | null;
+  location: string | null;
+  note: string | null;
+}
+
+export interface IExamRound {
+  id: string;
+  round: number;
+  name: string;
+  eventMonth: Date;
+}

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "271079129946",
+    "project_id": "eps-notification-f1634",
+    "storage_bucket": "eps-notification-f1634.firebasestorage.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:271079129946:android:7a238ca01956cb5ef32963",
+        "android_client_info": {
+          "package_name": "com.evn.eps.training"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "271079129946-xxxxxxxxxx.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsIuqEm2mlrWHDb0xBhnintqWMDYqho5w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "271079129946-xxxxxxxxxx.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
