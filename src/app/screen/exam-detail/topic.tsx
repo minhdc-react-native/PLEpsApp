@@ -27,7 +27,7 @@ export default function ExamDetailTopicInfo() {
             />
             <Field
               label="Lĩnh vực"
-              value={itemData.examinee.topic.activeTopic?.area.name}
+              value={itemData.examinee.topic.activeTopic?.area?.name}
             />
             <Field
               label="Trạng thái"
@@ -73,7 +73,7 @@ export default function ExamDetailTopicInfo() {
           {itemData.examinee.topic.history.map((item, index) => (
             <ListFields key={index}>
               <Field label="Tên đề tài" value={item.name} />
-              <Field label="Lĩnh vực" value={item.area.name} />
+              <Field label="Lĩnh vực" value={item.area?.name} />
               <Field label="Mô tả chi tiết" value={item.description} />
               <Field label="Từ chối bởi" value={item.rejectedBy?.fullName} />
               <Field
