@@ -171,7 +171,7 @@ const EmployeeInfo = () => {
                   marginBottom: 8,
                 }}
               >
-                {user?.position.name}
+                {user?.position?.name}
               </Text>
             </View>
             <View style={styles.actionContent}>
@@ -198,7 +198,7 @@ const EmployeeInfo = () => {
                   marginBottom: 8,
                 }}
               >
-                {user?.area.name}
+                {user?.area?.name}
               </Text>
             </View>
             <View style={styles.actionContent}>
@@ -225,7 +225,7 @@ const EmployeeInfo = () => {
                   marginBottom: 8,
                 }}
               >
-                {user?.department.name}
+                {user?.department?.name}
               </Text>
             </View>
             {/* <View style={styles.actionContent}>
