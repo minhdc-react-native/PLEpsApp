@@ -1,6 +1,6 @@
 {
   "expo": {
-    "jsEngine": "jsc",
+    "jsEngine": "hermes",
     "name": "EPS TRAINING",
     "slug": "eps-training",
     "version": "1.0.0",
@@ -49,7 +49,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "1de5b5d6-ec8f-439f-8ffb-0bdeece69ce2"
+        "projectId": "1502a605-697d-45c7-8211-d7335e5a34d3"
       }
     }
   }

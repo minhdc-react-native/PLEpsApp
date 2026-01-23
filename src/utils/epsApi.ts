@@ -8,7 +8,7 @@ import {
   documentDirectory,
   getInfoAsync,
   moveAsync,
-} from "expo-file-system/legacy";
+} from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { Platform } from "react-native";
 import epsAxios from "./epsAxios";
