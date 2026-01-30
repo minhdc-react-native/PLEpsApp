@@ -28,7 +28,7 @@ export const useAuth = () => {
     });
   };
   const logout = async () => {
-    api.post({
+    await api.post({
       link: `/auth/logout`,
       callBack: async () => {
         router.replace("/(auth)/login");
@@ -39,7 +39,7 @@ export const useAuth = () => {
     });
   };
   const login = async (login: ILogin) => {
-    api.post({
+    await api.post({
       link: `/auth/login`,
       data: login,
       callBack: async (res) => {
@@ -47,13 +47,22 @@ export const useAuth = () => {
           showToast(res.message || "Lỗi đăng nhập", { type: "error" });
         } else {
           await setToken(res);
-          await getDataBegin();
-          if (login.remember) {
-            await setLogin(login);
-          } else {
-            await removeLogin();
-          }
+
           router.replace("/(tabs)");
+
+          setTimeout(async () => {
+            try {
+              await getDataBegin();
+
+              if (login.remember) {
+                await setLogin(login);
+              } else {
+                await removeLogin();
+              }
+            } catch (e) {
+              console.log("Post-login init error", e);
+            }
+          }, 200); // delay 200ms cho token duoc set vao storeage so ipad cham.
         }
       },
       setLoading: (loading) => (loading ? show("Truy cập...") : hide()),

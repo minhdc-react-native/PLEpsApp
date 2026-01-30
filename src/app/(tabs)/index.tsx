@@ -1,4 +1,5 @@
 import { CustomAvatar } from "@/components/avatar";
+import PieLoader from "@/components/dialog/pieLoader";
 import { StarRating } from "@/components/starRating";
 import { useAuth } from "@/hooks/useAuth";
 // import useDeviceToken from "@/hooks/useDeviceToken";
@@ -25,7 +26,14 @@ const EmployeeInfo = () => {
   const totalUnread = useData((state) => state.totalUnread);
   const { logout } = useAuth();
   const [openLogout, setOpenLogout] = useState(false);
-
+  if (!user) {
+    // neu chua load duoc user...
+    return (
+      <View style={styles.overlay}>
+        <PieLoader />
+      </View>
+    );
+  }
   return (
     <ScrollView>
       {/* Header */}
@@ -274,6 +282,11 @@ const EmployeeInfo = () => {
 export default EmployeeInfo;
 
 const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   container: { flex: 1, backgroundColor: "#f9f9f9" },
   profile: { alignItems: "center", marginTop: 24 },
   name: { marginTop: 8, fontSize: 18, fontWeight: "600" },
