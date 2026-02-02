@@ -1,7 +1,6 @@
 import { CustomAvatar } from "@/components/avatar";
 import PieLoader from "@/components/dialog/pieLoader";
 import { StarRating } from "@/components/starRating";
-import { useAuth } from "@/hooks/useAuth";
 // import useDeviceToken from "@/hooks/useDeviceToken";
 import { useData } from "@/hooks/zustand/useData";
 import { AntDesign } from "@expo/vector-icons";
@@ -19,6 +18,7 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import { useAuth } from "../(auth)/AuthProvider";
 const sizeLogo = { width: 500, height: 199 };
 const EmployeeInfo = () => {
   const { colors } = useTheme();

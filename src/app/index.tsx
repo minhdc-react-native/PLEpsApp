@@ -1,14 +1,9 @@
-import { useAuth } from "@/hooks/useAuth";
-import { Redirect } from "expo-router";
-import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import PieLoader from "../components/dialog/pieLoader";
+import { useAuth } from "./(auth)/AuthProvider";
 
 export default function AppScreen() {
-  const { isLogin, checkLogin } = useAuth();
-  useEffect(() => {
-    checkLogin();
-  }, []);
+  const { isLogin } = useAuth();
   if (isLogin === null) {
     return (
       <View style={styles.overlay}>
@@ -16,9 +11,7 @@ export default function AppScreen() {
       </View>
     );
   }
-  return isLogin
-    ? <Redirect href="/(tabs)" />
-    : <Redirect href="/(auth)/login" />;
+  return null;
 }
 
 const styles = StyleSheet.create({

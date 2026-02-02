@@ -10,6 +10,7 @@ import { RootSiblingParent } from "react-native-root-siblings";
 import { LoadingProvider } from "../components/dialog/loadingProvider";
 import { PopupProvider } from "../components/dialog/popupProvider";
 import { NotificationProvider } from "../providers/NotificationProvider";
+import { AuthProvider } from "./(auth)/AuthProvider";
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -29,21 +30,23 @@ export default function RootLayout() {
           <PopupProvider>
             <LoadingProvider>
               <PaperProvider theme={theme}>
-                <Stack>
-                  <Stack.Screen name="index" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="(auth)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="screen"
-                    options={{ headerShown: false }}
-                  />
-                </Stack>
+                <AuthProvider>
+                  <Stack>
+                    <Stack.Screen name="index" options={{ headerShown: false }} />
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="(auth)"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="screen"
+                      options={{ headerShown: false }}
+                    />
+                  </Stack>
+                </AuthProvider>
                 <StatusBar style="auto" />
               </PaperProvider>
             </LoadingProvider>
