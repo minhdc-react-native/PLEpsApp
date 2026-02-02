@@ -38,7 +38,8 @@ export default function Login() {
       } else if (err instanceof Error) {
         showToast(err.message, { type: "error" });
       } else {
-        showToast("Đã có lỗi xảy ra", { type: "error" });
+        // showToast("Đã có lỗi xảy ra", { type: "error" });
+        console.log("Đã có lỗi xảy ra", err);
       }
     }
   };

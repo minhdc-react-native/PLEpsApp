@@ -58,7 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 callBack: async (res) => {
                     try {
                         if (res?.message) {
-                            setIsLogin(false);
                             showToast(res.message, { type: "error" });
                             hide();
                             return reject();
@@ -67,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         await setToken(res);
                         await getDataBegin();
 
+                        // eslint-disable-next-line no-unused-expressions
                         login.remember ? await setLogin(login) : await removeLogin();
 
                         setIsLogin(true);
@@ -75,17 +75,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         resolve();
                     } catch (e) {
                         hide();
-                        setIsLogin(false);
                         showToast("Đăng nhập thất bại", { type: "error" });
-                        router.replace("/(auth)/login");
                         reject(e);
                     }
                 },
                 callError: (err) => {
                     hide();
-                    setIsLogin(false);
                     showToast(err.message || "Lỗi đăng nhập", { type: "error" });
-                    router.replace("/(auth)/login");
                     reject(err);
                 },
                 setLoading: (loading) => loading ? show("Truy cập...") : hide(),
