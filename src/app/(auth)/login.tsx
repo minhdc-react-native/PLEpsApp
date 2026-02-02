@@ -43,13 +43,23 @@ export default function Login() {
     }
   };
   React.useEffect(() => {
-    const _getLoginInfo = async () => {
-      const _login = await getLogin();
-      if (_login) setLoginInfo(_login);
-      await clearTokens();
+    let mounted = true;
+    const init = async () => {
+      try {
+        const savedLogin = await getLogin();
+        if (mounted && savedLogin) {
+          setLoginInfo(savedLogin);
+        }
+      } catch (e) {
+        console.log("Init login error", e);
+      }
     };
-    _getLoginInfo();
+    init();
+    return () => {
+      mounted = false;
+    };
   }, []);
+
   return (
     <FormWrapper style={{ flex: 1, justifyContent: "flex-end", padding: 20 }}>
       {/* Logo + tiêu đề */}

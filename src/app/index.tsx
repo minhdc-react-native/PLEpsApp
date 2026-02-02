@@ -16,7 +16,9 @@ export default function AppScreen() {
       </View>
     );
   }
-  return <Redirect href={isLogin ? "/(tabs)" : "/(auth)/login"} />;
+  return isLogin
+    ? <Redirect href="/(tabs)" />
+    : <Redirect href="/(auth)/login" />;
 }
 
 const styles = StyleSheet.create({

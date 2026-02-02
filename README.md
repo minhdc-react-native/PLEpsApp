@@ -64,3 +64,11 @@ npx expo install --check
 # các gói khác expo:
 1. kiểm tra cũ chưa?
 yarn outdated
+
+# build bị lỗi
+cd android
+./gradlew clean
+rm -rf build
+rm -rf .cxx
+cd ..
+npx react-native-clean-project

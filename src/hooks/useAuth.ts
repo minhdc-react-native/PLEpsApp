@@ -16,19 +16,21 @@ export const useAuth = () => {
   const setUser = useData((state) => state.setUser);
   const setIndex = useTab((state) => state.setIndex);
   const getDataBegin = async () => {
-    await api.get({
-      link: `/employees/current-user/`,
-      callBack: (res) => {
-        if (res) setUser(res.returnData);
-      },
-      callError: (err) => {
-        console.log("err get current user>>", err);
-        throw new Error(err?.message || "Lấy thông tin người dùng thất bại");
-      },
+    return new Promise<void>((resolve, reject) => {
+      api.get({
+        link: `/employees/current-user/`,
+        callBack: (res) => {
+          setUser(res?.returnData ?? null);
+          resolve();
+        },
+        callError: (err) => {
+          reject(err);
+        },
+      });
     });
   };
   const logout = async () => {
-    api.post({
+    await api.post({
       link: `/auth/logout`,
       callBack: async () => {
         router.replace("/(auth)/login");
@@ -38,39 +40,62 @@ export const useAuth = () => {
       setLoading: (loading) => (loading ? show("Đăng xuất...") : hide()),
     });
   };
-  const login = async (login: ILogin) => {
-    api.post({
-      link: `/auth/login`,
-      data: login,
-      callBack: async (res) => {
-        if (res && res.message) {
-          showToast(res.message || "Lỗi đăng nhập", { type: "error" });
-        } else {
-          await setToken(res);
-          await getDataBegin();
-          if (login.remember) {
-            await setLogin(login);
-          } else {
-            await removeLogin();
+  const login = (login: ILogin) => {
+    return new Promise<void>((resolve, reject) => {
+      api.post({
+        link: `/auth/login`,
+        data: login,
+        callBack: async (res) => {
+          try {
+            if (res?.message) {
+              setIsLogin(false);
+              showToast(res.message, { type: "error" });
+              hide();
+              return reject();
+            }
+
+            await setToken(res);
+            await new Promise(r => setTimeout(r, 200));
+            try {
+              await getDataBegin();
+            } catch {
+              await getDataBegin();
+            }
+
+            login.remember ? await setLogin(login) : await removeLogin();
+
+            setIsLogin(true);
+            hide();
+            router.replace("/(tabs)");
+            resolve();
+          } catch (e) {
+            hide();
+            setIsLogin(false);
+            showToast("Đăng nhập thất bại", { type: "error" });
+            reject(e);
           }
-          router.replace("/(tabs)");
-        }
-      },
-      setLoading: (loading) => (loading ? show("Truy cập...") : hide()),
-      callError: (err) => {
-        console.log("err login>>", err);
-        showToast(err.message || "Lỗi đăng nhập", { type: "error" });
-        throw new Error(err);
-      },
+        },
+        callError: (err) => {
+          hide();
+          setIsLogin(false);
+          showToast(err.message || "Lỗi đăng nhập", { type: "error" });
+          reject(err);
+        },
+        setLoading: (loading) => loading ? show("Truy cập...") : hide(),
+      });
     });
   };
+
   const checkLogin = async () => {
-    const token = await getToken();
-    if (token) {
+    try {
+      const token = await getToken();
+      if (!token) {
+        setIsLogin(false);
+        return;
+      }
       await getDataBegin();
       setIsLogin(true);
-      router.replace("/(tabs)");
-    } else {
+    } catch {
       setIsLogin(false);
     }
   };
