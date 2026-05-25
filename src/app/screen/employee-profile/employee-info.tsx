@@ -64,10 +64,10 @@ export default function EmployeeInfo() {
             />
           </View>
 
-          <Field label="Phòng ban" value={user?.department.name ?? ""} />
-          <Field label="Tổ nhóm" value={user?.team.name ?? ""} />
-          <Field label="Chức vụ" value={user?.position.name ?? ""} />
-          <Field label="Chuyên môn" value={user?.area.name ?? ""} />
+          <Field label="Phòng ban" value={user?.department?.name ?? ""} />
+          <Field label="Tổ nhóm" value={user?.team?.name ?? ""} />
+          <Field label="Chức vụ" value={user?.position?.name ?? ""} />
+          <Field label="Chuyên môn" value={user?.area?.name ?? ""} />
 
           <Field label="Ngày tuyển dụng" value={displayDate(user?.hireDate)} />
           <Field

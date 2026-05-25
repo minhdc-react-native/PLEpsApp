@@ -46,7 +46,7 @@ export default function TopicRegistrationForm() {
     defaultValues: {
       title: activeTopic?.name || "",
       description: activeTopic?.description || "",
-      areaId: activeTopic?.area.id || user?.area.id || "",
+      areaId: activeTopic?.area?.id || user?.area?.id || "",
       mentorId: currentExam.examinee.mentor?.id || null,
     },
   });
@@ -144,8 +144,8 @@ export default function TopicRegistrationForm() {
             <View>
               <VcSelectList
                 label="Chọn lĩnh vực"
-                fDisplay={(item) => item.name}
-                value={value}
+                fDisplay={(item) => item?.name}
+                value={value ?? ""}
                 data={areas}
                 onChange={(item) => onChange(item?.id)}
               />

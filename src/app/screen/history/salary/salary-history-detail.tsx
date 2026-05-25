@@ -93,7 +93,7 @@ export default function SalaryHistoryDetail() {
           ) : (
             <Field label="Lương khoán" value={itemData?.lumpSum} />
           )}
-          <Field label="Chức danh" value={itemData?.position.name} />
+          <Field label="Chức danh" value={itemData?.position?.name} />
           <Field label="Quyết định số" value={itemData?.decision.number} />
           <Field
             label="Ngày ký"

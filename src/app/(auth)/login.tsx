@@ -4,7 +4,7 @@ import VcCheckBox from "@/components/vcCheckbox";
 import { zRequiredString } from "@/utils/checkZod";
 import { epsStorage } from "@/utils/epsStorage";
 import * as React from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Text, TextInput, useTheme } from "react-native-paper";
 import * as z from "zod";
 import { useAuth } from "./AuthProvider";
@@ -17,6 +17,7 @@ const zod = z.object({
 
 export default function Login() {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
   const [secureText, setSecureText] = React.useState(true);
   const [loginInfo, setLoginInfo] = React.useState<ILogin>({
     userName: "",
@@ -69,17 +70,13 @@ export default function Login() {
           source={require("@/assets/images/splash-icon.png")}
           style={[
             {
-              width: (1 / 4) * sizeLogo.width,
-              height: (1 / 4) * sizeLogo.height,
-              resizeMode: "cover",
+              width: width - 80,
+              height: ((width - 80) * sizeLogo.height) / sizeLogo.width,
+              resizeMode: "contain",
               marginVertical: 20,
             },
           ]}
         />
-        {/* <Text variant="titleLarge" style={{ color: "#0000AA", fontWeight: "bold" }}>ENV<Text style={{ color: '#FF0000', fontWeight: "bold" }}>GENCO3</Text></Text> */}
-        <Text style={[styles.subTitle, { color: colors.primary }]}>
-          CÔNG TY DỊCH VỤ SỬA CHỮA CÁC NHÀ MÁY ĐIỆN
-        </Text>
       </View>
 
       {/* Form đăng nhập */}
