@@ -1,6 +1,7 @@
 import LoadingScreen from "@/components/loading-screen";
 import VcSelector from "@/components/vcSelector";
 import { useData } from "@/hooks/zustand/useData";
+import { IEmployeeExamHistory } from "@/types/exam/exam.model";
 import { router, useLocalSearchParams } from "expo-router";
 
 import { useMemo, useState } from "react";
@@ -23,16 +24,21 @@ const mapComponent = {
 };
 
 export default function ExamDetail() {
-  const itemData = useData((state) => state.itemData);
+  const itemData = useData(
+    (state) => state.itemData
+  ) as IEmployeeExamHistory | null;
   const { colors } = useTheme();
   const layout = useWindowDimensions();
 
   const routes = [
     { key: "examinee-general-info", title: "Thí Sinh" },
     { key: "exam-info", title: "Đợt Thi" },
-    // { key: "condition", title: "Điều Kiện Xét Duyệt" },
-    { key: "topic", title: "Đề Tài" },
-    { key: "education", title: "Kết Quả Đào Tạo" },
+    ...(itemData?.exam.examType.hasTopic
+      ? [{ key: "topic", title: "Đề Tài" }]
+      : []),
+    ...(itemData?.exam.examType.hasTraining
+      ? [{ key: "education", title: "Kết Quả Đào Tạo" }]
+      : []),
     { key: "scores", title: "Điểm" },
   ];
 

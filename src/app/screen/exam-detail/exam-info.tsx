@@ -6,7 +6,6 @@ import { Field } from "@/components/Field";
 import { FileBadge } from "@/components/file-badge";
 import { helper } from "@/hooks/useHelper";
 import { useData } from "@/hooks/zustand/useData";
-import { EXAM_TYPE_LABELS } from "@/types/exam/enums/exam-type.enum";
 import {
   IEmployeeExamHistory,
   IExamRegistrationRecord,
@@ -73,7 +72,7 @@ export default function ExamDetailExamInfo() {
           <Field label="Tên kỳ thi" value={itemData.exam.name} />
           <Field
             label="Loại kỳ thi"
-            value={EXAM_TYPE_LABELS[itemData.exam.type]}
+            value={itemData.exam.examType.name}
           />
           <Field label="Đợt thi" value={itemData.exam.round?.name} />
           <Field
@@ -153,10 +152,11 @@ export default function ExamDetailExamInfo() {
           "Thi lý thuyết chuyên môn",
           itemData.exam.schedules.professional
         )}
-        {renderSchedule(
-          "Thi vấn đáp (thực hành)",
-          itemData.examinee.schedules.practical
-        )}
+        {itemData.exam.examType.hasPractical &&
+          renderSchedule(
+            "Thi vấn đáp (thực hành)",
+            itemData.examinee.schedules.practical
+          )}
         <ListFields>
           <Field label="Quyết định số" value={itemData.exam.decision.number} />
           <Field

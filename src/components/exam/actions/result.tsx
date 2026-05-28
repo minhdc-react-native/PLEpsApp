@@ -17,7 +17,7 @@ export function ExamResultActionCard() {
       info={
         <ResultStatusBadge
           isPassed={currentExam.examinee.education?.isPass}
-          score={currentExam.examinee.scores.averageScore ?? undefined}
+          score={currentExam.examinee.scores.average ?? undefined}
         />
       }
       onPress={() => {

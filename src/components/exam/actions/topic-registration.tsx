@@ -75,7 +75,11 @@ export function TopicRegistrationActionCard() {
     );
   };
 
-  if (currentExam.examinee.stage < EXAMINEE_STAGES.TOPIC) return null;
+  if (
+    !currentExam.exam.examType.hasTopic ||
+    currentExam.examinee.stage < EXAMINEE_STAGES.TOPIC
+  )
+    return null;
 
   return (
     <ExamStatusActionCard

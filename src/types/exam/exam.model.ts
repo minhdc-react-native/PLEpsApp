@@ -4,9 +4,9 @@ import { IPayroll } from "../system/payroll.model";
 import { IPosition } from "../system/position.model";
 import { IRank } from "../system/rank.model";
 import { IDecision, IFinalDecision } from "./decision.model";
+import { IExamType } from "./exam-type.model";
 import { ExamRegistrationStatus } from "./enums/exam-registration-status.enum";
 import { ExamStatus } from "./enums/exam-status.enum";
-import { ExamType } from "./enums/exam-type.enum";
 import { ExamineeStage } from "./enums/examinee-stage.enum";
 import { ExamineeTakenExamStatus } from "./enums/taken-exam-status.enum";
 import { IExamineeConditionGroup } from "./examinee-condition.model";
@@ -15,7 +15,7 @@ import { IExamineeTopic } from "./topic.model";
 export interface IExam {
   id: string;
   name: string;
-  type: ExamType;
+  examType: IExamType;
   round: IExamRound | null;
   eventMonth: Date;
   status: ExamStatus;
@@ -47,7 +47,7 @@ export interface IExaminee extends IExamineeAttempt {
   };
   isPass: boolean | null;
   topic: IExamineeTopic;
-  scores: Partial<IExamScore>;
+  scores: IExamScore;
   mentor: Partial<IEmployee> | null;
   education: IExamineeEducation | null;
   stage: ExamineeStage;
@@ -77,12 +77,12 @@ export interface IExamineeEducation {
 }
 
 export interface IExamScore {
-  safetyExamScore: number | null; // Điểm thi an toàn
-  corporateCultureScore: number | null; // Điểm phần văn hóa doanh nghiệp
-  professionalScore: number | null; // Điểm lý thuyết chuyên môn
-  practicalScore: number | null; // Điểm vấn đáp / thực hành
-  examiners: IExaminerScore[]; // Giám khảo
-  averageScore: number | null;
+  average: number | null;
+  at: number | null;
+  vhdn: number | null;
+  ltcm: number | null;
+  th: number | null;
+  examiners: IExaminerScore[];
 }
 
 export interface IExaminerScore {

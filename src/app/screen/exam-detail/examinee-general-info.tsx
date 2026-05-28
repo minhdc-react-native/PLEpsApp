@@ -25,7 +25,7 @@ export default function ExamDetailExamineeGeneralInfo() {
             <View style={{ gap: 10, alignSelf: "center" }}>
               <Text style={styles.resultLabel}>Điểm TB</Text>
               <Text style={[styles.resultValue, { textAlign: "center" }]}>
-                {itemData?.examinee.scores.averageScore ?? "-"}
+                {itemData?.examinee.scores.average ?? "-"}
               </Text>
             </View>
           </Card>
@@ -61,16 +61,20 @@ export default function ExamDetailExamineeGeneralInfo() {
             label="Ngày xét điều kiện"
             value={displayDate(itemData?.examinee.conditionDate)}
           />
-          <Field
-            label={`Thời gian hưởng lương đến hết ${displayDate(
-              itemData?.exam.eventMonth
-            )}`}
-            value={itemData.examinee.salaryPeriod}
-          />
-          <Field
-            label="Thời gian nâng lương theo quy định"
-            value={`${itemData.examinee.salaryYear} năm`}
-          />
+          {itemData.exam.examType.editExamineeSalary && (
+            <>
+              <Field
+                label={`Thời gian hưởng lương đến hết ${displayDate(
+                  itemData?.exam.eventMonth
+                )}`}
+                value={itemData.examinee.salaryPeriod}
+              />
+              <Field
+                label="Thời gian nâng lương theo quy định"
+                value={`${itemData.examinee.salaryYear} năm`}
+              />
+            </>
+          )}
           <Field
             label="Trình độ (cao nhất)"
             value={
