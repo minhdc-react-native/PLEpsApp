@@ -17,6 +17,8 @@ export function ExamRegistrationActionCard() {
   const currentExam = useData((state) => state.currentExam) as IEmployeeExam;
   const { displayDatetime } = helper();
 
+  if (!currentExam.exam.examType.examineeCanRegister) return null;
+
   const renderBtn = () => {
     const now = new Date();
 

@@ -9,7 +9,11 @@ export function ExamTrainingActionCard() {
   const currentExam = useData((state) => state.currentExam) as IEmployeeExam;
   const setItemData = useData((state) => state.setItemData);
 
-  if (currentExam.examinee.stage < EXAMINEE_STAGES.EDUCATION) return null;
+  if (
+    !currentExam.exam.examType.hasTraining ||
+    currentExam.examinee.stage < EXAMINEE_STAGES.EDUCATION
+  )
+    return null;
 
   return (
     <ExamStatusActionCard

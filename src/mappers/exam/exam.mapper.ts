@@ -2,7 +2,6 @@ import { IEmployee } from "@/types/employee/employee.model";
 import { HighestEducationLevel } from "@/types/employee/enums/highest-education-level.enum";
 import { ExamRegistrationStatus } from "@/types/exam/enums/exam-registration-status.enum";
 import { ExamStatus } from "@/types/exam/enums/exam-status.enum";
-import { ExamType } from "@/types/exam/enums/exam-type.enum";
 import { ExamineeStage } from "@/types/exam/enums/examinee-stage.enum";
 import { ExamineeTakenExamStatus } from "@/types/exam/enums/taken-exam-status.enum";
 import {
@@ -11,6 +10,8 @@ import {
   IExamineeAttempt,
   IExaminerScore,
   IExamRound,
+  IExamScore,
+  IExamSubjectSchedule,
 } from "@/types/exam/exam.model";
 import {
   ExamineeConditionCode,
@@ -22,38 +23,29 @@ import { mapAreaShort } from "../area.mapper";
 import { mapDepartmentShort } from "../department.mapper";
 import { mapPositionShort } from "../position.mapper";
 import { mapTeamShort } from "../team.mapper";
+import { mapExamType } from "./exam-type.mapper";
 import { mapExamineeTopic } from "./topic.mapper";
 
 // Map GetExamRawSchema to IExamGeneralInfo
 export function mapExam(schema: any): IExam {
+  const examType = mapExamType(schema.examType);
+
   return {
     id: schema.id,
     name: schema.name,
-    type: schema.examType.code as ExamType,
+    examType: {
+      ...examType,
+      scoreMinimums: schema.scores ?? examType.scoreMinimums,
+    },
     round: schema.examRound ? mapExamRound(schema.examRound) : null,
     eventMonth: schema.examMonth,
     status: schema.status as ExamStatus,
     registrationStartDate: schema.registrationStartDate,
     registrationEndDate: schema.registrationEndDate,
     schedules: {
-      safetyExam: {
-        startDate: schema.schedules?.at.startDate ?? null,
-        endDate: schema.schedules?.at.endDate ?? null,
-        location: schema.schedules?.at.location ?? null,
-        note: schema.schedules?.at.note ?? null,
-      },
-      corporateCulture: {
-        startDate: schema.schedules?.vhdn.startDate ?? null,
-        endDate: schema.schedules?.vhdn.endDate ?? null,
-        location: schema.schedules?.vhdn.location ?? null,
-        note: schema.schedules?.vhdn.note ?? null,
-      },
-      professional: {
-        startDate: schema.schedules?.ltcm.startDate ?? null,
-        endDate: schema.schedules?.ltcm.endDate ?? null,
-        location: schema.schedules?.ltcm.location ?? null,
-        note: schema.schedules?.ltcm.note ?? null,
-      },
+      safetyExam: mapExamSchedule(schema.schedules?.at),
+      corporateCulture: mapExamSchedule(schema.schedules?.vhdn),
+      professional: mapExamSchedule(schema.schedules?.ltcm),
     },
     topicSchedule: {
       startDate: schema.registrationTopicStartDate ?? null,
@@ -194,35 +186,7 @@ export function mapExaminee(schema: any): IExaminee {
           }
         : null,
     },
-    scores: {
-      safetyExamScore: schema.scores.at.score,
-      corporateCultureScore: schema.scores.vhdn.score,
-      professionalScore: schema.scores.ltcm.score,
-      practicalScore: schema.scores.th.score,
-      examiners: schema.scores.th.examinerScore?.map((examiner: any) => {
-        return {
-          id: examiner.id,
-          employee: examiner.employee
-            ? {
-                id: examiner.employee.id,
-                fullName: examiner.employee.fullName,
-                code: examiner.employee.code,
-                rank: {
-                  rank: examiner.employee.currentRank,
-                  rankScale: examiner.employee.rankScale,
-                },
-                area: mapAreaShort(examiner.employee.area),
-              }
-            : null,
-          name: examiner.name,
-          score: examiner.score,
-          evaluation: examiner.evaluation,
-          note: examiner.note,
-          noteVisible: examiner.noteVisibleEmployee,
-        } as IExaminerScore;
-      }),
-      averageScore: schema.finalScore,
-    },
+    scores: mapExamScores(schema),
     topic: topic,
     mentor: schema.mentor ? mapExamineeEmployee(schema.mentor) : null,
     education:
@@ -233,6 +197,51 @@ export function mapExaminee(schema: any): IExaminee {
           }
         : null,
     stage: schema.stage as ExamineeStage,
+  };
+}
+
+function mapExamSchedule(schema: any): IExamSubjectSchedule | null {
+  if (!schema) return null;
+
+  return {
+    startDate: schema.startDate ?? null,
+    endDate: schema.endDate ?? null,
+    location: schema.location ?? null,
+    note: schema.note ?? null,
+  };
+}
+
+export function mapExamScores(schema: any): IExamScore {
+  const scores = schema.scores ?? {};
+
+  return {
+    average: schema.finalScore ?? scores.finalScore ?? null,
+    at: scores.at?.score ?? null,
+    vhdn: scores.vhdn?.score ?? null,
+    ltcm: scores.ltcm?.score ?? null,
+    th: scores.th?.score ?? null,
+    examiners: (scores.th?.examinerScore ?? []).map((examiner: any) => {
+      return {
+        id: examiner.id,
+        employee: examiner.employee
+          ? {
+              id: examiner.employee.id,
+              fullName: examiner.employee.fullName,
+              code: examiner.employee.code,
+              rank: {
+                rank: examiner.employee.currentRank,
+                rankScale: examiner.employee.rankScale,
+              },
+              area: mapAreaShort(examiner.employee.area),
+            }
+          : null,
+        name: examiner.name,
+        score: examiner.score,
+        evaluation: examiner.evaluation,
+        note: examiner.note,
+        noteVisible: examiner.noteVisibleEmployee,
+      } as IExaminerScore;
+    }),
   };
 }
 
@@ -264,7 +273,7 @@ export function mapExamineeCondition({
             currentRank: currentRank,
             eventMonth: condition.data?.examMonth,
           },
-        } as IExamineeCondition)
+        }) as IExamineeCondition,
     ),
   }));
 }

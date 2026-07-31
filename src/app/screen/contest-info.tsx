@@ -2,7 +2,6 @@ import { Field } from "@/components/Field";
 import { StarRating } from "@/components/starRating";
 import { helper } from "@/hooks/useHelper";
 import { useData } from "@/hooks/zustand/useData";
-import { EXAM_TYPE_LABELS } from "@/types/exam/enums/exam-type.enum";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -33,11 +32,7 @@ const ContestInfo = () => {
           <Divider style={{ marginVertical: 10 }} />
           <Field
             label="Loại"
-            value={`${
-              (EXAM_TYPE_LABELS as any)[
-                currentExam?.employeeExamPeriod?.examType?.code
-              ]
-            }`}
+            value={currentExam?.employeeExamPeriod?.examType?.name ?? "-"}
           />
           <Field
             label="Thời gian"

@@ -6,7 +6,8 @@ export function ScheduleStatusBadge({ data }: { data: IEmployeeExam }) {
     data.exam.schedules.safetyExam !== null ||
     data.exam.schedules.corporateCulture !== null ||
     data.exam.schedules.professional !== null ||
-    data.examinee.schedules.practical !== null;
+    (data.exam.examType.hasPractical &&
+      data.examinee.schedules.practical !== null);
 
   return (
     <Badge variant={hasSchedule ? "success" : "default"}>

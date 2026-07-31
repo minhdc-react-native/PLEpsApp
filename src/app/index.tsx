@@ -3,6 +3,8 @@ import PieLoader from "../components/dialog/pieLoader";
 import { useAuth } from "./(auth)/AuthProvider";
 
 export default function AppScreen() {
+  console.log("Đường dẫn API hiện tại là:", process.env.EXPO_PUBLIC_BASE_URL);
+
   const { isLogin } = useAuth();
   if (isLogin === null) {
     return (

@@ -4,7 +4,6 @@ import { useToast } from "@/components/dialog/useToast";
 import { StarRating } from "@/components/starRating";
 import { helper } from "@/hooks/useHelper";
 import { useData } from "@/hooks/zustand/useData";
-import { EXAM_TYPE_LABELS } from "@/types/exam/enums/exam-type.enum";
 import { api } from "@/utils/epsApi";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -48,9 +47,7 @@ export default function EmployeeRegister() {
         </Text>
         <Text style={styles.description}>
           {`Bạn nằm trong danh sách ${
-            (EXAM_TYPE_LABELS as any)[
-              currentExam?.employeeExamPeriod?.examType?.code
-            ]
+            currentExam?.employeeExamPeriod?.examType?.name ?? "-"
           } đợt ${formatDate(
             currentExam?.employeeExamPeriod?.examMonth
           )}, vui lòng xác nhận đăng ký tham gia trước thời hạn.`}
@@ -77,11 +74,7 @@ export default function EmployeeRegister() {
           <View style={styles.row}>
             <Text style={styles.label}>Loại thi</Text>
             <Text style={styles.value}>
-              {
-                (EXAM_TYPE_LABELS as any)[
-                  currentExam?.employeeExamPeriod?.examType?.code
-                ]
-              }
+              {currentExam?.employeeExamPeriod?.examType?.name ?? "-"}
             </Text>
           </View>
           <View style={styles.row}>
