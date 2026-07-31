@@ -1,12 +1,12 @@
 import LoadingScreen from "@/components/loading-screen";
-import VcSelector from "@/components/vcSelector";
+import DetailTabBar from "@/components/detail-tab-bar";
 import { useData } from "@/hooks/zustand/useData";
 import { IEmployeeExamHistory } from "@/types/exam/exam.model";
 import { router, useLocalSearchParams } from "expo-router";
 
 import { useMemo, useState } from "react";
 import { useWindowDimensions, View } from "react-native";
-import { Appbar, Divider, useTheme } from "react-native-paper";
+import { Appbar, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TabView } from "react-native-tab-view";
 import ExamDetailEducationInfo from "./education";
@@ -65,12 +65,15 @@ export default function ExamDetail() {
     <View
       style={{
         flex: 1,
-        gap: 10,
-        backgroundColor: colors.background,
+        backgroundColor: colors.surface,
         marginBottom: insets.bottom,
       }}
     >
-      <Appbar.Header>
+      <Appbar.Header
+        mode="small"
+        elevated={false}
+        style={{ backgroundColor: colors.surface }}
+      >
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content title={itemData?.exam.name} />
       </Appbar.Header>
@@ -79,22 +82,17 @@ export default function ExamDetail() {
         renderScene={renderScene}
         lazy
         renderLazyPlaceholder={() => LazyPlaceholder}
-        renderTabBar={(pros: any) => (
-          <>
-            <VcSelector
-              data={Object.values(routes).map((route) => ({
-                id: route.key,
-                value: route.title,
-              }))}
-              value={routes[index].key}
-              onChange={(value) =>
-                setIndex(routes.findIndex((r) => r.key === value.id))
-              }
-              type="line"
-              mode="full"
-            />
-            <Divider />
-          </>
+        renderTabBar={() => (
+          <DetailTabBar
+            data={routes.map((route) => ({
+              id: route.key,
+              value: route.title,
+            }))}
+            value={routes[index]?.key}
+            onChange={(value) =>
+              setIndex(routes.findIndex((route) => route.key === value.id))
+            }
+          />
         )}
         onIndexChange={setIndex}
         initialLayout={{ width: layout.width }}

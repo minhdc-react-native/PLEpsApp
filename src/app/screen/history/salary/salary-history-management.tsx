@@ -37,10 +37,12 @@ export default function SalaryHistoryManagement() {
   const renderItem = ({ item }: { item: ISalaryHistory }) => (
     <View style={styles.row}>
       <Card
+        mode="outlined"
         style={[
           styles.card,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface,
+            borderColor: colors.outlineVariant,
           },
         ]}
       >
@@ -74,7 +76,7 @@ export default function SalaryHistoryManagement() {
               {item?.apply && (
                 <Badge
                   style={{
-                    backgroundColor: "green",
+                    backgroundColor: colors.tertiary,
                     paddingHorizontal: 8,
                   }}
                 >
@@ -98,14 +100,18 @@ export default function SalaryHistoryManagement() {
               max={item?.rank?.rankScale ?? 0}
             />
           </Card.Content>
-          <MaterialCommunityIcons name="chevron-right" size={24} color="gray" />
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={24}
+            color={colors.onSurfaceVariant}
+          />
         </Pressable>
       </Card>
     </View>
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       {/* {<Appbar.Header>
                 <Appbar.BackAction onPress={() => router.back()} />
@@ -162,7 +168,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
     borderRadius: 12,
-    elevation: 2,
   },
   chip: {
     alignSelf: "flex-start",

@@ -8,23 +8,26 @@ import { ISalaryHistory } from "@/types/employee/salary-history.model";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { Appbar, Divider, useTheme } from "react-native-paper";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Appbar, useTheme } from "react-native-paper";
 
 export default function SalaryHistoryDetail() {
   const itemData = useData((state) => state.itemData) as ISalaryHistory;
   const { colors } = useTheme();
   const { displayDate, displayDateDiff } = helper();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.elevation.level1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.surface }}>
       {/* Appbar */}
-      <Appbar.Header>
+      <Appbar.Header
+        mode="small"
+        elevated={false}
+        style={{ backgroundColor: colors.surface }}
+      >
         <Appbar.BackAction onPress={() => router.back()} />
         <Appbar.Content
           title={`Ngạch ${itemData?.payroll?.code}- Bậc ${itemData.rank?.rank}/${itemData.rank?.rankScale}`}
         />
       </Appbar.Header>
-      <Divider />
       {/* Nội dung */}
       <ScrollView
         style={[styles.container]}
@@ -43,31 +46,37 @@ export default function SalaryHistoryDetail() {
             label="Đang áp dụng?"
             value={
               itemData?.apply ? (
-                <MaterialCommunityIcons name="check" size={24} color="blue" />
+                <MaterialCommunityIcons
+                  name="check"
+                  size={24}
+                  color={colors.primary}
+                />
               ) : (
-                <MaterialCommunityIcons name="close" size={24} color="red" />
+                <MaterialCommunityIcons
+                  name="close"
+                  size={24}
+                  color={colors.error}
+                />
               )
             }
           />
           {itemData?.lumpSum === null ? (
             <>
               <Field label="Ngạch lương" value={itemData?.payroll?.code} />
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Field
-                  label="Bậc lương"
-                  value={`${itemData?.rank?.rank}/${itemData?.rank?.rankScale}`}
-                />
-                <StarRating
-                  value={itemData?.rank?.rank ?? 0}
-                  max={itemData?.rank?.rankScale ?? 0}
-                />
-              </View>
+              <Field
+                label="Bậc lương"
+                value={
+                  <View style={styles.rankValue}>
+                    <Text style={[styles.rankText, { color: colors.onSurface }]}>
+                      {`${itemData?.rank?.rank}/${itemData?.rank?.rankScale}`}
+                    </Text>
+                    <StarRating
+                      value={itemData?.rank?.rank ?? 0}
+                      max={itemData?.rank?.rankScale ?? 0}
+                    />
+                  </View>
+                }
+              />
               <Field label="Hệ số lương" value={itemData?.coefficient} />
               <Field
                 label="Ngày kết thúc hưởng lương"
@@ -117,6 +126,13 @@ export default function SalaryHistoryDetail() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+  },
+  rankValue: {
+    alignItems: "flex-end",
+    gap: 6,
+  },
+  rankText: {
+    fontSize: 16,
+    lineHeight: 22,
   },
 });

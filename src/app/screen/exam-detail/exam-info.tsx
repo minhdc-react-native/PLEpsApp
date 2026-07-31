@@ -66,7 +66,7 @@ export default function ExamDetailExamInfo() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.elevation.level1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <ScrollView style={styles.container} contentContainerStyle={{ gap: 16 }}>
         <ListFields>
           <Field label="Tên kỳ thi" value={itemData.exam.name} />
@@ -185,6 +185,5 @@ export default function ExamDetailExamInfo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
 });

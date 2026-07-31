@@ -1,8 +1,8 @@
 import LoadingScreen from "@/components/loading-screen";
-import VcSelector from "@/components/vcSelector";
+import DetailTabBar from "@/components/detail-tab-bar";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
-import { StyleSheet, useWindowDimensions, View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 import { Appbar, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TabView } from "react-native-tab-view";
@@ -44,7 +44,7 @@ export default function EmployeeProfile() {
   }, []);
   return (
     <View
-      style={[styles.container, { backgroundColor: colors.surface, marginBottom: insets.bottom }]}
+      style={{ flex: 1, backgroundColor: colors.surface, marginBottom: insets.bottom }}
     >
       <Appbar.Header
         mode="small"
@@ -60,7 +60,7 @@ export default function EmployeeProfile() {
         lazy
         renderLazyPlaceholder={() => LazyPlaceholder}
         renderTabBar={() => (
-          <VcSelector
+          <DetailTabBar
             data={Object.values(routes).map((route) => ({
               id: route.key,
               value: route.title,
@@ -69,17 +69,7 @@ export default function EmployeeProfile() {
             onChange={(value) =>
               setIndex(routes.findIndex((r) => r.key === value.id))
             }
-            type="line"
             mode="full"
-            containerStyle={[
-              styles.tabBar,
-              {
-                backgroundColor: colors.primaryContainer,
-                borderColor: colors.outlineVariant,
-              },
-            ]}
-            itemStyle={styles.tabItem}
-            tabBackgroundColor={colors.primaryContainer}
           />
         )}
         onIndexChange={setIndex}
@@ -88,18 +78,3 @@ export default function EmployeeProfile() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  tabBar: {
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
-  },
-  tabItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-  },
-});

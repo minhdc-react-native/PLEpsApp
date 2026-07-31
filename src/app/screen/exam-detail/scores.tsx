@@ -24,7 +24,7 @@ export default function ExamDetailScoresInfo() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.elevation.level1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <ScrollView style={styles.container} contentContainerStyle={{ gap: 16 }}>
         <ListFields>
           {configuredScores.map(({ key, label }) => (
@@ -95,6 +95,5 @@ export default function ExamDetailScoresInfo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
 });

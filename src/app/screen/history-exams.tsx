@@ -37,10 +37,12 @@ export default function HistoryExams() {
   const renderItem = ({ item }: any) => (
     <View style={styles.row}>
       <Card
+        mode="outlined"
         style={[
           styles.card,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface,
+            borderColor: colors.outlineVariant,
           },
         ]}
       >
@@ -90,7 +92,7 @@ export default function HistoryExams() {
                 <Badge
                   style={{
                     paddingHorizontal: 8,
-                    backgroundColor: "gray",
+                    backgroundColor: colors.onSurfaceVariant,
                     marginBottom: 8,
                   }}
                 >
@@ -106,7 +108,7 @@ export default function HistoryExams() {
                   style={{
                     paddingHorizontal: 8,
                     backgroundColor: item.examinee.isPass
-                      ? "green"
+                      ? colors.tertiary
                       : colors.error,
                     marginBottom: 8,
                   }}
@@ -116,14 +118,18 @@ export default function HistoryExams() {
               )}
             </View>
           </Card.Content>
-          <MaterialCommunityIcons name="chevron-right" size={24} color="gray" />
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={24}
+            color={colors.onSurfaceVariant}
+          />
         </Pressable>
       </Card>
     </View>
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}
@@ -173,7 +179,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
     borderRadius: 12,
-    elevation: 2,
   },
   chip: {
     alignSelf: "flex-start",
