@@ -11,7 +11,7 @@ export default function EmployeeContract() {
   const { colors } = useTheme();
   const { displayDate } = helper();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={[styles.container]}>
         <ListFields>
           <Field label="Số HĐLĐ" value={user?.contractNumber ?? ""} />

@@ -14,7 +14,7 @@ export default function ExamDetailExamineeGeneralInfo() {
   const { displayDate } = helper();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={styles.container} contentContainerStyle={{ gap: 16 }}>
         {/* Box kết quả */}
 

@@ -48,7 +48,6 @@ export const Field = ({ label, value, style, layout = "row" }: IProgs) => {
         detailFieldStyles.container,
         isColumn && detailFieldStyles.columnContainer,
         detailFieldStyles.divider,
-        { borderBottomColor: colors.outlineVariant },
         style,
       ]}
     >

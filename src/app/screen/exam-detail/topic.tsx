@@ -15,7 +15,7 @@ export default function ExamDetailTopicInfo() {
   const { colors } = useTheme();
   const { displayDatetime } = helper();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {itemData.examinee.topic.status !== null ? (
         <ScrollView
           style={styles.container}

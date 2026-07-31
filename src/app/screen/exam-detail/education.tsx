@@ -11,7 +11,7 @@ export default function ExamDetailEducationInfo() {
   const itemData = useData((state) => state.itemData) as IEmployeeExamHistory;
   const { colors } = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {itemData.examinee.education !== null ? (
         <ScrollView style={styles.container}>
           <ListFields>

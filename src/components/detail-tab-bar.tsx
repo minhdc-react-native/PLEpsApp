@@ -32,12 +32,12 @@ export default function DetailTabBar({
       containerStyle={[
         styles.container,
         {
-          backgroundColor: colors.primaryContainer,
+          backgroundColor: colors.surface,
           borderColor: colors.outlineVariant,
         },
       ]}
       itemStyle={styles.item}
-      tabBackgroundColor={colors.primaryContainer}
+      tabBackgroundColor={colors.surface}
     />
   );
 }
@@ -45,12 +45,14 @@ export default function DetailTabBar({
 const styles = StyleSheet.create({
   container: {
     marginTop: 0,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 1,
   },
   item: {
     paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingVertical: 10,
+    minHeight: 44,
   },
 });

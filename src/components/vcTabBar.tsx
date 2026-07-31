@@ -41,7 +41,7 @@ export const VcTabBar = ({ value, data, onPress, style }: IProgs) => {
     }, [value, layoutReady]);
 
     return (
-        <View style={[{ backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.outlineVariant, borderBottomWidth: 1, borderBottomColor: colors.outlineVariant }, style]} onLayout={(event: LayoutChangeEvent) => {
+        <View style={[{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.outlineVariant, borderBottomWidth: 1, borderBottomColor: colors.outlineVariant }, style]} onLayout={(event: LayoutChangeEvent) => {
             const { x, width } = event.nativeEvent.layout;
             setWidthView(width);
             requestAnimationFrame(() => {

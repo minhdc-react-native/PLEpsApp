@@ -175,7 +175,7 @@ const VcSelector = ({
               type === "box" && {
                 width: selectedWidth,
                 borderRadius: 12,
-                borderWidth: StyleSheet.hairlineWidth,
+                borderWidth: 1,
                 borderColor: colors.primaryContainer,
                 backgroundColor: colors.primaryContainer,
               },
@@ -248,7 +248,7 @@ const VcSelector = ({
                 type === "box" && {
                   width: selectedWidth,
                   borderRadius: 12,
-                  borderWidth: StyleSheet.hairlineWidth,
+                  borderWidth: 1,
                   borderColor: colors.primaryContainer,
                   backgroundColor: colors.primaryContainer,
                 },

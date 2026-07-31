@@ -1,9 +1,10 @@
 import LoadingScreen from "@/components/loading-screen";
 import DetailTabBar from "@/components/detail-tab-bar";
+import AppHeader from "@/components/app-header";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { useWindowDimensions, View } from "react-native";
-import { Appbar, useTheme } from "react-native-paper";
+import { useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TabView } from "react-native-tab-view";
 import EmployeeEducation from "./employee-education";
@@ -44,16 +45,12 @@ export default function EmployeeProfile() {
   }, []);
   return (
     <View
-      style={{ flex: 1, backgroundColor: colors.surface, marginBottom: insets.bottom }}
+      style={{ flex: 1, backgroundColor: colors.background, marginBottom: insets.bottom }}
     >
-      <Appbar.Header
-        mode="small"
-        elevated={false}
-        style={{ backgroundColor: colors.surface }}
-      >
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Hồ sơ nhân viên" />
-      </Appbar.Header>
+      <AppHeader
+        title="Hồ sơ nhân viên"
+        onBack={() => router.back()}
+      />
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}

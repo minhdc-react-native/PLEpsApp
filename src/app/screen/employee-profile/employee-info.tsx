@@ -1,5 +1,6 @@
 import { ListFields } from "@/components/detail-fields/list-fields";
 import { Field } from "@/components/Field";
+import DetailSectionHeader from "@/components/detail-section-header";
 import { StarRating } from "@/components/starRating";
 import { helper } from "@/hooks/useHelper";
 import { useData } from "@/hooks/zustand/useData";
@@ -13,9 +14,10 @@ export default function EmployeeInfo() {
   const { colors } = useTheme();
   const { displayDate } = helper();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={[styles.container]}>
-        <ListFields>
+        <DetailSectionHeader title="Thông tin tài khoản" />
+        <ListFields style={styles.groupFields}>
           <Field label="Tên đăng nhập" value={user?.userName ?? ""} />
           <Field
             label="Loại tài khoản"
@@ -57,12 +59,18 @@ export default function EmployeeInfo() {
               </View>
             }
           />
+        </ListFields>
 
+        <DetailSectionHeader title="Thông tin chung" />
+        <ListFields style={styles.groupFields}>
           <Field label="Phòng ban" value={user?.department?.name ?? ""} />
           <Field label="Tổ nhóm" value={user?.team?.name ?? ""} />
           <Field label="Chức vụ" value={user?.position?.name ?? ""} />
           <Field label="Chuyên môn" value={user?.area?.name ?? ""} />
+        </ListFields>
 
+        <DetailSectionHeader title="Thông tin thời gian" />
+        <ListFields style={styles.groupFields}>
           <Field label="Ngày tuyển dụng" value={displayDate(user?.hireDate)} />
           <Field
             label="Ngày vào ngành"
@@ -76,8 +84,6 @@ export default function EmployeeInfo() {
             label="Ngày bổ nhiệm"
             value={displayDate(user?.appointmentDate)}
           />
-
-          <Field label="Phân loại chức danh" value={user?.positionCategory} />
         </ListFields>
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -88,6 +94,9 @@ export default function EmployeeInfo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  groupFields: {
+    marginTop: 0,
   },
   inlineValue: { flexDirection: "row", alignItems: "center", gap: 10 },
   rankValue: { alignItems: "flex-end", gap: 6 },

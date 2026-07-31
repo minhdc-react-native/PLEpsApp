@@ -9,7 +9,7 @@ export default function EmployeeHistory() {
   const user = useData((state) => state.user);
   const { colors } = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={[styles.container]}>
         <ListFields>
           <Field label="Ghi chú" value={user?.note} />

@@ -1,8 +1,9 @@
 import DetailTabBar from "@/components/detail-tab-bar";
+import AppHeader from "@/components/app-header";
 import { router } from "expo-router";
 import { useState } from "react";
 import { View, useWindowDimensions } from "react-native";
-import { Appbar, useTheme } from "react-native-paper";
+import { useTheme } from "react-native-paper";
 import { SceneMap, TabView } from "react-native-tab-view";
 import ExamHistoryManagement from "./exam/exam-history-management";
 import SalaryHistoryManagement from "./salary/salary-history-management";
@@ -21,15 +22,11 @@ export default function History() {
   const layout = useWindowDimensions();
   const [index, setIndex] = useState(0);
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }}>
-      <Appbar.Header
-        mode="small"
-        elevated={false}
-        style={{ backgroundColor: colors.surface }}
-      >
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Lịch sử" />
-      </Appbar.Header>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <AppHeader
+        title="Lịch sử"
+        onBack={() => router.back()}
+      />
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}

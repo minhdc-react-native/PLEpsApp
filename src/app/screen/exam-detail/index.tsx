@@ -1,12 +1,13 @@
 import LoadingScreen from "@/components/loading-screen";
 import DetailTabBar from "@/components/detail-tab-bar";
+import AppHeader from "@/components/app-header";
 import { useData } from "@/hooks/zustand/useData";
 import { IEmployeeExamHistory } from "@/types/exam/exam.model";
 import { router, useLocalSearchParams } from "expo-router";
 
 import { useMemo, useState } from "react";
 import { useWindowDimensions, View } from "react-native";
-import { Appbar, useTheme } from "react-native-paper";
+import { useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TabView } from "react-native-tab-view";
 import ExamDetailEducationInfo from "./education";
@@ -65,18 +66,15 @@ export default function ExamDetail() {
     <View
       style={{
         flex: 1,
-        backgroundColor: colors.surface,
+        backgroundColor: colors.background,
         marginBottom: insets.bottom,
       }}
     >
-      <Appbar.Header
-        mode="small"
-        elevated={false}
-        style={{ backgroundColor: colors.surface }}
-      >
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title={itemData?.exam.name} />
-      </Appbar.Header>
+      <AppHeader
+        title={itemData?.exam.name ?? "Chi tiết kỳ thi"}
+        subtitle="Chi tiết thi"
+        onBack={() => router.back()}
+      />
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}

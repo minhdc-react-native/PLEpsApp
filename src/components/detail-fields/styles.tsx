@@ -2,9 +2,9 @@ import { StyleSheet } from "react-native";
 
 export const detailFieldStyles = StyleSheet.create({
   container: {
-    minHeight: 60,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    minHeight: 52,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -16,9 +16,10 @@ export const detailFieldStyles = StyleSheet.create({
   },
   divider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E2E8F0",
   },
   contentContainer: {
-    flex: 1.2,
+    flex: 1.1,
     alignItems: "flex-end",
     justifyContent: "center",
     gap: 4,
@@ -31,15 +32,15 @@ export const detailFieldStyles = StyleSheet.create({
   label: {
     flex: 1,
     fontSize: 14,
-    lineHeight: 20,
-    fontWeight: "500",
+    lineHeight: 19,
+    fontWeight: "400",
   },
   columnLabel: {
     flex: 0,
   },
   text: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 19,
     textAlign: "right",
     flexShrink: 1,
   },

@@ -1,3 +1,4 @@
+import AppHeader from "@/components/app-header";
 import { ListFields } from "@/components/detail-fields/list-fields";
 import { Field } from "@/components/Field";
 import { FileBadge } from "@/components/file-badge";
@@ -9,25 +10,19 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Appbar, useTheme } from "react-native-paper";
+import { useTheme } from "react-native-paper";
 
 export default function SalaryHistoryDetail() {
   const itemData = useData((state) => state.itemData) as ISalaryHistory;
   const { colors } = useTheme();
   const { displayDate, displayDateDiff } = helper();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }}>
-      {/* Appbar */}
-      <Appbar.Header
-        mode="small"
-        elevated={false}
-        style={{ backgroundColor: colors.surface }}
-      >
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content
-          title={`Ngạch ${itemData?.payroll?.code}- Bậc ${itemData.rank?.rank}/${itemData.rank?.rankScale}`}
-        />
-      </Appbar.Header>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <AppHeader
+        title={`Ngạch ${itemData?.payroll?.code}- Bậc ${itemData.rank?.rank}/${itemData.rank?.rankScale}`}
+        subtitle="Chi tiết hưởng lương"
+        onBack={() => router.back()}
+      />
       {/* Nội dung */}
       <ScrollView
         style={[styles.container]}

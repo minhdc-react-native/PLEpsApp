@@ -25,7 +25,7 @@ export default function ExamDetailScoresInfo() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={styles.container} contentContainerStyle={{ gap: 16 }}>
         <ListFields>
           {configuredScores.map(({ key, label }) => (

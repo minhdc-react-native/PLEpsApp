@@ -45,24 +45,26 @@ export default function ExamDetailExamInfo() {
     if (!schedule) return null;
 
     return (
-      <ListFields>
+      <View>
         <DetailSectionHeader title={name} />
-        <Field
-          label="Thời gian bắt đầu"
-          value={displayDatetime(schedule.startDate)}
-        />
-        <Field
-          label="Thời gian kết thúc"
-          value={displayDatetime(schedule.endDate)}
-        />
-        <Field label="Địa điểm thi" value={schedule.location} />
-        <Field label="Ghi chú" value={schedule.note} />
-      </ListFields>
+        <ListFields style={{ marginTop: 0 }}>
+          <Field
+            label="Thời gian bắt đầu"
+            value={displayDatetime(schedule.startDate)}
+          />
+          <Field
+            label="Thời gian kết thúc"
+            value={displayDatetime(schedule.endDate)}
+          />
+          <Field label="Địa điểm thi" value={schedule.location} />
+          <Field label="Ghi chú" value={schedule.note} />
+        </ListFields>
+      </View>
     );
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.surface }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={styles.container} contentContainerStyle={{ gap: 16 }}>
         <ListFields>
           <Field label="Tên kỳ thi" value={itemData.exam.name} />
