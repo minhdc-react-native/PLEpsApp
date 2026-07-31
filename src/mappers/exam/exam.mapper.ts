@@ -35,7 +35,7 @@ export function mapExam(schema: any): IExam {
     name: schema.name,
     examType: {
       ...examType,
-      scoreMinimums: examType.scoreMinimums,
+      scoreMinimums: schema.scores ?? examType.scoreMinimums,
     },
     round: schema.examRound ? mapExamRound(schema.examRound) : null,
     eventMonth: schema.examMonth,
