@@ -6,6 +6,7 @@ import { TOPIC_STATUS } from "@/types/exam/enums/topic-status.enum";
 import { IEmployeeExam } from "@/types/exam/exam.model";
 import { router } from "expo-router";
 import { View } from "react-native";
+import { Badge } from "@/components/badge";
 import { Button, Icon, Text } from "react-native-paper";
 import { TopicStatusBadge } from "../topic-status-badge";
 import {
@@ -75,17 +76,22 @@ export function TopicRegistrationActionCard() {
     );
   };
 
-  if (
-    !currentExam.exam.examType.hasTopic ||
-    currentExam.examinee.stage < EXAMINEE_STAGES.TOPIC
-  )
-    return null;
+  if (!currentExam.exam.examType.hasTopic) return null;
 
   return (
     <ExamStatusActionCard
       title="Đăng ký đề tài"
+      icon="file-document-edit-outline"
+      step={2}
+      last={false}
       action={renderBtn()}
-      info={<TopicStatusBadge status={currentExam.examinee.topic.status} />}
+      info={
+        currentExam.examinee.stage < EXAMINEE_STAGES.TOPIC ? (
+          <Badge>Chưa mở</Badge>
+        ) : (
+          <TopicStatusBadge status={currentExam.examinee.topic.status} />
+        )
+      }
       active={currentExam.exam.status === EXAM_STATUS.TOPIC_REGISTRATION}
     >
       <View style={{ gap: 4 }}>

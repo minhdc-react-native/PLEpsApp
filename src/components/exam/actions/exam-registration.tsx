@@ -6,6 +6,7 @@ import { EXAM_STATUS } from "@/types/exam/enums/exam-status.enum";
 import { IEmployeeExam } from "@/types/exam/exam.model";
 import { router } from "expo-router";
 import { View } from "react-native";
+import { Badge } from "@/components/badge";
 import { Button, Icon, Text } from "react-native-paper";
 import { ExamRegistrationStatusBadge } from "../exam-registration-status-badge";
 import {
@@ -17,7 +18,16 @@ export function ExamRegistrationActionCard() {
   const currentExam = useData((state) => state.currentExam) as IEmployeeExam;
   const { displayDatetime } = helper();
 
-  if (!currentExam.exam.examType.examineeCanRegister) return null;
+  if (!currentExam.exam.examType.examineeCanRegister) {
+    return (
+      <ExamStatusActionCard
+        title="Đăng ký tham gia"
+        icon="account-plus-outline"
+        step={1}
+        info={<Badge>Chưa mở</Badge>}
+      />
+    );
+  }
 
   const renderBtn = () => {
     const now = new Date();
@@ -88,6 +98,10 @@ export function ExamRegistrationActionCard() {
   return (
     <ExamStatusActionCard
       title="Đăng ký tham gia"
+      icon="account-plus-outline"
+      step={1}
+      first
+      last={false}
       action={renderBtn()}
       info={
         <ExamRegistrationStatusBadge
