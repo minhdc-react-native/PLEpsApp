@@ -1,4 +1,5 @@
 import { ListFields } from "@/components/detail-fields/list-fields";
+import DetailSectionHeader from "@/components/detail-section-header";
 import { TopicStatusBadge } from "@/components/exam/topic-status-badge";
 import { Field } from "@/components/Field";
 import { FileBadge } from "@/components/file-badge";
@@ -7,7 +8,7 @@ import { useData } from "@/hooks/zustand/useData";
 import { IEmployeeExamHistory } from "@/types/exam/exam.model";
 import * as React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { Icon, Text, useTheme } from "react-native-paper";
+import { Text, useTheme } from "react-native-paper";
 
 export default function ExamDetailTopicInfo() {
   const itemData = useData((state) => state.itemData) as IEmployeeExamHistory;
@@ -37,10 +38,12 @@ export default function ExamDetailTopicInfo() {
             />
             <Field
               label="Mô tả chi tiết"
+              layout="column"
               value={itemData.examinee.topic.activeTopic?.description}
             />
             <Field
               label="File đề tài"
+              layout="column"
               value={
                 itemData.examinee.topic.file && (
                   <FileBadge file={itemData.examinee.topic.file} />
@@ -48,33 +51,19 @@ export default function ExamDetailTopicInfo() {
               }
             />
           </ListFields>
-          <View
-            style={{
-              gap: 4,
-              flexDirection: "row",
-              alignItems: "center",
-              marginTop: 16,
-            }}
-          >
-            <Icon source="calendar" size={16} />
-            <View
-              style={{
-                flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text variant="titleMedium">
-                Lịch sử thay đổi ({itemData.examinee.topic.history.length})
-              </Text>
-            </View>
-          </View>
+          <DetailSectionHeader
+            icon="calendar"
+            title={`Lịch sử thay đổi (${itemData.examinee.topic.history.length})`}
+          />
           {itemData.examinee.topic.history.map((item, index) => (
             <ListFields key={index}>
               <Field label="Tên đề tài" value={item.name} />
               <Field label="Lĩnh vực" value={item.area?.name} />
-              <Field label="Mô tả chi tiết" value={item.description} />
+              <Field
+                label="Mô tả chi tiết"
+                layout="column"
+                value={item.description}
+              />
               <Field label="Từ chối bởi" value={item.rejectedBy?.fullName} />
               <Field
                 label="Lúc"

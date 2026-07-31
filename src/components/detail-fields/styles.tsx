@@ -9,6 +9,11 @@ export const detailFieldStyles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
+  columnContainer: {
+    alignItems: "stretch",
+    flexDirection: "column",
+    gap: 8,
+  },
   divider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
@@ -18,17 +23,29 @@ export const detailFieldStyles = StyleSheet.create({
     justifyContent: "center",
     gap: 4,
   },
+  columnContentContainer: {
+    alignItems: "stretch",
+    flex: 0,
+    width: "100%",
+  },
   label: {
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "500",
   },
+  columnLabel: {
+    flex: 0,
+  },
   text: {
     fontSize: 16,
     lineHeight: 22,
     textAlign: "right",
     flexShrink: 1,
+  },
+  columnText: {
+    textAlign: "left",
+    width: "100%",
   },
   textError: {
     color: "red",

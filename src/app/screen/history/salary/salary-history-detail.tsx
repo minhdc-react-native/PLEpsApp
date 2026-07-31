@@ -110,6 +110,7 @@ export default function SalaryHistoryDetail() {
           />
           <Field
             label="File quyết định"
+            layout="column"
             value={
               itemData?.decision.file && (
                 <FileBadge file={itemData.decision.file} />

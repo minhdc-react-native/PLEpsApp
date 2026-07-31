@@ -44,6 +44,7 @@ export default function DetailTabBar({
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 0,
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderRightWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,

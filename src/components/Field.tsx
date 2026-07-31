@@ -7,21 +7,35 @@ interface IProgs {
   label: string;
   value?: string | React.ReactElement | null | number;
   style?: StyleProp<ViewStyle>;
+  layout?: "row" | "column";
 }
 
-export const Field = ({ label, value, style }: IProgs) => {
+export const Field = ({ label, value, style, layout = "row" }: IProgs) => {
   const { colors } = useTheme();
+  const isColumn = layout === "column";
 
   const renderValue = () => {
     if (typeof value === "string" || value === null || value === undefined)
       return (
-        <Text style={[detailFieldStyles.text, { color: colors.onSurface }]}>
+        <Text
+          style={[
+            detailFieldStyles.text,
+            isColumn && detailFieldStyles.columnText,
+            { color: colors.onSurface },
+          ]}
+        >
           {value ?? ""}
         </Text>
       );
     if (typeof value === "number")
       return (
-        <Text style={[detailFieldStyles.text, { color: colors.onSurface }]}>
+        <Text
+          style={[
+            detailFieldStyles.text,
+            isColumn && detailFieldStyles.columnText,
+            { color: colors.onSurface },
+          ]}
+        >
           {value}
         </Text>
       );
@@ -32,17 +46,29 @@ export const Field = ({ label, value, style }: IProgs) => {
     <View
       style={[
         detailFieldStyles.container,
+        isColumn && detailFieldStyles.columnContainer,
         detailFieldStyles.divider,
         { borderBottomColor: colors.outlineVariant },
         style,
       ]}
     >
       <Text
-        style={[detailFieldStyles.label, { color: colors.onSurfaceVariant }]}
+        style={[
+          detailFieldStyles.label,
+          isColumn && detailFieldStyles.columnLabel,
+          { color: colors.onSurfaceVariant },
+        ]}
       >
         {label}
       </Text>
-      <View style={detailFieldStyles.contentContainer}>{renderValue()}</View>
+      <View
+        style={[
+          detailFieldStyles.contentContainer,
+          isColumn && detailFieldStyles.columnContentContainer,
+        ]}
+      >
+        {renderValue()}
+      </View>
     </View>
   );
 };

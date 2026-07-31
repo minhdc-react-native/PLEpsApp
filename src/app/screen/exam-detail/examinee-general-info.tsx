@@ -149,6 +149,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   resultCard: {
     flex: 1,

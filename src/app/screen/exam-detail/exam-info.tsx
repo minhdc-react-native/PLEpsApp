@@ -1,6 +1,7 @@
-import { CustomAvatar } from "@/components/avatar";
 import { ListFields } from "@/components/detail-fields/list-fields";
 import { detailFieldStyles } from "@/components/detail-fields/styles";
+import DetailSectionHeader from "@/components/detail-section-header";
+import PersonSummary from "@/components/person-summary";
 import { ExamRegistrationStatusBadge } from "@/components/exam/exam-registration-status-badge";
 import { Field } from "@/components/Field";
 import { FileBadge } from "@/components/file-badge";
@@ -45,12 +46,7 @@ export default function ExamDetailExamInfo() {
 
     return (
       <ListFields>
-        <Text
-          variant="titleSmall"
-          style={{ marginBottom: 16, color: colors.tertiary }}
-        >
-          {name}
-        </Text>
+        <DetailSectionHeader title={name} />
         <Field
           label="Thời gian bắt đầu"
           value={displayDatetime(schedule.startDate)}
@@ -107,38 +103,18 @@ export default function ExamDetailExamInfo() {
           />
           <Field
             label="Người kèm cặp"
+            layout="column"
             value={
               itemData.examinee.mentor && (
-                <View
-                  style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-                >
-                  <CustomAvatar
-                    src={itemData.examinee.mentor?.imageUrl}
-                    size={40}
-                  />
-                  <View>
-                    <Text style={{ fontWeight: "600", color: colors.tertiary }}>
-                      {itemData.examinee.mentor?.fullName}
-                    </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 8,
-                      }}
-                    >
-                      <Text>
-                        {itemData.examinee.mentor?.area?.name ??
-                          "Chưa có chuyên môn"}
-                      </Text>
-                      <Text>•</Text>
-                      <Text>
-                        Bậc{" "}
-                        {`${itemData.examinee.mentor?.rank?.rank}/${itemData.examinee.mentor?.rank?.rankScale}`}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
+                <PersonSummary
+                  name={itemData.examinee.mentor.fullName}
+                  imageUrl={itemData.examinee.mentor.imageUrl}
+                  details={[
+                    itemData.examinee.mentor.area?.name ??
+                      "Chưa có chuyên môn",
+                    `Bậc ${itemData.examinee.mentor.rank?.rank}/${itemData.examinee.mentor.rank?.rankScale}`,
+                  ]}
+                />
               )
             }
           />
@@ -165,6 +141,7 @@ export default function ExamDetailExamInfo() {
           />
           <Field
             label="File quyết định"
+            layout="column"
             value={
               itemData.exam.decision.file && (
                 <FileBadge file={itemData.exam.decision.file} />
