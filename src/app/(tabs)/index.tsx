@@ -19,7 +19,35 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useAuth } from "../(auth)/AuthProvider";
-const sizeLogo = { width: 500, height: 199 };
+type InfoRowProps = {
+  icon: string;
+  label: string;
+  value?: string | null;
+};
+
+const InfoRow = ({ icon, label, value }: InfoRowProps) => {
+  const { colors } = useTheme();
+
+  return (
+    <View style={styles.infoRow}>
+      <Avatar.Icon
+        icon={icon}
+        size={34}
+        style={styles.infoIcon}
+        color={colors.primary}
+      />
+      <View style={styles.infoCopy}>
+        <Text variant="labelMedium" style={{ color: colors.onSurfaceVariant }}>
+          {label}
+        </Text>
+        <Text variant="bodyLarge" style={styles.infoValue} numberOfLines={2}>
+          {value || "Chưa cập nhật"}
+        </Text>
+      </View>
+    </View>
+  );
+};
+
 const EmployeeInfo = () => {
   const { colors } = useTheme();
   const user = useData((state) => state.user);
@@ -34,17 +62,19 @@ const EmployeeInfo = () => {
     );
   }
   return (
-    <ScrollView>
-      {/* Header */}
-      <Appbar.Header mode="center-aligned">
+    <ScrollView
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <Appbar.Header
+        mode="center-aligned"
+        elevated={false}
+        style={{ backgroundColor: colors.background }}
+      >
         <Image
           source={require("@/assets/images/splash-icon.png")}
-          style={{
-            width: (1 / 3) * sizeLogo.width,
-            height: (1 / 3) * sizeLogo.height,
-            resizeMode: "cover",
-            marginLeft: 20,
-          }}
+          style={styles.logo}
         />
         <Appbar.Content title="" />
         <View style={{ flexDirection: "row" }}>
@@ -74,25 +104,31 @@ const EmployeeInfo = () => {
         />
       </Appbar.Header>
 
-      {/* Avatar + Name */}
-      <View style={[styles.profile]}>
-        <CustomAvatar src={user?.imageUrl} size={128} />
+      <View style={styles.profile}>
+        <View style={styles.avatarRing}>
+          <CustomAvatar src={user?.imageUrl} size={92} />
+        </View>
         <Text
-          variant="titleMedium"
-          style={{ fontWeight: "bold", marginTop: 12, color: colors.secondary }}
+          variant="labelLarge"
+          style={{ marginTop: 16, color: colors.primary, fontWeight: "700" }}
         >
           {user?.code}
         </Text>
-        <Text variant="titleLarge" style={{ fontWeight: "bold", marginTop: 8 }}>
+        <Text variant="headlineSmall" style={styles.fullName}>
           {user?.fullName}
+        </Text>
+        <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant }}>
+          Hồ sơ nhân sự
         </Text>
       </View>
 
       <View style={styles.actions}>
         <Button
-          mode="outlined"
+          mode="contained-tonal"
           icon="chart-bar"
           onPress={() => router.navigate("/screen/history")}
+          style={styles.actionButton}
+          contentStyle={styles.actionButtonContent}
         >
           Lịch sử
         </Button>
@@ -100,164 +136,45 @@ const EmployeeInfo = () => {
           mode="text"
           icon="arrow-right"
           contentStyle={{ flexDirection: "row-reverse" }}
+          labelStyle={styles.profileButtonLabel}
           onPress={() => router.navigate("/screen/employee-profile")}
         >
           Hồ sơ nhân sự
         </Button>
       </View>
 
-      {/* Info Cards */}
-      <View style={styles.row}>
-        <Card
-          style={{
-            flex: 1,
-          }}
-        >
-          <Card.Content
-            style={{
-              gap: 12,
-            }}
-          >
-            <View style={styles.actionContent}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Avatar.Icon
-                  icon={"star"}
-                  style={{ backgroundColor: colors.background }}
-                  color={colors.primary}
-                  size={24}
-                />
-                <Text variant="titleSmall">
-                  Bậc thợ{" "}
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.onErrorContainer,
-                    }}
-                  >{`${user?.currentRank}/${user?.rankScale}`}</Text>
-                </Text>
-              </View>
-              <StarRating
-                value={user?.currentRank ?? 0}
-                max={user?.rankScale}
-              />
-            </View>
-            <View style={styles.actionContent}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Avatar.Icon
-                  icon={"account"}
-                  style={{ backgroundColor: colors.background }}
-                  color={colors.primary}
-                  size={24}
-                />
-                <Text variant="titleSmall">Chức danh</Text>
-              </View>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  fontWeight: "bold",
-                  color: colors.onErrorContainer,
-                  marginBottom: 8,
-                }}
-              >
-                {user?.position?.name}
+      <Card mode="outlined" style={styles.infoCard}>
+        <Card.Content style={styles.infoContent}>
+          <View style={styles.sectionHeading}>
+            <View>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Tóm tắt nhân sự
+              </Text>
+              <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
+                Thông tin đang được sử dụng trong hệ thống
               </Text>
             </View>
-            <View style={styles.actionContent}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Avatar.Icon
-                  icon={"toolbox"}
-                  style={{ backgroundColor: colors.background }}
-                  color={colors.primary}
-                  size={24}
-                />
-                <Text variant="titleSmall">Chuyên môn</Text>
-              </View>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  fontWeight: "bold",
-                  color: colors.onErrorContainer,
-                  marginBottom: 8,
-                }}
-              >
-                {user?.area?.name}
-              </Text>
-            </View>
-            <View style={styles.actionContent}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Avatar.Icon
-                  icon={"home-account"}
-                  style={{ backgroundColor: colors.background }}
-                  color={colors.primary}
-                  size={24}
-                />
-                <Text variant="titleSmall">Phòng ban</Text>
-              </View>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  fontWeight: "bold",
-                  color: colors.onErrorContainer,
-                  marginBottom: 8,
-                }}
-              >
-                {user?.department?.name}
-              </Text>
-            </View>
-            {/* <View style={styles.actionContent}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Avatar.Icon
-                  icon={"account"}
-                  style={{ backgroundColor: colors.background }}
-                  color={colors.primary}
-                  size={24}
-                />
-                <Text variant="titleSmall">Tổ nhóm</Text>
-              </View>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  fontWeight: "bold",
-                  color: colors.onErrorContainer,
-                  marginBottom: 8,
-                }}
-              >
-                {user?.team.name}
-              </Text>
-            </View> */}
-          </Card.Content>
-        </Card>
-      </View>
+            <Avatar.Icon
+              icon="account-details-outline"
+              size={40}
+              style={{ backgroundColor: colors.primaryContainer }}
+              color={colors.primary}
+            />
+          </View>
+
+          <View style={styles.rankRow}>
+            <InfoRow
+              icon="star-outline"
+              label="Bậc thợ"
+              value={`${user?.currentRank ?? "—"}/${user?.rankScale ?? "—"}`}
+            />
+            <StarRating value={user?.currentRank ?? 0} max={user?.rankScale} />
+          </View>
+          <InfoRow icon="briefcase-outline" label="Chức danh" value={user?.position?.name} />
+          <InfoRow icon="toolbox-outline" label="Chuyên môn" value={user?.area?.name} />
+          <InfoRow icon="office-building-outline" label="Phòng ban" value={user?.department?.name} />
+        </Card.Content>
+      </Card>
 
       <Portal>
         <Dialog
@@ -286,32 +203,55 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  container: { flex: 1, backgroundColor: "#f9f9f9" },
-  profile: { alignItems: "center", marginTop: 24 },
-  name: { marginTop: 8, fontSize: 18, fontWeight: "600" },
-  row: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 50,
-    marginTop: 16,
-    marginHorizontal: 20,
-    marginBottom: 16,
+  scrollContent: { paddingBottom: 28 },
+  logo: {
+    width: 132,
+    height: 54,
+    resizeMode: "contain",
+    marginLeft: 16,
   },
+  profile: { alignItems: "center", paddingTop: 16, paddingHorizontal: 20 },
+  avatarRing: {
+    padding: 5,
+    borderRadius: 56,
+    backgroundColor: "#E8F0FF",
+  },
+  fullName: { fontWeight: "700", marginTop: 4 },
   actions: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 16,
-    marginTop: 32,
-  },
-  actionContent: {
+    marginTop: 24,
     gap: 8,
   },
-  sectionTitle: {
-    marginTop: 24,
-    marginLeft: 16,
-    fontWeight: "600",
-    fontSize: 16,
+  actionButton: { borderRadius: 12 },
+  actionButtonContent: { height: 46 },
+  profileButtonLabel: { fontWeight: "600" },
+  infoCard: {
+    marginHorizontal: 16,
+    marginTop: 20,
+    borderRadius: 20,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
   },
+  infoContent: { gap: 18, paddingVertical: 20 },
+  sectionHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 2,
+  },
+  sectionTitle: { fontWeight: "700" },
+  rankRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  infoIcon: { backgroundColor: "#F1F4F8" },
+  infoCopy: { flex: 1, gap: 2 },
+  infoValue: { fontWeight: "600" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
 });

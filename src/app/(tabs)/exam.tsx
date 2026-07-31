@@ -1,9 +1,10 @@
 import useCurrentExam from "@/hooks/useCurrentExam";
 import { useData } from "@/hooks/zustand/useData";
 import { useEffect } from "react";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { RefreshControl, ScrollView } from "react-native";
 import { useTheme } from "react-native-paper";
 import ExamRegistrationScreen from "../screen/current-exam";
+import NoneExam from "../screen/none-exam";
 
 const CurrentExamPage = () => {
   const currentExam = useData((state) => state.currentExam);
@@ -37,9 +38,7 @@ const CurrentExamPage = () => {
       {currentExam ? (
         <ExamRegistrationScreen />
       ) : (
-        <View>
-          <Text>Không có kỳ thi</Text>
-        </View>
+        <NoneExam />
       )}
     </ScrollView>
   );

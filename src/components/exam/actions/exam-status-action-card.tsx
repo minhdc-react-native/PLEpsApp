@@ -21,7 +21,16 @@ export function ExamStatusActionCard({
 }: Props) {
   const { colors } = useTheme();
   return (
-    <Card style={{ padding: 16 }} onPress={onPress}>
+      <Card
+        mode="outlined"
+        style={{
+          padding: 16,
+          borderRadius: 18,
+          borderColor: colors.outlineVariant,
+          backgroundColor: colors.surface,
+        }}
+        onPress={onPress}
+      >
       <View style={{ flexDirection: "column", gap: 8 }}>
         <View
           style={{
@@ -34,7 +43,7 @@ export function ExamStatusActionCard({
             variant="titleMedium"
             style={{
               fontWeight: "bold",
-              color: active ? colors.primary : colors.secondary,
+              color: active ? colors.primary : colors.onSurface,
             }}
           >
             {title}

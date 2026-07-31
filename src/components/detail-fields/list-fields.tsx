@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { Card, useTheme } from "react-native-paper";
+import { View } from "react-native";
+import { useTheme } from "react-native-paper";
 
 interface Props {
   children: ReactNode;
@@ -8,13 +9,12 @@ interface Props {
 export const ListFields = ({ children }: Props) => {
   const { colors } = useTheme();
   return (
-    <Card
+    <View
       style={{
-        padding: 20,
-        backgroundColor: colors.background,
+        backgroundColor: colors.surface,
       }}
     >
       {children}
-    </Card>
+    </View>
   );
 };

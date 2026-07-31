@@ -150,7 +150,7 @@ const RegisterTopic = () => {
         />
         <VcSelectList
           label="Chọn lĩnh vực"
-          fDisplay={{ fValue: "name" }}
+          fDisplay={(item: any) => item.name}
           value={dataTopic.areaId || ""}
           data={areas}
           onChange={(item) =>

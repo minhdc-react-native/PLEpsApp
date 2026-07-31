@@ -9,7 +9,7 @@ export default function EmployeeResume() {
   const user = useData((state) => state.user);
   const { colors } = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.elevation.level1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <ScrollView style={[styles.container]}>
         <ListFields>
           <Field label="Dân tộc" value={user?.ethnicity ?? ""} />
@@ -30,6 +30,5 @@ export default function EmployeeResume() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
 });

@@ -63,7 +63,10 @@ export default function Login() {
   }, []);
 
   return (
-    <FormWrapper style={{ flex: 1, justifyContent: "flex-end", padding: 20 }}>
+    <FormWrapper
+      style={styles.page}
+      backgroundColor={colors.background}
+    >
       {/* Logo + tiêu đề */}
       <View style={styles.header}>
         <Image
@@ -81,7 +84,8 @@ export default function Login() {
 
       {/* Form đăng nhập */}
       <View style={styles.form}>
-        <Text style={styles.title}>Đăng Nhập</Text>
+        <Text style={[styles.title, { color: colors.onSurface }]}>Đăng nhập</Text>
+        <Text style={[styles.subtitle, { color: colors.onSurfaceVariant }]}>Đăng nhập để tiếp tục sử dụng EPS TRAINING</Text>
 
         {/* EPS SSO */}
         {/* <Button mode="outlined" style={styles.ssoButton}>
@@ -100,7 +104,7 @@ export default function Login() {
           left={
             <TextInput.Icon icon={"account"} color={colors.onErrorContainer} />
           }
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.surface }]}
         />
 
         <TextInput
@@ -111,7 +115,7 @@ export default function Login() {
           }
           secureTextEntry={secureText}
           mode="outlined"
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.surface }]}
           left={
             <TextInput.Icon
               icon={"key-chain-variant"}
@@ -144,7 +148,12 @@ export default function Login() {
         </View>
 
         {/* Nút đăng nhập */}
-        <Button mode="contained" onPress={onLogin}>
+        <Button
+          mode="contained"
+          onPress={onLogin}
+          style={styles.loginButton}
+          contentStyle={styles.loginButtonContent}
+        >
           Đăng nhập
         </Button>
       </View>
@@ -153,9 +162,14 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    justifyContent: "flex-end",
+    padding: 20,
+  },
   header: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 12,
   },
   company: {
     fontSize: 22,
@@ -166,20 +180,22 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   form: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
     padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-    marginVertical: 20,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    marginVertical: 16,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
+    fontSize: 26,
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 20,
   },
   ssoButton: {
     marginBottom: 12,
@@ -191,7 +207,7 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 12,
-    backgroundColor: "#fff",
+    borderRadius: 14,
   },
   row: {
     flexDirection: "row",
@@ -199,6 +215,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
+  loginButton: { borderRadius: 14, marginTop: 4 },
+  loginButtonContent: { height: 50 },
   rememberRow: {
     flexDirection: "row",
     alignItems: "center",

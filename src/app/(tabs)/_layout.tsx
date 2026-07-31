@@ -2,6 +2,7 @@ import LoadingScreen from "@/components/loading-screen";
 import { useData } from "@/hooks/zustand/useData";
 import { useTab } from "@/hooks/zustand/useTab";
 import React, { useEffect } from "react";
+import { StyleSheet } from "react-native";
 import { BottomNavigation, useTheme } from "react-native-paper";
 import { BaseRoute } from "react-native-paper/lib/typescript/components/BottomNavigation/BottomNavigation";
 import EmployeeInfo from ".";
@@ -54,11 +55,22 @@ export default function TabLayout() {
   return (
     <BottomNavigation
       navigationState={{ index, routes }}
+      activeColor={colors.primary}
+      inactiveColor={colors.onSurfaceVariant}
+      barStyle={styles.bar}
       activeIndicatorStyle={{
-        backgroundColor: colors.elevation.level5,
+        backgroundColor: colors.primaryContainer,
       }}
       onIndexChange={setIndex}
       renderScene={renderScene}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  bar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+});

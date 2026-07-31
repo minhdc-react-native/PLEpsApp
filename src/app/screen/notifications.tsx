@@ -158,7 +158,11 @@ export default function NotificationScreen() {
       }}
     >
       {/* Appbar */}
-      <Appbar.Header mode="center-aligned">
+      <Appbar.Header
+        mode="center-aligned"
+        elevated={false}
+        style={{ backgroundColor: theme.colors.background }}
+      >
         <Appbar.BackAction onPress={() => router.back()} />
         <View
           style={{ flexDirection: "row", gap: 10, justifyContent: "center" }}
@@ -185,7 +189,7 @@ export default function NotificationScreen() {
         data={filtered}
         keyExtractor={(item, idx) => `${item.id}-${idx}`}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: 12 }}
+        contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 20 }}
         refreshControl={
           <RefreshControl
             refreshing={typeLoading === 1}
@@ -200,7 +204,7 @@ export default function NotificationScreen() {
         <Modal
           visible={visible}
           onDismiss={hideFilter}
-          contentContainerStyle={styles.modal}
+          contentContainerStyle={[styles.modal, { backgroundColor: colors.surface }]}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Text style={[styles.title, { flex: 1 }]}>Bộ lọc</Text>
@@ -242,7 +246,6 @@ export default function NotificationScreen() {
 
 const styles = StyleSheet.create({
   modal: {
-    backgroundColor: "white",
     padding: 20,
     margin: 20,
     borderRadius: 12,

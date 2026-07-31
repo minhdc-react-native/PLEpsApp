@@ -11,7 +11,7 @@ export default function EmployeeEducation() {
   const { colors } = useTheme();
   const { formatDate } = helper();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.elevation.level1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.surface }}>
       <ScrollView style={[styles.container]}>
         <ListFields>
           <Field label="Trình độ văn hoá" value={user?.academicLevel ?? ""} />
@@ -37,6 +37,5 @@ export default function EmployeeEducation() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
 });
