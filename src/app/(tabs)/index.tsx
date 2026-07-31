@@ -4,9 +4,10 @@ import { StarRating } from "@/components/starRating";
 // import useDeviceToken from "@/hooks/useDeviceToken";
 import { useData } from "@/hooks/zustand/useData";
 import { AntDesign } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Image,
   ScrollView,
@@ -31,9 +32,10 @@ type InfoRowProps = {
   icon: string;
   label: string;
   value?: string | null;
+  accessory?: ReactNode;
 };
 
-const InfoRow = ({ icon, label, value }: InfoRowProps) => {
+const InfoRow = ({ icon, label, value, accessory }: InfoRowProps) => {
   const { colors } = useTheme();
 
   return (
@@ -51,6 +53,7 @@ const InfoRow = ({ icon, label, value }: InfoRowProps) => {
         <Text variant="bodyLarge" style={styles.infoValue} numberOfLines={2}>
           {value || "Chưa cập nhật"}
         </Text>
+        {accessory && <View style={styles.infoAccessory}>{accessory}</View>}
       </View>
     </View>
   );
@@ -64,7 +67,9 @@ const EmployeeInfo = () => {
   const [openLogout, setOpenLogout] = useState(false);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const heroHeight = 176 + insets.top;
+  const logoHeight = 54;
+  const heroHeight = 176 + insets.top - logoHeight;
+  const avatarSize = 128;
   const heroDiameter = width * 2.2;
   if (user === null) {
     return (
@@ -81,16 +86,19 @@ const EmployeeInfo = () => {
     >
       <StatusBar style="light" backgroundColor={colors.primary} />
       <View style={[styles.hero, { height: heroHeight, paddingTop: insets.top }]}>
-        <View
+        <LinearGradient
+          colors={["#123B9B", colors.primary, "#347AF1"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           pointerEvents="none"
           style={[
             styles.heroShape,
             {
-              backgroundColor: colors.primary,
               width: heroDiameter,
               height: heroDiameter,
               borderRadius: heroDiameter / 2,
-              left: (width - heroDiameter) / 2,
+              left: "50%",
+              transform: [{ translateX: -(heroDiameter / 2) }],
               top: heroHeight - heroDiameter,
             },
           ]}
@@ -137,16 +145,30 @@ const EmployeeInfo = () => {
             />
           ))}
         </View>
-      </View>
-
-      <View style={styles.profile}>
-        <View style={styles.avatarRing}>
+        <View
+          style={[
+            styles.floatingAvatar,
+            {
+              width: avatarSize,
+              height: avatarSize,
+              left: "50%",
+              marginLeft: -(avatarSize / 2),
+              bottom: -(avatarSize / 2),
+              borderRadius: avatarSize / 2,
+              padding: 8,
+              backgroundColor: colors.background,
+            },
+          ]}
+        >
           {user?.imageUrl ? (
-            <CustomAvatar src={user.imageUrl} size={82} />
+            <CustomAvatar src={user.imageUrl} size={avatarSize - 16} />
           ) : (
             <View style={[styles.avatarCore, { backgroundColor: colors.primary }]} />
           )}
         </View>
+      </View>
+
+      <View style={[styles.profile, { paddingTop: avatarSize / 2 }]}>
         <View style={[styles.codeBadge, { backgroundColor: colors.primaryContainer }]}>
           <Text style={{ color: colors.primary, fontWeight: "700" }}>
             {user?.code}
@@ -154,9 +176,6 @@ const EmployeeInfo = () => {
         </View>
         <Text variant="headlineSmall" style={styles.fullName}>
           {user?.fullName}
-        </Text>
-        <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant }}>
-          Hồ sơ nhân sự
         </Text>
       </View>
 
@@ -172,9 +191,9 @@ const EmployeeInfo = () => {
         </Button>
         <Button
           mode="contained"
-          icon="arrow-right"
+          icon="account-details-outline"
           style={styles.actionButton}
-          contentStyle={[styles.actionButtonContent, { flexDirection: "row-reverse" }]}
+          contentStyle={styles.actionButtonContent}
           labelStyle={styles.profileButtonLabel}
           onPress={() => router.navigate("/screen/employee-profile")}
         >
@@ -184,31 +203,14 @@ const EmployeeInfo = () => {
 
       <Card mode="outlined" style={styles.infoCard}>
         <Card.Content style={styles.infoContent}>
-          <View style={styles.sectionHeading}>
-            <View>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                Tóm tắt nhân sự
-              </Text>
-              <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
-                Thông tin đang được sử dụng trong hệ thống
-              </Text>
-            </View>
-            <Avatar.Icon
-              icon="account-details-outline"
-              size={40}
-              style={{ backgroundColor: colors.primaryContainer }}
-              color={colors.primary}
-            />
-          </View>
-
-          <View style={styles.rankRow}>
-            <InfoRow
-              icon="star-outline"
-              label="Bậc thợ"
-              value={`${user?.currentRank ?? "—"}/${user?.rankScale ?? "—"}`}
-            />
-            <StarRating value={user?.currentRank ?? 0} max={user?.rankScale} />
-          </View>
+          <InfoRow
+            icon="star-outline"
+            label="Bậc thợ"
+            value={`${user?.currentRank ?? "—"}/${user?.rankScale ?? "—"}`}
+            accessory={
+              <StarRating value={user?.currentRank ?? 0} max={user?.rankScale} />
+            }
+          />
           <InfoRow icon="briefcase-outline" label="Chức danh" value={user?.position?.name} />
           <InfoRow icon="toolbox-outline" label="Chuyên môn" value={user?.area?.name} />
           <InfoRow icon="office-building-outline" label="Phòng ban" value={user?.department?.name} />
@@ -245,7 +247,8 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 28 },
   hero: {
     position: "relative",
-    overflow: "hidden",
+    overflow: "visible",
+    zIndex: 2,
   },
   heroShape: {
     position: "absolute",
@@ -265,7 +268,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     justifyContent: "center",
     borderRadius: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.94)",
+    backgroundColor: "transparent",
   },
   logo: {
     width: 144,
@@ -287,8 +290,8 @@ const styles = StyleSheet.create({
   },
   dotPattern: {
     position: "absolute",
-    right: 34,
-    bottom: 38,
+    right: 24,
+    bottom: 54,
     width: 118,
     flexDirection: "row",
     flexWrap: "wrap",
@@ -302,22 +305,15 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: "#FFFFFF",
   },
+  floatingAvatar: {
+    position: "absolute",
+    zIndex: 3,
+  },
   profile: {
     alignItems: "center",
     paddingTop: 0,
     paddingHorizontal: 20,
-    // Float the avatar at the curve boundary: half above, half below.
-    marginTop: -48,
-    zIndex: 3,
-  },
-  avatarRing: {
-    width: 96,
-    height: 96,
-    padding: 7,
-    borderRadius: 48,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    zIndex: 1,
   },
   avatarCore: {
     flex: 1,
@@ -348,7 +344,7 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
   },
-  infoContent: { gap: 18, paddingVertical: 20 },
+  infoContent: { gap: 18, paddingVertical: 16 },
   sectionHeading: {
     flexDirection: "row",
     alignItems: "center",
@@ -356,15 +352,10 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   sectionTitle: { fontWeight: "700" },
-  rankRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
   infoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   infoIcon: { backgroundColor: "#F1F4F8" },
   infoCopy: { flex: 1, gap: 2 },
   infoValue: { fontWeight: "600" },
+  infoAccessory: { marginTop: 4, alignSelf: "flex-start" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
 });
