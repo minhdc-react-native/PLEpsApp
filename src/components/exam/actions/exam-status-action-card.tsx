@@ -8,7 +8,6 @@ interface Props {
   info?: ReactNode;
   children?: ReactNode;
   active?: boolean;
-  onPress?: () => void;
   icon?: string;
   subtitle?: string;
   step?: number;
@@ -21,7 +20,6 @@ export function ExamStatusActionCard({
   info,
   action,
   active,
-  onPress,
   children,
   icon = "clipboard-text-outline",
   subtitle,
@@ -81,7 +79,6 @@ export function ExamStatusActionCard({
             backgroundColor: colors.surface,
           },
         ]}
-        onPress={onPress}
       >
         <View style={styles.content}>
           <View style={styles.headingRow}>
@@ -117,14 +114,11 @@ export function ExamStatusActionCard({
                 </Text>
               )}
             </View>
-            {!active && (
-              <Icon source="chevron-right" size={24} color={colors.onSurfaceVariant} />
-            )}
           </View>
 
           {info && <View style={styles.statusRow}>{info}</View>}
           {children}
-          {active && action && <View style={styles.action}>{action}</View>}
+          {action && <View style={styles.action}>{action}</View>}
         </View>
       </Card>
     </View>
@@ -181,7 +175,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     minWidth: 0,
-    paddingLeft: 8,
     gap: 10,
   },
   headingRow: {
@@ -211,5 +204,6 @@ const styles = StyleSheet.create({
   },
   action: {
     paddingTop: 2,
+    alignItems: "stretch",
   },
 });

@@ -7,6 +7,7 @@ interface AppHeaderProps {
   subtitle?: string;
   onBack?: () => void;
   actions?: ReactNode;
+  bottom?: ReactNode;
 }
 
 export default function AppHeader({
@@ -14,46 +15,61 @@ export default function AppHeader({
   subtitle,
   onBack,
   actions,
+  bottom,
 }: AppHeaderProps) {
   const { colors } = useTheme();
 
   return (
-    <Appbar.Header
-      mode="small"
-      elevated={false}
+    <View
       style={[
-        styles.header,
-        subtitle && styles.headerWithSubtitle,
+        styles.container,
         {
           backgroundColor: colors.surface,
+          borderBottomColor: colors.outlineVariant,
         },
       ]}
     >
-      {onBack && <Appbar.BackAction onPress={onBack} />}
-      <View style={styles.titleBlock}>
-        <Text
-          numberOfLines={1}
-          ellipsizeMode="tail"
-          style={[styles.title, { color: colors.onSurface }]}
-        >
-          {title}
-        </Text>
-        {subtitle && (
+      <Appbar.Header
+        mode="small"
+        elevated={false}
+        style={[
+          styles.header,
+          subtitle && styles.headerWithSubtitle,
+          {
+            backgroundColor: colors.surface,
+          },
+        ]}
+      >
+        {onBack && <Appbar.BackAction onPress={onBack} />}
+        <View style={styles.titleBlock}>
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
-            style={[styles.subtitle, { color: colors.onSurfaceVariant }]}
+            style={[styles.title, { color: colors.onSurface }]}
           >
-            {subtitle}
+            {title}
           </Text>
-        )}
-      </View>
-      {actions && <View style={styles.actions}>{actions}</View>}
-    </Appbar.Header>
+          {subtitle && (
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={[styles.subtitle, { color: colors.onSurfaceVariant }]}
+            >
+              {subtitle}
+            </Text>
+          )}
+        </View>
+        {actions && <View style={styles.actions}>{actions}</View>}
+      </Appbar.Header>
+      {bottom}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    borderBottomWidth: 1,
+  },
   header: {
     height: 60,
     borderBottomWidth: 0,

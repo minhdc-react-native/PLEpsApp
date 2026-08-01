@@ -50,13 +50,7 @@ export default function EmployeeProfile() {
       <AppHeader
         title="Hồ sơ nhân sự"
         onBack={() => router.back()}
-      />
-      <TabView
-        navigationState={{ index, routes }}
-        renderScene={renderScene}
-        lazy
-        renderLazyPlaceholder={() => LazyPlaceholder}
-        renderTabBar={() => (
+        bottom={
           <DetailTabBar
             data={Object.values(routes).map((route) => ({
               id: route.key,
@@ -68,7 +62,14 @@ export default function EmployeeProfile() {
             }
             mode="full"
           />
-        )}
+        }
+      />
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        lazy
+        renderLazyPlaceholder={() => LazyPlaceholder}
+        renderTabBar={() => null}
         onIndexChange={setIndex}
         initialLayout={{ width: layout.width }}
       />

@@ -1,14 +1,14 @@
-import { helper } from "@/hooks/useHelper";
 import { useData } from "@/hooks/zustand/useData";
 import { EXAM_STATUS } from "@/types/exam/enums/exam-status.enum";
 import { EXAMINEE_STAGES } from "@/types/exam/enums/examinee-stage.enum";
 import { TOPIC_STATUS } from "@/types/exam/enums/topic-status.enum";
 import { IEmployeeExam } from "@/types/exam/exam.model";
 import { router } from "expo-router";
-import { View } from "react-native";
-import { Badge } from "@/components/badge";
-import { Button, Icon, Text } from "react-native-paper";
-import { TopicStatusBadge } from "../topic-status-badge";
+import { Button, useTheme } from "react-native-paper";
+import {
+  ExamStageDateRange,
+  ExamStageStatus,
+} from "./exam-stage-widgets";
 import {
   ExamStatusActionCard,
   ExamStatusActionCardStyles,
@@ -16,62 +16,46 @@ import {
 
 export function TopicRegistrationActionCard() {
   const currentExam = useData((state) => state.currentExam) as IEmployeeExam;
-  const { displayDatetime } = helper();
+  const { colors } = useTheme();
+  const hasPassedTopic =
+    currentExam.examinee.stage > EXAMINEE_STAGES.TOPIC ||
+    currentExam.exam.status > EXAM_STATUS.TOPIC_REGISTRATION ||
+    currentExam.examinee.topic.status === TOPIC_STATUS.ACCEPTED;
+  const canOpenForm =
+    currentExam.examinee.stage >= EXAMINEE_STAGES.TOPIC || hasPassedTopic;
+  const openForm = () => {
+    router.navigate("/screen/current-exam/topic-registration-form");
+  };
 
   const renderBtn = () => {
-    const now = new Date();
-    if (
-      currentExam.exam.status < EXAM_STATUS.TOPIC_REGISTRATION ||
-      !currentExam.exam.topicSchedule.startDate ||
-      now < new Date(currentExam.exam.topicSchedule.startDate)
-    )
-      return (
-        <Button
-          mode="contained"
-          labelStyle={ExamStatusActionCardStyles.actionBtnLabel}
-          disabled
-        >
-          Chưa mở
-        </Button>
-      );
-
-    if (
-      currentExam.exam.status > EXAM_STATUS.TOPIC_REGISTRATION ||
-      !currentExam.exam.topicSchedule.endDate ||
-      now > new Date(currentExam.exam.topicSchedule.endDate)
-    )
-      return (
-        <Button
-          mode="contained"
-          labelStyle={ExamStatusActionCardStyles.actionBtnLabel}
-          disabled
-        >
-          Đã kết thúc
-        </Button>
-      );
-
-    if (currentExam.examinee.topic.status === TOPIC_STATUS.ACCEPTED)
-      return (
-        <Button
-          mode="contained"
-          labelStyle={ExamStatusActionCardStyles.actionBtnLabel}
-          disabled
-        >
-          Đã chấp thuận
-        </Button>
-      );
+    const status = currentExam.examinee.topic.status;
+    const label =
+      currentExam.examinee.stage < EXAMINEE_STAGES.TOPIC
+        ? "Chưa mở"
+        : status === TOPIC_STATUS.NO_TOPIC
+          ? "Đăng ký ngay"
+          : status === TOPIC_STATUS.PENDING
+            ? "Đã gửi"
+            : status === TOPIC_STATUS.ACCEPTED
+              ? "Đã chấp thuận"
+              : "Đã bị từ chối";
+    const buttonColor =
+      status === TOPIC_STATUS.ACCEPTED
+        ? "#087A52"
+        : status === TOPIC_STATUS.REJECTED
+          ? colors.error
+          : colors.primary;
 
     return (
       <Button
-        mode="contained"
-        icon="arrow-right"
+        mode="outlined"
         labelStyle={ExamStatusActionCardStyles.actionBtnLabel}
-        contentStyle={{ flexDirection: "row-reverse" }}
-        onPress={() => {
-          router.navigate("/screen/current-exam/topic-registration-form");
-        }}
+        style={{ borderColor: buttonColor }}
+        textColor={buttonColor}
+        disabled={!canOpenForm}
+        onPress={openForm}
       >
-        Cập nhật
+        {label}
       </Button>
     );
   };
@@ -87,47 +71,34 @@ export function TopicRegistrationActionCard() {
       action={renderBtn()}
       info={
         currentExam.examinee.stage < EXAMINEE_STAGES.TOPIC ? (
-          <Badge>Chưa mở</Badge>
+          <ExamStageStatus label="Chưa mở" />
         ) : (
-          <TopicStatusBadge status={currentExam.examinee.topic.status} />
+          <ExamStageStatus
+            label={
+              currentExam.examinee.topic.status === TOPIC_STATUS.NO_TOPIC
+                ? "Chưa có đề tài"
+                : currentExam.examinee.topic.status === TOPIC_STATUS.PENDING
+                  ? "Đã gửi"
+                  : currentExam.examinee.topic.status === TOPIC_STATUS.ACCEPTED
+                    ? "Đã chấp thuận"
+                    : "Đã bị từ chối"
+            }
+            tone={
+              currentExam.examinee.topic.status === TOPIC_STATUS.ACCEPTED
+                ? "success"
+                : currentExam.examinee.topic.status === TOPIC_STATUS.REJECTED
+                  ? "error"
+                  : "neutral"
+            }
+          />
         )
       }
       active={currentExam.exam.status === EXAM_STATUS.TOPIC_REGISTRATION}
     >
-      <View style={{ gap: 4 }}>
-        <View style={{ gap: 4, flexDirection: "row", alignItems: "center" }}>
-          <Icon source="calendar" size={16} />
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Text style={{ fontWeight: "bold" }}>Từ: </Text>
-            <Text>
-              {displayDatetime(currentExam.exam.topicSchedule.startDate, "--")}
-            </Text>
-          </View>
-        </View>
-        <View style={{ gap: 4, flexDirection: "row", alignItems: "center" }}>
-          <Icon source="calendar" size={16} />
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Text style={{ fontWeight: "bold" }}>Đến: </Text>
-            <Text>
-              {displayDatetime(currentExam.exam.topicSchedule.endDate, "--")}
-            </Text>
-          </View>
-        </View>
-      </View>
+      <ExamStageDateRange
+        start={currentExam.exam.topicSchedule.startDate}
+        end={currentExam.exam.topicSchedule.endDate}
+      />
     </ExamStatusActionCard>
   );
 }

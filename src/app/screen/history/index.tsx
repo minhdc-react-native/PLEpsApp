@@ -26,11 +26,7 @@ export default function History() {
       <AppHeader
         title="Lịch sử"
         onBack={() => router.back()}
-      />
-      <TabView
-        navigationState={{ index, routes }}
-        renderScene={renderScene}
-        renderTabBar={() => (
+        bottom={
           <DetailTabBar
             data={routes.map((route) => ({
               id: route.key,
@@ -42,7 +38,12 @@ export default function History() {
             }
             mode="fit"
           />
-        )}
+        }
+      />
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        renderTabBar={() => null}
         onIndexChange={setIndex}
         initialLayout={{ width: layout.width }}
       />

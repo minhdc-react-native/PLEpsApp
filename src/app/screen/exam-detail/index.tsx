@@ -74,13 +74,7 @@ export default function ExamDetail() {
         title={itemData?.exam.name ?? "Chi tiết kỳ thi"}
         subtitle="Chi tiết thi"
         onBack={() => router.back()}
-      />
-      <TabView
-        navigationState={{ index, routes }}
-        renderScene={renderScene}
-        lazy
-        renderLazyPlaceholder={() => LazyPlaceholder}
-        renderTabBar={() => (
+        bottom={
           <DetailTabBar
             data={routes.map((route) => ({
               id: route.key,
@@ -91,7 +85,14 @@ export default function ExamDetail() {
               setIndex(routes.findIndex((route) => route.key === value.id))
             }
           />
-        )}
+        }
+      />
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        lazy
+        renderLazyPlaceholder={() => LazyPlaceholder}
+        renderTabBar={() => null}
         onIndexChange={setIndex}
         initialLayout={{ width: layout.width }}
       />
