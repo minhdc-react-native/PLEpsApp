@@ -3,7 +3,7 @@
     "jsEngine": "hermes",
     "name": "EPS TRAINING",
     "slug": "eps-training",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
     "scheme": "eps-training",
@@ -47,10 +47,10 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
-      // "eas": {
-      //   "projectId": "1502a605-697d-45c7-8211-d7335e5a34d3"
-      // }
+      "router": {},
+      "eas": {
+        "projectId": "1502a605-697d-45c7-8211-d7335e5a34d3"
+      }
     }
   }
 }
