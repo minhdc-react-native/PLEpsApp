@@ -48,7 +48,7 @@ export default function EmployeeProfile() {
       style={{ flex: 1, backgroundColor: colors.background, marginBottom: insets.bottom }}
     >
       <AppHeader
-        title="Hồ sơ nhân viên"
+        title="Hồ sơ nhân sự"
         onBack={() => router.back()}
       />
       <TabView
