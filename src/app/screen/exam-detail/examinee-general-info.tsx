@@ -14,13 +14,13 @@ export default function ExamDetailExamineeGeneralInfo() {
   const { displayDate } = helper();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.elevation.level1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={styles.container} contentContainerStyle={{ gap: 16 }}>
         {/* Box kết quả */}
 
         <View style={[styles.resultRow]}>
           <Card
-            style={[styles.resultCard, { backgroundColor: colors.background }]}
+            style={[styles.resultCard, { backgroundColor: colors.surface }]}
           >
             <View style={{ gap: 10, alignSelf: "center" }}>
               <Text style={styles.resultLabel}>Điểm TB</Text>
@@ -30,7 +30,7 @@ export default function ExamDetailExamineeGeneralInfo() {
             </View>
           </Card>
           <Card
-            style={[styles.resultCard, { backgroundColor: colors.background }]}
+            style={[styles.resultCard, { backgroundColor: colors.surface }]}
           >
             <View style={{ gap: 10, alignSelf: "center" }}>
               <Text style={[styles.resultLabel, { textAlign: "center" }]}>
@@ -42,7 +42,7 @@ export default function ExamDetailExamineeGeneralInfo() {
                     {
                       alignSelf: "flex-start",
                       backgroundColor: itemData?.examinee.isPass
-                        ? "green"
+                        ? colors.tertiary
                         : colors.error,
                       paddingHorizontal: 12,
                     },
@@ -83,38 +83,34 @@ export default function ExamDetailExamineeGeneralInfo() {
           />
         </ListFields>
         <ListFields>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Field
-              label="Bậc trước thi"
-              value={`${itemData.examinee.employee.rank?.rank}/${itemData.examinee.employee.rank?.rankScale}`}
-            />
-            <StarRating
-              value={itemData.examinee.employee.rank?.rank ?? 0}
-              max={itemData.examinee.employee.rank?.rankScale ?? 0}
-            />
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Field
-              label="Bậc thi"
-              value={`${itemData.examinee.examRank.rank}/${itemData.examinee.examRank.rankScale}`}
-            />
-            <StarRating
-              value={itemData.examinee.examRank.rank ?? 0}
-              max={itemData.examinee.examRank.rankScale ?? 0}
-            />
-          </View>
+          <Field
+            label="Bậc trước thi"
+            value={
+              <View style={styles.rankValue}>
+                <Text style={[styles.rankText, { color: colors.onSurface }]}>
+                  {`${itemData.examinee.employee.rank?.rank}/${itemData.examinee.employee.rank?.rankScale}`}
+                </Text>
+                <StarRating
+                  value={itemData.examinee.employee.rank?.rank ?? 0}
+                  max={itemData.examinee.employee.rank?.rankScale ?? 0}
+                />
+              </View>
+            }
+          />
+          <Field
+            label="Bậc thi"
+            value={
+              <View style={styles.rankValue}>
+                <Text style={[styles.rankText, { color: colors.onSurface }]}>
+                  {`${itemData.examinee.examRank.rank}/${itemData.examinee.examRank.rankScale}`}
+                </Text>
+                <StarRating
+                  value={itemData.examinee.examRank.rank ?? 0}
+                  max={itemData.examinee.examRank.rankScale ?? 0}
+                />
+              </View>
+            }
+          />
           <Field label="Bậc sau thi" value={""} />
           <Field
             label="Chức danh cũ"
@@ -148,12 +144,13 @@ export default function ExamDetailExamineeGeneralInfo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   resultRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   resultCard: {
     flex: 1,
@@ -166,5 +163,13 @@ const styles = StyleSheet.create({
   resultValue: {
     fontSize: 20,
     fontWeight: "bold",
+  },
+  rankValue: {
+    alignItems: "flex-end",
+    gap: 6,
+  },
+  rankText: {
+    fontSize: 16,
+    lineHeight: 22,
   },
 });

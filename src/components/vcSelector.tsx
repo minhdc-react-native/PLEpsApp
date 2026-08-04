@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LayoutChangeEvent,
   Pressable,
@@ -29,6 +29,7 @@ interface IProgs {
   onChange?: (value: IItem) => void;
   containerStyle?: StyleProp<ViewStyle>;
   itemStyle?: StyleProp<ViewStyle>;
+  tabBackgroundColor?: string;
   type?: "box" | "line";
   mode?: "fit" | "full";
 }
@@ -39,6 +40,7 @@ const VcSelector = ({
   onChange,
   containerStyle,
   itemStyle,
+  tabBackgroundColor,
   type = "line",
   mode = "fit",
 }: IProgs) => {
@@ -46,6 +48,10 @@ const VcSelector = ({
 
   const [wrapperWidth, setWrapperWidth] = useState(0);
   const [itemWidths, setItemWidths] = useState<number[]>([]);
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const [layoutVersion, setLayoutVersion] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+  const itemLayouts = useRef<Record<string, { x: number; width: number }>>({});
 
   const itemWidth = useMemo(() => {
     if (mode === "fit" && data?.length && wrapperWidth) {
@@ -71,9 +77,24 @@ const VcSelector = ({
     };
   });
 
+  const scrollToItem = useCallback(
+    (itemId: string | number) => {
+      const layout = itemLayouts.current[String(itemId)];
+      if (!layout || !viewportWidth) return;
+
+      const targetX = layout.x + layout.width / 2 - viewportWidth / 2;
+      scrollRef.current?.scrollTo({
+        x: Math.max(0, targetX),
+        animated: true,
+      });
+    },
+    [viewportWidth]
+  );
+
   const onSelect = (index: number) => {
     setSelectedIndex(index);
     onChange?.(data[index]);
+    scrollToItem(data[index].id);
   };
 
   // Khi value từ cha đổi -> cập nhật selectedIndex
@@ -84,6 +105,13 @@ const VcSelector = ({
     );
     setSelectedIndex(newIndex);
   }, [value, data]);
+
+  // TabView can change value from a swipe. Keep the active tab visible even
+  // when the user did not tap the tab directly.
+  useEffect(() => {
+    if (mode !== "full" || value === undefined || value === null) return;
+    scrollToItem(value);
+  }, [layoutVersion, mode, scrollToItem, value]);
 
   // Khi selectedIndex hoặc itemWidths đổi -> animate slider
   useEffect(() => {
@@ -105,10 +133,13 @@ const VcSelector = ({
     }
   };
 
-  const onItemLayout = (index: number) => (e: LayoutChangeEvent) => {
+  const onItemLayout = (itemId: string | number) => (e: LayoutChangeEvent) => {
     if (mode === "full") {
-      const width = e.nativeEvent.layout.width;
+      const { x, width } = e.nativeEvent.layout;
+      itemLayouts.current[String(itemId)] = { x, width };
+      setLayoutVersion((version) => version + 1);
       setItemWidths((prev) => {
+        const index = data.findIndex((item) => item.id === itemId);
         const newWidths = [...prev];
         newWidths[index] = width;
         return newWidths;
@@ -120,13 +151,19 @@ const VcSelector = ({
     mode === "fit" ? itemWidth : itemWidths[selectedIndex] || 0;
 
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View
+      style={[
+        styles.container,
+        mode === "full" && styles.fullContainer,
+        containerStyle,
+      ]}
+    >
       {mode === "fit" ? (
         <View
           style={[
             styles.wrapper,
-            { backgroundColor: colors.background },
-            type === "box" && { borderRadius: 5 },
+            { backgroundColor: tabBackgroundColor ?? colors.surface },
+            type === "box" && { borderRadius: 12 },
           ]}
           onLayout={onWrapperLayout}
         >
@@ -137,10 +174,10 @@ const VcSelector = ({
               animatedStyle,
               type === "box" && {
                 width: selectedWidth,
-                borderRadius: 5,
-                borderWidth: StyleSheet.hairlineWidth,
-                borderColor: colors.primary,
-                backgroundColor: colors.elevation.level2,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: colors.primaryContainer,
+                backgroundColor: colors.primaryContainer,
               },
             ]}
           >
@@ -168,16 +205,16 @@ const VcSelector = ({
               key={String(item.id) || String(index)}
               style={[
                 styles.item,
-                mode === "fit" ? { width: itemWidth } : {},
+                { width: itemWidth },
                 itemStyle,
               ]}
               onPress={() => onSelect(index)}
-              disabled={mode === "fit" && itemWidth === 0}
-              onLayout={mode === "full" ? onItemLayout(index) : undefined}
+              disabled={itemWidth === 0}
             >
               <Text
                 style={[
                   styles.text,
+                  { color: colors.onSurface },
                   index === selectedIndex && styles.textActive,
                   index === selectedIndex && { color: colors.primary },
                 ]}
@@ -191,14 +228,16 @@ const VcSelector = ({
       ) : (
         <ScrollView
           horizontal
+          ref={scrollRef}
+          onLayout={(event) => setViewportWidth(event.nativeEvent.layout.width)}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
           <View
             style={[
               styles.wrapper,
-              { backgroundColor: colors.background },
-              type === "box" && { borderRadius: 5 },
+              { backgroundColor: tabBackgroundColor ?? colors.surface },
+              type === "box" && { borderRadius: 12 },
             ]}
           >
             {/* slider */}
@@ -208,10 +247,10 @@ const VcSelector = ({
                 animatedStyle,
                 type === "box" && {
                   width: selectedWidth,
-                  borderRadius: 5,
-                  borderWidth: StyleSheet.hairlineWidth,
-                  borderColor: colors.primary,
-                  backgroundColor: colors.elevation.level2,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: colors.primaryContainer,
+                  backgroundColor: colors.primaryContainer,
                 },
               ]}
             >
@@ -239,16 +278,15 @@ const VcSelector = ({
                 key={String(item.id) || String(index)}
                 style={[
                   styles.item,
-                  mode === "fit" ? { width: itemWidth } : {},
                   itemStyle,
                 ]}
                 onPress={() => onSelect(index)}
-                disabled={mode === "fit" && itemWidth === 0}
-                onLayout={mode === "full" ? onItemLayout(index) : undefined}
+                onLayout={onItemLayout(item.id)}
               >
                 <Text
                   style={[
                     styles.text,
+                    { color: colors.onSurface },
                     index === selectedIndex && styles.textActive,
                     index === selectedIndex && { color: colors.primary },
                   ]}
@@ -269,6 +307,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: PADDING,
     marginTop: 12,
   },
+  fullContainer: {
+    paddingHorizontal: 0,
+    marginTop: 0,
+  },
   scrollContent: {
     flexDirection: "row",
   },
@@ -286,10 +328,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 1,
   },
-  text: {
-    color: "#333",
-    fontWeight: "500",
-  },
+  text: { fontWeight: "500" },
   textActive: {
     fontWeight: "bold",
   },

@@ -1,194 +1,136 @@
+import {
+  HistoryOverviewCard,
+  HistoryOverviewStat,
+} from "@/components/history/history-overview-card";
+import DetailSectionHeader from "@/components/detail-section-header";
+import {
+  HistoryListCard,
+  HistoryListItem,
+} from "@/components/history/history-list";
 import { useData } from "@/hooks/zustand/useData";
 import { mapEmployeeExamHistory } from "@/mappers/employee/exam-history.mapper";
 import {
   EXAM_REGISTRATION_STATUS,
   EXAM_REGISTRATION_STATUS_LABELS,
-  ExamRegistrationStatus,
 } from "@/types/exam/enums/exam-registration-status.enum";
 import { IEmployeeExamHistory } from "@/types/exam/exam.model";
 import { api } from "@/utils/epsApi";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
-import { RefreshControl } from "react-native-gesture-handler";
-import { Badge, Card, Text, useTheme } from "react-native-paper";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Text, useTheme } from "react-native-paper";
+import { router } from "expo-router";
+
+function getExamResult(item: IEmployeeExamHistory) {
+  if (item.examinee.finalRegStatus?.status === EXAM_REGISTRATION_STATUS.POSTPONED) {
+    return { label: "Hoãn thi", icon: "clock-outline", iconColor: "#667085", iconBackground: "#F1F4F8", resultColor: "#667085" };
+  }
+  if (item.examinee.isPass === true) {
+    return { label: "Đạt", icon: "check-circle-outline", iconColor: "#087A52", iconBackground: "#E3F5EC", resultColor: "#087A52" };
+  }
+  if (item.examinee.isPass === false) {
+    return { label: "Không đạt", icon: "close-circle-outline", iconColor: "#BA1A1A", iconBackground: "#FCE5E5", resultColor: "#BA1A1A" };
+  }
+  const registrationStatus = item.examinee.finalRegStatus?.status;
+  if (registrationStatus === EXAM_REGISTRATION_STATUS.ADDED) {
+    return { label: EXAM_REGISTRATION_STATUS_LABELS[registrationStatus], icon: "file-document-outline", iconColor: "#1D5FE9", iconBackground: "#E8F0FF", resultColor: "#1D5FE9" };
+  }
+  return { label: "Chưa có kết quả", icon: "file-document-outline", iconColor: "#667085", iconBackground: "#F1F4F8", resultColor: "#667085" };
+}
 
 export default function ExamHistoryManagement() {
   const [data, setData] = useState<IEmployeeExamHistory[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
   const user = useData((state) => state.user);
   const setItemData = useData((state) => state.setItemData);
+  const { colors } = useTheme();
+
   const onRefresh = () => {
     api.get({
       link: `/employees/period-history/${user?.id}`,
       callBack: (res) => {
-        const mappedData = res.returnData.map((item: any) =>
-          mapEmployeeExamHistory(item)
-        );
-        setData(mappedData);
+        setData(res.returnData.map((item: any) => mapEmployeeExamHistory(item)));
       },
-      setLoading: setLoading,
+      setLoading,
     });
   };
 
   useEffect(() => {
     onRefresh();
   }, []);
-  const { colors } = useTheme();
-  const renderItem = ({ item }: { item: IEmployeeExamHistory }) => (
-    <View style={styles.row} key={item.id}>
-      <Card
-        style={[
-          styles.card,
-          {
-            backgroundColor: colors.background,
-          },
-        ]}
-      >
-        <Pressable
-          style={({ pressed }) => [
-            {
-              opacity: pressed ? 0.7 : 1,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: 10,
-            },
-          ]}
-          onPress={() => {
-            setItemData(item);
-            router.navigate("/screen/exam-detail");
-          }}
-        >
-          <Card.Content style={{ flex: 1, gap: 10 }}>
-            <View
-              style={{
-                marginTop: 6,
-                gap: 8,
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <Text variant="titleMedium">{item.exam.name}</Text>
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ color: colors.secondary }}>
-                Bậc thi: {item.examinee.examRank.rank} /{" "}
-                {item.examinee.examRank.rankScale}
-              </Text>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              {(item.examinee.finalRegStatus?.status ===
-                EXAM_REGISTRATION_STATUS.POSTPONED ||
-                item.examinee.finalRegStatus?.status ===
-                  EXAM_REGISTRATION_STATUS.REJECTED) && (
-                <Badge
-                  style={{
-                    paddingHorizontal: 8,
-                    backgroundColor: "gray",
-                    marginBottom: 8,
-                  }}
-                >
-                  {
-                    EXAM_REGISTRATION_STATUS_LABELS[
-                      item.examinee.finalRegStatus
-                        .status as ExamRegistrationStatus
-                    ]
-                  }
-                </Badge>
-              )}
-              {item.examinee.isPass !== null && (
-                <Badge
-                  style={{
-                    paddingHorizontal: 8,
-                    backgroundColor: item.examinee.isPass
-                      ? "green"
-                      : colors.error,
-                    marginBottom: 8,
-                  }}
-                >
-                  {item.examinee.isPass ? "Đạt" : "Không đạt"}
-                </Badge>
-              )}
-            </View>
-          </Card.Content>
-          <MaterialCommunityIcons name="chevron-right" size={24} color="gray" />
-        </Pressable>
-      </Card>
-    </View>
-  );
+
+  const passed = data.filter((item) => item.examinee.isPass === true).length;
+  const failed = data.filter((item) => item.examinee.isPass === false).length;
+  const postponed = data.filter(
+    (item) => item.examinee.finalRegStatus?.status === EXAM_REGISTRATION_STATUS.POSTPONED,
+  ).length;
+  const stats: HistoryOverviewStat[] = [
+    { label: "Đạt", value: passed, icon: "check-circle-outline", tone: "success" },
+    { label: "Không đạt", value: failed, icon: "close-circle-outline", tone: "error" },
+    { label: "Hoãn thi", value: postponed, icon: "clock-outline", tone: "neutral" },
+  ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
-      <FlatList
-        data={data}
-        keyExtractor={(item, index) => `${index}`}
-        renderItem={renderItem}
-        contentContainerStyle={{ padding: 16 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={loading}
-            onRefresh={onRefresh}
-            colors={[colors.primary]} // màu vòng quay (Android)
-            tintColor={colors.primary} // màu vòng quay (iOS)
-          />
-        }
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={loading}
+          onRefresh={onRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
+    >
+      <HistoryOverviewCard
+        title="Lịch sử thi cử"
+        subtitle={`Đã thi ${data.length} kỳ`}
+        icon="clipboard-text-outline"
+        stats={stats}
       />
-    </View>
+
+      <DetailSectionHeader title="Danh sách kỳ thi" inset={false} />
+      {data.length > 0 ? (
+        <HistoryListCard>
+          {data.map((item, index) => {
+            const result = getExamResult(item);
+            return (
+              <HistoryListItem
+                key={item.id || index}
+                title={item.exam.name}
+                subtitle={`Bậc thi: ${item.examinee.examRank.rank ?? "-"} / ${item.examinee.examRank.rankScale ?? "-"}`}
+                icon={result.icon}
+                iconColor={result.iconColor}
+                iconBackgroundColor={result.iconBackground}
+                result={{ label: result.label, color: result.resultColor }}
+                last={index === data.length - 1}
+                onPress={() => {
+                  setItemData(item);
+                  router.navigate("/screen/exam-detail");
+                }}
+              />
+            );
+          })}
+        </HistoryListCard>
+      ) : (
+        <View style={styles.emptyState}>
+          <Text style={{ color: colors.onSurfaceVariant }}>Chưa có lịch sử thi cử</Text>
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    marginBottom: 10,
+  container: { flex: 1 },
+  content: {
+    padding: 16,
+    paddingTop: 14,
+    paddingBottom: 28,
   },
-  timeline: {
-    width: 20,
+  emptyState: {
+    minHeight: 96,
     alignItems: "center",
-    position: "relative",
-  },
-  date: { fontWeight: "700", fontSize: 16 },
-  circle: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 3,
-    backgroundColor: "white",
-    zIndex: 1,
-  },
-  line: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    width: 2,
-    backgroundColor: "#ddd",
-    marginTop: 30,
-  },
-  card: {
-    flex: 1,
-    marginLeft: 8,
-    borderRadius: 12,
-    elevation: 2,
-  },
-  chip: {
-    alignSelf: "flex-start",
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  metaText: {
-    marginLeft: 4,
-    color: "#666",
-    fontSize: 13,
+    justifyContent: "center",
   },
 });

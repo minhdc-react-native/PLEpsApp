@@ -1,10 +1,10 @@
-import { Badge } from "@/components/badge";
+import AppHeader from "@/components/app-header";
 import { helper } from "@/hooks/useHelper";
 import { useNotification } from "@/hooks/useNotification";
 import { mapNoti } from "@/mappers/noti.mapper";
 import { INoti } from "@/types/noti.model";
 import { api } from "@/utils/epsApi";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import * as React from "react";
 import {
   FlatList,
@@ -14,133 +14,49 @@ import {
   View,
 } from "react-native";
 import Markdown from "react-native-markdown-display";
-import {
-  Appbar,
-  Chip,
-  Divider,
-  IconButton,
-  Modal,
-  Portal,
-  Text,
-  useTheme,
-} from "react-native-paper";
+import { Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const filters = {
-  topic: [
-    { id: "topic1", value: "Thi nâng bậc" },
-    { id: "topic2", value: "Thi giữ bậc" },
-    { id: "topic3", value: "Thi KTSHN" },
-    { id: "topic4", value: "Nâng lương" },
-    { id: "topic5", value: "Khác" },
-  ],
-  time: [
-    { id: "time1", value: "Tất cả" },
-    { id: "time2", value: "7 ngày" },
-    { id: "time3", value: "14 ngày" },
-    { id: "time4", value: "30 ngày" },
-  ],
-};
+type ReadFilter = "all" | "unread";
+
 export default function NotificationScreen() {
-  const { limit } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const theme = useTheme();
-  const { fetchNotificationCount } = useNotification();
-  const [visible, setVisible] = React.useState(false);
   const { colors } = useTheme();
-  const showFilter = () => setVisible(true);
-  const hideFilter = () => setVisible(false);
-  const [filerSelect, setFilterSelect] = React.useState<string[]>([
-    "topic1",
-    "topic2",
-    "time1",
-  ]);
-  const onPresFilterItem = (item: any) => {
-    if (filerSelect.includes(item.id)) {
-      setFilterSelect((prev) => prev.filter((f) => f !== item.id));
-    } else {
-      setFilterSelect((prev) => [...prev, item.id]);
-    }
-  };
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [notifications, setNotifications] = React.useState<INoti[]>([]);
-
-  const filtered = notifications.filter((item) =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const { fetchNotificationCount } = useNotification();
   const { displayDatetime } = helper();
-  const renderItem = ({ item }: { item: (typeof notifications)[0] }) => (
-    <Pressable
-      style={({ pressed }) => [
-        {
-          opacity: pressed ? 0.7 : 1,
-          paddingVertical: 12,
-          paddingHorizontal: 10,
-          borderBottomWidth: 0.5,
-          borderBottomColor: theme.colors.outlineVariant,
-        },
-      ]}
-      onPress={async () => {}}
-    >
-      {/* Header row */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <View
-          style={{
-            alignItems: "flex-start",
-            paddingBottom: 10,
-            flex: 1,
-          }}
-        >
-          <Text variant="titleMedium" style={{ flex: 1, fontWeight: "600" }}>
-            {item.title}
-          </Text>
-          <Text
-            variant="bodySmall"
-            style={{ color: theme.colors.onSurfaceVariant }}
-          >
-            {displayDatetime(item.sendAt)}
-          </Text>
-        </View>
-        {!item.isRead && <Badge variant="tertiary">Mới</Badge>}
-      </View>
-
-      {/* Description */}
-      <Markdown>{item.body}</Markdown>
-    </Pressable>
-  );
+  const [readFilter, setReadFilter] = React.useState<ReadFilter>("all");
+  const [notifications, setNotifications] = React.useState<INoti[]>([]);
   const [infoParam, setInfoParam] = React.useState({
     totalItems: 0,
-    totalPages: 3,
+    totalPages: 1,
     itemCount: 5,
     currentPage: 1,
   });
+  const [typeLoading, setTypeLoading] = React.useState<0 | 1 | 2>(0);
 
-  const [typeLoading, setTypeLoading] = React.useState<0 | 1 | 2>(0); // 1:refresh, 2:loadMore, 0:none
-
-  const getData = async (refresh?: boolean) => {
+  const getData = async (refresh = false) => {
     if (
       typeLoading !== 0 ||
       (!refresh && infoParam.currentPage === infoParam.totalPages)
-    )
+    ) {
       return;
-    const newCurrentPage = !!refresh ? 1 : infoParam.currentPage + 1;
-    setTypeLoading(!!refresh ? 1 : 2);
+    }
+
+    const newCurrentPage = refresh ? 1 : infoParam.currentPage + 1;
+    setTypeLoading(refresh ? 1 : 2);
     api.get({
-      link: `/notifications?page=${!!refresh ? 1 : newCurrentPage}&limit=${
-        infoParam.itemCount
-      }`,
+      link: `/notifications?page=${newCurrentPage}&limit=${infoParam.itemCount}`,
       callBack: async (res) => {
-        const data = res.returnData.items.map((i: any) => mapNoti(i));
+        const data = res.returnData.items.map((item: any) => mapNoti(item));
         const meta = res.returnData.meta;
-        setNotifications((prev) => (!!refresh ? data : [...prev, ...data]));
+
+        setNotifications((prev) => (refresh ? data : [...prev, ...data]));
         setInfoParam((prev) => ({
           ...prev,
           ...meta,
           currentPage: newCurrentPage,
         }));
         setTypeLoading(0);
-
-        // Gọi lại API global để cập nhật số lượng thông báo chưa đọc
         await fetchNotificationCount();
       },
     });
@@ -149,113 +65,250 @@ export default function NotificationScreen() {
   React.useEffect(() => {
     getData(true);
   }, []);
+
+  const filteredNotifications = notifications.filter(
+    (item) => readFilter === "all" || !item.isRead
+  );
+
+  const renderItem = ({ item }: { item: INoti }) => (
+    <NotificationCard item={item} displayDatetime={displayDatetime} />
+  );
+
   return (
     <View
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.background,
-        marginBottom: insets.bottom,
-      }}
+      style={[
+        styles.screen,
+        { backgroundColor: colors.background, marginBottom: insets.bottom },
+      ]}
     >
-      {/* Appbar */}
-      <Appbar.Header mode="center-aligned">
-        <Appbar.BackAction onPress={() => router.back()} />
-        <View
-          style={{ flexDirection: "row", gap: 10, justifyContent: "center" }}
-        >
-          <Text variant="headlineMedium">{`Thông báo`}</Text>
-          {/* <Badge style={{ position: "absolute", top: 0, right: -25 }}>
-            {infoParam.totalItems > 99 ? "+99" : infoParam.totalItems}
-          </Badge> */}
-        </View>
-      </Appbar.Header>
-      <Divider />
-      {/* <View style={{ flexDirection: "row", alignItems: "center", marginRight: 10 }}>
-                <Searchbar
-                    placeholder="Tìm nội dung"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    style={{ margin: 10, borderRadius: 20, flex: 1, backgroundColor: colors.elevation.level1, borderWidth: 0.2, borderColor: colors.backdrop }}
-                />
-                <Appbar.Action icon="filter-variant" onPress={showFilter} />
-            </View> */}
+      <AppHeader title="Thông báo" onBack={() => router.back()} />
 
-      {/* List */}
+      <View style={styles.filterSection}>
+        <View
+          style={[
+            styles.filterControl,
+            { borderColor: colors.primaryContainer },
+          ]}
+        >
+          <Pressable
+            accessibilityRole="tab"
+            accessibilityState={{ selected: readFilter === "all" }}
+            onPress={() => setReadFilter("all")}
+            style={[
+              styles.filterOption,
+              readFilter === "all" && {
+                backgroundColor: colors.primary,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                {
+                  color:
+                    readFilter === "all"
+                      ? colors.onPrimary
+                      : colors.primary,
+                },
+              ]}
+            >
+              Tất cả
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="tab"
+            accessibilityState={{ selected: readFilter === "unread" }}
+            onPress={() => setReadFilter("unread")}
+            style={[
+              styles.filterOption,
+              readFilter === "unread" && {
+                backgroundColor: colors.primary,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                {
+                  color:
+                    readFilter === "unread"
+                      ? colors.onPrimary
+                      : colors.primary,
+                },
+              ]}
+            >
+              Chưa đọc
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
       <FlatList
-        data={filtered}
-        keyExtractor={(item, idx) => `${item.id}-${idx}`}
+        data={filteredNotifications}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: 12 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
             refreshing={typeLoading === 1}
             onRefresh={() => getData(true)}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
         onEndReached={() => getData()}
         onEndReachedThreshold={0.5}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={[styles.emptyTitle, { color: colors.onSurface }] }>
+              {readFilter === "unread"
+                ? "Bạn đã đọc hết thông báo"
+                : "Chưa có thông báo"}
+            </Text>
+            <Text
+              style={[styles.emptyDescription, { color: colors.onSurfaceVariant }]}
+            >
+              Nội dung mới sẽ được hiển thị tại đây.
+            </Text>
+          </View>
+        }
       />
+    </View>
+  );
+}
 
-      <Portal>
-        <Modal
-          visible={visible}
-          onDismiss={hideFilter}
-          contentContainerStyle={styles.modal}
+function NotificationCard({
+  item,
+  displayDatetime,
+}: {
+  item: INoti;
+  displayDatetime: (value?: Date | null, fallback?: string) => string;
+}) {
+  const { colors } = useTheme();
+
+  return (
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderColor: item.isRead ? colors.outlineVariant : colors.primary,
+        },
+      ]}
+    >
+      <View style={styles.cardHeader}>
+        <Text
+          numberOfLines={3}
+          style={[
+            styles.cardTitle,
+            {
+              color: colors.onSurface,
+              fontWeight: item.isRead ? "600" : "700",
+            },
+          ]}
         >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={[styles.title, { flex: 1 }]}>Bộ lọc</Text>
-            <IconButton icon={"close"} onPress={hideFilter} />
-          </View>
-          <Divider style={{ marginBottom: 20 }} />
-          <Text>Chủ đề</Text>
-          <View style={styles.row}>
-            {filters.topic.map((f, idx) => (
-              <Chip
-                key={f.id}
-                mode={filerSelect.includes(f.id) ? "flat" : "outlined"}
-                selected={filerSelect.includes(f.id)}
-                onPress={() => onPresFilterItem(f)}
-              >
-                {f.value}
-              </Chip>
-            ))}
-          </View>
-
-          <Text style={{ marginTop: 16 }}>Khoảng thời gian</Text>
-          <View style={styles.row}>
-            {filters.time.map((f, idx) => (
-              <Chip
-                key={f.id}
-                mode={filerSelect.includes(f.id) ? "flat" : "outlined"}
-                selected={filerSelect.includes(f.id)}
-                onPress={() => onPresFilterItem(f)}
-              >
-                {f.value}
-              </Chip>
-            ))}
-          </View>
-        </Modal>
-      </Portal>
+          {item.title}
+        </Text>
+      </View>
+      <Text style={[styles.timestamp, { color: colors.onSurfaceVariant }] }>
+        {displayDatetime(item.sendAt)}
+      </Text>
+      <Markdown
+        style={{
+          body: {
+            color: colors.onSurface,
+            fontSize: 15,
+            lineHeight: 22,
+          },
+          paragraph: {
+            marginTop: 0,
+            marginBottom: 8,
+          },
+          strong: {
+            color: colors.primary,
+            fontWeight: "700",
+          },
+          link: {
+            color: colors.primary,
+          },
+        }}
+      >
+        {item.body}
+      </Markdown>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  modal: {
-    backgroundColor: "white",
-    padding: 20,
-    margin: 20,
-    borderRadius: 12,
+  screen: {
+    flex: 1,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
+  filterSection: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 4,
   },
-  row: {
+  filterControl: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 2,
+    overflow: "hidden",
+  },
+  filterOption: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 21,
+  },
+  filterText: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 32,
+  },
+  card: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 0,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  cardTitle: {
+    flex: 1,
+    fontSize: 17,
+    lineHeight: 24,
+  },
+  timestamp: {
+    marginTop: 6,
+    marginBottom: 10,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingTop: 56,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  emptyDescription: {
+    marginTop: 6,
+    fontSize: 14,
+    textAlign: "center",
   },
 });

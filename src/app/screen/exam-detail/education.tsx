@@ -11,7 +11,7 @@ export default function ExamDetailEducationInfo() {
   const itemData = useData((state) => state.itemData) as IEmployeeExamHistory;
   const { colors } = useTheme();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.elevation.level1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {itemData.examinee.education !== null ? (
         <ScrollView style={styles.container}>
           <ListFields>
@@ -51,6 +51,5 @@ export default function ExamDetailEducationInfo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
 });

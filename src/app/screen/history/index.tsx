@@ -1,8 +1,9 @@
-import VcSelector from "@/components/vcSelector";
+import DetailTabBar from "@/components/detail-tab-bar";
+import AppHeader from "@/components/app-header";
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, View, useWindowDimensions } from "react-native";
-import { Appbar, Divider, useTheme } from "react-native-paper";
+import { View, useWindowDimensions } from "react-native";
+import { useTheme } from "react-native-paper";
 import { SceneMap, TabView } from "react-native-tab-view";
 import ExamHistoryManagement from "./exam/exam-history-management";
 import SalaryHistoryManagement from "./salary/salary-history-management";
@@ -22,62 +23,30 @@ export default function History() {
   const [index, setIndex] = useState(0);
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title="Lịch sử" />
-      </Appbar.Header>
+      <AppHeader
+        title="Lịch sử"
+        onBack={() => router.back()}
+        bottom={
+          <DetailTabBar
+            data={routes.map((route) => ({
+              id: route.key,
+              value: route.title,
+            }))}
+            value={routes[index].key}
+            onChange={(value) =>
+              setIndex(routes.findIndex((route) => route.key === value.id))
+            }
+            mode="fit"
+          />
+        }
+      />
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}
-        renderTabBar={(pros) => (
-          <>
-            <VcSelector
-              data={Object.values(routes).map((route) => ({
-                id: route.key,
-                value: route.title,
-              }))}
-              value={routes[index].key}
-              onChange={(value) =>
-                setIndex(routes.findIndex((r) => r.key === value.id))
-              }
-              type="line"
-            />
-            <Divider />
-          </>
-        )}
+        renderTabBar={() => null}
         onIndexChange={setIndex}
         initialLayout={{ width: layout.width }}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  tabBar: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  tabLabel: {
-    color: "#888",
-    fontWeight: "400",
-  },
-  tabLabelActive: {
-    color: "#007aff",
-    fontWeight: "700",
-  },
-  tabUnderline: {
-    marginTop: 4,
-    height: 2,
-    width: "100%",
-    backgroundColor: "#007aff",
-  },
-});

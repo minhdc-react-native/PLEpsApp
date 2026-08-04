@@ -1,5 +1,6 @@
 import { useLoading } from "@/components/dialog/loadingProvider";
 import { useToast } from "@/components/dialog/useToast";
+import AppHeader from "@/components/app-header";
 import FormWrapper from "@/components/formWrapper";
 import VcSelectList from "@/components/vcSelectList";
 import { getFullActiveTopic } from "@/helpers/topic.helpder";
@@ -8,13 +9,22 @@ import { useData } from "@/hooks/zustand/useData";
 import { mapArea } from "@/mappers/area.mapper";
 import { IEmployee } from "@/types/employee/employee.model";
 import { IEmployeeExam } from "@/types/exam/exam.model";
+import { EXAMINEE_STAGES } from "@/types/exam/enums/examinee-stage.enum";
+import { EXAM_STATUS } from "@/types/exam/enums/exam-status.enum";
+import { TOPIC_STATUS } from "@/types/exam/enums/topic-status.enum";
 import { IArea } from "@/types/system/area.model";
 import { api } from "@/utils/epsApi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { StyleSheet, View } from "react-native";
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  TextInput as NativeTextInput,
+  View,
+} from "react-native";
 import { Appbar, Button, Text, TextInput } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import z from "zod";
@@ -33,6 +43,18 @@ export default function TopicRegistrationForm() {
   const { showToast } = useToast();
   const { show, hide } = useLoading();
   const activeTopic = getFullActiveTopic(currentExam.examinee.topic);
+  const now = new Date();
+  const isTopicWindowOpen =
+    currentExam.exam.status === EXAM_STATUS.TOPIC_REGISTRATION &&
+    !!currentExam.exam.topicSchedule.startDate &&
+    !!currentExam.exam.topicSchedule.endDate &&
+    now >= new Date(currentExam.exam.topicSchedule.startDate) &&
+    now <= new Date(currentExam.exam.topicSchedule.endDate);
+  const isReadOnly = !(
+    currentExam.examinee.stage === EXAMINEE_STAGES.TOPIC &&
+    currentExam.examinee.topic.status !== TOPIC_STATUS.ACCEPTED &&
+    isTopicWindowOpen
+  );
   const [areas, setAreas] = useState<IArea[]>([]);
   const [mentors, setMentors] = useState<IEmployee[]>([]);
   const { refetch } = useCurrentExam();
@@ -89,11 +111,18 @@ export default function TopicRegistrationForm() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title={"Đăng ký đề tài"} />
-      </Appbar.Header>
-      <FormWrapper style={{ flex: 1, padding: 20, gap: 24 }}>
+      <AppHeader
+        title={currentExam.exam.name}
+        subtitle="Đăng ký đề tài"
+        onBack={() => router.back()}
+      />
+      <FormWrapper
+        style={{
+          padding: 20,
+          paddingBottom: 0,
+          gap: 24,
+        }}
+      >
         <Controller
           control={control}
           name="title"
@@ -107,7 +136,34 @@ export default function TopicRegistrationForm() {
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value ?? ""}
+                editable={!isReadOnly}
                 error={!!errors.title}
+                render={(inputProps) => {
+                  const contentWidth = Math.max(
+                    Dimensions.get("window").width - 40,
+                    Math.ceil((value ?? "").length * 9.5) + 40
+                  );
+
+                  return (
+                    <ScrollView
+                      horizontal
+                      bounces={false}
+                      nestedScrollEnabled
+                      showsHorizontalScrollIndicator={false}
+                      style={styles.titleScroll}
+                      contentContainerStyle={styles.titleScrollContent}
+                    >
+                      <NativeTextInput
+                        {...inputProps}
+                        style={[
+                          inputProps.style,
+                          styles.titleNativeInput,
+                          { width: contentWidth },
+                        ]}
+                      />
+                    </ScrollView>
+                  );
+                }}
               />
               {errors.title && (
                 <Text style={styles.error}>{errors.title.message}</Text>
@@ -129,6 +185,7 @@ export default function TopicRegistrationForm() {
                 onChangeText={onChange}
                 value={value ?? ""}
                 error={!!errors.description}
+                editable={!isReadOnly}
                 multiline
               />
               {errors.description && (
@@ -148,6 +205,7 @@ export default function TopicRegistrationForm() {
                 value={value ?? ""}
                 data={areas}
                 onChange={(item) => onChange(item?.id)}
+                disabled={isReadOnly}
               />
               {errors.areaId && (
                 <Text style={styles.error}>{errors.areaId.message}</Text>
@@ -168,6 +226,7 @@ export default function TopicRegistrationForm() {
                 value={value ?? ""}
                 data={mentors}
                 onChange={(item) => onChange(item?.id)}
+                disabled={isReadOnly}
               />
               {errors.mentorId && (
                 <Text style={styles.error}>{errors.mentorId.message}</Text>
@@ -175,24 +234,27 @@ export default function TopicRegistrationForm() {
             </View>
           )}
         />
+        <View style={{ height: isReadOnly ? 120 : 240 }} />
       </FormWrapper>
-      <Appbar
-        style={[
-          styles.bottom,
-          {
-            height: 100 + bottom,
-          },
-        ]}
-        safeAreaInsets={{ bottom }}
-      >
-        <Button
-          mode="contained"
-          style={{ flex: 1, padding: 10 }}
-          onPress={handleSubmit(onSubmit)}
+      {!isReadOnly && (
+        <Appbar
+          style={[
+            styles.bottom,
+            {
+              height: 100 + bottom,
+            },
+          ]}
+          safeAreaInsets={{ bottom }}
         >
-          Cập nhật
-        </Button>
-      </Appbar>
+          <Button
+            mode="contained"
+            style={{ flex: 1, padding: 10 }}
+            onPress={handleSubmit(onSubmit)}
+          >
+            Cập nhật
+          </Button>
+        </Appbar>
+      )}
     </View>
   );
 }
@@ -212,6 +274,15 @@ const styles = StyleSheet.create({
   input: {
     marginBottom: 12,
     backgroundColor: "#fff",
+  },
+  titleScroll: {
+    flex: 1,
+  },
+  titleScrollContent: {
+    minWidth: "100%",
+  },
+  titleNativeInput: {
+    flexGrow: 0,
   },
   error: {
     color: "red",

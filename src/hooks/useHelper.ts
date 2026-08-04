@@ -68,6 +68,11 @@ export const helper = () => {
     return dayjs(date).format("HH:mm:ss, ngày DD/MM/YYYY");
   };
 
+  const displayDatetimeShort = (date?: Date | null, fallback: string = "") => {
+    if (!date) return fallback;
+    return dayjs(date).format("HH:mm, ngày DD/MM/YYYY");
+  };
+
   const displayDateDiff = (start: Date, end?: Date | null) => {
     const startDate = dayjs(start);
     const endDate = dayjs(end || new Date());
@@ -88,6 +93,7 @@ export const helper = () => {
     displayDateDiff,
     displayDate,
     displayDatetime,
+    displayDatetimeShort,
     isNotEmpty,
   };
 };

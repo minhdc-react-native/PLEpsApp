@@ -120,10 +120,8 @@ function ViewComponent<T = IDataBase>({
           styles.button,
           {
             opacity: pressed ? 0.7 : 1,
-            borderColor: isError ? colors.error : colors.secondary,
-            backgroundColor: disabled
-              ? colors.elevation.level1
-              : colors.background,
+            borderColor: isError ? colors.error : colors.outline,
+            backgroundColor: colors.surface,
           },
           style,
         ]}
@@ -145,8 +143,11 @@ function ViewComponent<T = IDataBase>({
               variant="bodyLarge"
               numberOfLines={1}
               style={{
-                color: itemSelected ? "#000" : colors.backdrop,
-                paddingLeft: 8,
+                color: itemSelected
+                  ? disabled
+                    ? colors.onSurfaceVariant
+                    : colors.onSurface
+                  : colors.onSurfaceVariant,
               }}
             >
               {itemSelected
@@ -180,26 +181,17 @@ function ViewComponent<T = IDataBase>({
         ) : (
           <FontAwesome name="angle-down" size={20} color={colors.secondary} />
         )}
-        {value && label && (
-          <View style={styles.label}>
-            <View style={styles.label}>
-              <Text style={{ color: colors.inverseSurface, fontSize: 12.7 }}>
-                {label}
-              </Text>
-            </View>
-            {label && (
-              <Text
-                style={{
-                  color: disabled ? colors.elevation.level1 : colors.background,
-                  paddingHorizontal: 4,
-                }}
-              >
-                {label}
-              </Text>
-            )}
-            {label && (
-              <View style={[styles.line, { borderColor: colors.background }]} />
-            )}
+        {itemSelected && label && (
+          <View style={[styles.label, { backgroundColor: colors.background }]}>
+            <Text
+              style={{
+                color: colors.onSurfaceVariant,
+                fontSize: 12,
+                lineHeight: 16,
+              }}
+            >
+              {label}
+            </Text>
           </View>
         )}
       </Pressable>
@@ -381,23 +373,15 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    borderWidth: 0.5,
-    height: 42,
-  },
-  line: {
-    position: "absolute",
-    width: "100%",
+    paddingHorizontal: 12,
+    borderRadius: 4,
     borderWidth: 1,
-    top: 3,
-    left: 2,
-    zIndex: 1,
+    height: 56,
   },
   label: {
     position: "absolute",
-    fontSize: 12,
-    top: -4,
+    paddingHorizontal: 4,
+    top: -8,
     left: 8,
     zIndex: 2,
   },

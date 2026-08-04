@@ -41,7 +41,7 @@ export const VcTabBar = ({ value, data, onPress, style }: IProgs) => {
     }, [value, layoutReady]);
 
     return (
-        <View style={[{ backgroundColor: colors.background, borderWidth: 0.5, borderColor: colors.backdrop, borderBottomWidth: 1, borderBottomColor: colors.primary }, style]} onLayout={(event: LayoutChangeEvent) => {
+        <View style={[{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.outlineVariant, borderBottomWidth: 1, borderBottomColor: colors.outlineVariant }, style]} onLayout={(event: LayoutChangeEvent) => {
             const { x, width } = event.nativeEvent.layout;
             setWidthView(width);
             requestAnimationFrame(() => {
@@ -61,7 +61,7 @@ export const VcTabBar = ({ value, data, onPress, style }: IProgs) => {
                     return (
                         <TouchableOpacity
                             key={item.id}
-                            style={[styles.tabItem, isFocused && { backgroundColor: colors.primary }]}
+                            style={[styles.tabItem, isFocused && { backgroundColor: colors.primaryContainer }]}
                             onPress={() => onTabPress(item)}
                             onLayout={(event: LayoutChangeEvent) => {
                                 const { x, width } = event.nativeEvent.layout;
@@ -69,12 +69,12 @@ export const VcTabBar = ({ value, data, onPress, style }: IProgs) => {
                             }}
                         >
                             <Text numberOfLines={1} variant="titleSmall" style={[styles.tabText,
-                            isFocused && [styles.activeTabText, { color: colors.background }]]}>
+                            isFocused && [styles.activeTabText, { color: colors.primary }]]}>
                                 {item.value}
                             </Text>
                             {!!item.badge && <Text style={[
                                 styles.badge,
-                                isFocused ? { backgroundColor: colors.background, color: colors.secondary } : { backgroundColor: colors.backdrop, color: colors.background }
+                                isFocused ? { backgroundColor: colors.surface, color: colors.primary } : { backgroundColor: colors.secondaryContainer, color: colors.onSecondaryContainer }
                             ]}>{getTextBadge(Number(item.badge))}</Text>}
                         </TouchableOpacity>
                     );
@@ -104,8 +104,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         alignItems: 'center',
         // borderRadius: 10,
-        borderTopLeftRadius: 10,
-        borderTopRightRadius: 10,
+        borderRadius: 14,
         // maxWidth: 120,
         gap: 5,
         flexDirection: "row"
@@ -114,7 +113,7 @@ const styles = StyleSheet.create({
         flexShrink: 1,
         // fontSize: 18,
         paddingVertical: 5,
-        color: '#999'
+        color: '#5B667A'
     },
     activeTabText: {
         // fontWeight: 'bold',

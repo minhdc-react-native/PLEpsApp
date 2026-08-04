@@ -11,7 +11,7 @@ export default function EmployeeContract() {
   const { colors } = useTheme();
   const { displayDate } = helper();
   return (
-    <View style={{ flex: 1, backgroundColor: colors.elevation.level1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={[styles.container]}>
         <ListFields>
           <Field label="Số HĐLĐ" value={user?.contractNumber ?? ""} />
@@ -36,6 +36,5 @@ export default function EmployeeContract() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
 });

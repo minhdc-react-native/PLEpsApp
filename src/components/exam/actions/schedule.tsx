@@ -1,28 +1,46 @@
 import { useData } from "@/hooks/zustand/useData";
 import { EXAMINEE_STAGES } from "@/types/exam/enums/examinee-stage.enum";
+import { EXAM_STATUS } from "@/types/exam/enums/exam-status.enum";
 import { IEmployeeExam } from "@/types/exam/exam.model";
 import { router } from "expo-router";
-import { ScheduleStatusBadge } from "../schedule-status-badge";
-import { ExamStatusActionCard } from "./exam-status-action-card";
+import { Button } from "react-native-paper";
+import {
+  ExamStatusActionCard,
+  ExamStatusActionCardStyles,
+} from "./exam-status-action-card";
 
 export function ExamScheduleActionCard() {
   const currentExam = useData((state) => state.currentExam) as IEmployeeExam;
   const setItemData = useData((state) => state.setItemData);
-
-  if (currentExam.examinee.stage < EXAMINEE_STAGES.SCHEDULE) return null;
+  const openDetail = () => {
+    setItemData({
+      id: "null",
+      active: true,
+      ...currentExam,
+    });
+    router.navigate("/screen/exam-detail?tab=exam-info");
+  };
 
   return (
     <ExamStatusActionCard
       title="Lịch thi"
-      info={<ScheduleStatusBadge data={currentExam} />}
-      onPress={() => {
-        setItemData({
-          id: "null",
-          active: true,
-          ...currentExam,
-        });
-        router.navigate("/screen/exam-detail?tab=exam-info");
-      }}
+      icon="calendar-clock-outline"
+      step={currentExam.exam.examType.hasTopic && currentExam.exam.examType.hasTraining ? 4 : 3}
+      last={false}
+      active={currentExam.exam.status === EXAM_STATUS.EXAM}
+      action={
+        currentExam.examinee.stage >= EXAMINEE_STAGES.SCHEDULE ? (
+          <Button
+            mode="outlined"
+            icon="arrow-right"
+            labelStyle={ExamStatusActionCardStyles.actionBtnLabel}
+            contentStyle={{ flexDirection: "row-reverse" }}
+            onPress={openDetail}
+          >
+            Xem lịch thi
+          </Button>
+        ) : undefined
+      }
     />
   );
 }

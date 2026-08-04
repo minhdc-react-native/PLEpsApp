@@ -2,21 +2,51 @@ import { StyleSheet } from "react-native";
 
 export const detailFieldStyles = StyleSheet.create({
   container: {
-    marginBottom: 16,
-    flex: 1,
+    minHeight: 52,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
-  contentContainer: {
+  columnContainer: {
+    alignItems: "stretch",
     flexDirection: "column",
     gap: 8,
   },
+  divider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E2E8F0",
+  },
+  contentContainer: {
+    flex: 1.1,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 4,
+  },
+  columnContentContainer: {
+    alignItems: "stretch",
+    flex: 0,
+    width: "100%",
+  },
   label: {
+    flex: 1,
     fontSize: 14,
-    color: "gray",
-    marginBottom: 8,
+    lineHeight: 19,
+    fontWeight: "400",
+  },
+  columnLabel: {
+    flex: 0,
   },
   text: {
-    color: "black",
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 19,
+    textAlign: "right",
+    flexShrink: 1,
+  },
+  columnText: {
+    textAlign: "left",
+    width: "100%",
   },
   textError: {
     color: "red",

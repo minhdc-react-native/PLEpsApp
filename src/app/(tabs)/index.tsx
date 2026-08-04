@@ -4,28 +4,73 @@ import { StarRating } from "@/components/starRating";
 // import useDeviceToken from "@/hooks/useDeviceToken";
 import { useData } from "@/hooks/zustand/useData";
 import { AntDesign } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import { useState } from "react";
-import { Image, ScrollView, StyleSheet, View } from "react-native";
+import { useState, type ReactNode } from "react";
 import {
-  Appbar,
+  Image,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import {
   Avatar,
   Badge,
   Button,
   Card,
   Dialog,
+  IconButton,
   Portal,
   Text,
   useTheme,
 } from "react-native-paper";
 import { useAuth } from "../(auth)/AuthProvider";
-const sizeLogo = { width: 500, height: 199 };
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+type InfoRowProps = {
+  icon: string;
+  label: string;
+  value?: string | null;
+  accessory?: ReactNode;
+};
+
+const InfoRow = ({ icon, label, value, accessory }: InfoRowProps) => {
+  const { colors } = useTheme();
+
+  return (
+    <View style={styles.infoRow}>
+      <Avatar.Icon
+        icon={icon}
+        size={34}
+        style={styles.infoIcon}
+        color={colors.primary}
+      />
+      <View style={styles.infoCopy}>
+        <Text variant="labelMedium" style={{ color: colors.onSurfaceVariant }}>
+          {label}
+        </Text>
+        <Text variant="bodyLarge" style={styles.infoValue} numberOfLines={2}>
+          {value || "Chưa cập nhật"}
+        </Text>
+        {accessory && <View style={styles.infoAccessory}>{accessory}</View>}
+      </View>
+    </View>
+  );
+};
+
 const EmployeeInfo = () => {
   const { colors } = useTheme();
   const user = useData((state) => state.user);
   const totalUnread = useData((state) => state.totalUnread);
   const { logout } = useAuth();
   const [openLogout, setOpenLogout] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const logoHeight = 54;
+  const heroHeight = 176 + insets.top - logoHeight;
+  const avatarSize = 128;
+  const heroDiameter = width * 2.2;
   if (user === null) {
     return (
       <View style={styles.overlay}>
@@ -34,56 +79,102 @@ const EmployeeInfo = () => {
     );
   }
   return (
-    <ScrollView>
-      {/* Header */}
-      <Appbar.Header mode="center-aligned">
-        <Image
-          source={require("@/assets/images/splash-icon.png")}
-          style={{
-            width: (1 / 3) * sizeLogo.width,
-            height: (1 / 3) * sizeLogo.height,
-            resizeMode: "cover",
-            marginLeft: 20,
-          }}
+    <ScrollView
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <StatusBar style="light" />
+      <View style={[styles.hero, { height: heroHeight, paddingTop: insets.top }]}>
+        <LinearGradient
+          colors={["#123B9B", colors.primary, "#347AF1"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          pointerEvents="none"
+          style={[
+            styles.heroShape,
+            {
+              width: heroDiameter,
+              height: heroDiameter,
+              borderRadius: heroDiameter / 2,
+              left: "50%",
+              transform: [{ translateX: -(heroDiameter / 2) }],
+              top: heroHeight - heroDiameter,
+            },
+          ]}
         />
-        <Appbar.Content title="" />
-        <View style={{ flexDirection: "row" }}>
-          <Appbar.Action
-            icon="bell-outline"
-            onPress={() =>
-              router.navigate({
-                pathname: "/screen/notifications",
-                params: { limit: totalUnread },
-              })
-            }
-          />
-          {totalUnread !== 0 && (
-            <Badge
-              size={15}
-              style={{ position: "absolute", top: 10, right: 10 }}
-            >
-              {totalUnread}
-            </Badge>
+        <View style={styles.heroTop}>
+          <View style={styles.logoPill}>
+            <Image
+              source={require("@/assets/images/splash-icon.png")}
+              style={styles.logo}
+            />
+          </View>
+          <View style={styles.heroActions}>
+            <View style={styles.notificationAction}>
+              <IconButton
+                icon="bell-outline"
+                iconColor="#FFFFFF"
+                size={22}
+                onPress={() =>
+                  router.navigate({
+                    pathname: "/screen/notifications",
+                    params: { limit: totalUnread },
+                  })
+                }
+              />
+              {totalUnread !== 0 && (
+                <Badge size={15} style={styles.notificationBadge}>
+                  {totalUnread}
+                </Badge>
+              )}
+            </View>
+            <IconButton
+              icon={() => (
+                <AntDesign name="logout" size={21} color="#FFFFFF" />
+              )}
+              onPress={() => setOpenLogout(true)}
+            />
+          </View>
+        </View>
+        <View pointerEvents="none" style={styles.dotPattern}>
+          {Array.from({ length: 30 }).map((_, index) => (
+            <View
+              key={index}
+              style={[styles.dot, { opacity: 0.1 + (index % 4) * 0.04 }]}
+            />
+          ))}
+        </View>
+        <View
+          style={[
+            styles.floatingAvatar,
+            {
+              width: avatarSize,
+              height: avatarSize,
+              left: "50%",
+              marginLeft: -(avatarSize / 2),
+              bottom: -(avatarSize / 2),
+              borderRadius: avatarSize / 2,
+              padding: 8,
+              backgroundColor: colors.background,
+            },
+          ]}
+        >
+          {user?.imageUrl ? (
+            <CustomAvatar src={user.imageUrl} size={avatarSize - 16} />
+          ) : (
+            <View style={[styles.avatarCore, { backgroundColor: colors.primary }]} />
           )}
         </View>
-        <Appbar.Action
-          icon={() => (
-            <AntDesign name="logout" size={24} color={colors.primary} />
-          )}
-          onPress={() => setOpenLogout(true)}
-        />
-      </Appbar.Header>
+      </View>
 
-      {/* Avatar + Name */}
-      <View style={[styles.profile]}>
-        <CustomAvatar src={user?.imageUrl} size={128} />
-        <Text
-          variant="titleMedium"
-          style={{ fontWeight: "bold", marginTop: 12, color: colors.secondary }}
-        >
-          {user?.code}
-        </Text>
-        <Text variant="titleLarge" style={{ fontWeight: "bold", marginTop: 8 }}>
+      <View style={[styles.profile, { paddingTop: avatarSize / 2 }]}>
+        <View style={[styles.codeBadge, { backgroundColor: colors.primaryContainer }]}>
+          <Text style={{ color: colors.primary, fontWeight: "700" }}>
+            {user?.code}
+          </Text>
+        </View>
+        <Text variant="headlineSmall" style={styles.fullName}>
           {user?.fullName}
         </Text>
       </View>
@@ -91,173 +182,40 @@ const EmployeeInfo = () => {
       <View style={styles.actions}>
         <Button
           mode="outlined"
-          icon="chart-bar"
+          icon="calendar-month-outline"
           onPress={() => router.navigate("/screen/history")}
+          style={styles.actionButton}
+          contentStyle={styles.actionButtonContent}
         >
           Lịch sử
         </Button>
         <Button
-          mode="text"
-          icon="arrow-right"
-          contentStyle={{ flexDirection: "row-reverse" }}
+          mode="contained"
+          icon="account-details-outline"
+          style={styles.actionButton}
+          contentStyle={styles.actionButtonContent}
+          labelStyle={styles.profileButtonLabel}
           onPress={() => router.navigate("/screen/employee-profile")}
         >
           Hồ sơ nhân sự
         </Button>
       </View>
 
-      {/* Info Cards */}
-      <View style={styles.row}>
-        <Card
-          style={{
-            flex: 1,
-          }}
-        >
-          <Card.Content
-            style={{
-              gap: 12,
-            }}
-          >
-            <View style={styles.actionContent}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Avatar.Icon
-                  icon={"star"}
-                  style={{ backgroundColor: colors.background }}
-                  color={colors.primary}
-                  size={24}
-                />
-                <Text variant="titleSmall">
-                  Bậc thợ{" "}
-                  <Text
-                    style={{
-                      fontWeight: "bold",
-                      color: colors.onErrorContainer,
-                    }}
-                  >{`${user?.currentRank}/${user?.rankScale}`}</Text>
-                </Text>
-              </View>
-              <StarRating
-                value={user?.currentRank ?? 0}
-                max={user?.rankScale}
-              />
-            </View>
-            <View style={styles.actionContent}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Avatar.Icon
-                  icon={"account"}
-                  style={{ backgroundColor: colors.background }}
-                  color={colors.primary}
-                  size={24}
-                />
-                <Text variant="titleSmall">Chức danh</Text>
-              </View>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  fontWeight: "bold",
-                  color: colors.onErrorContainer,
-                  marginBottom: 8,
-                }}
-              >
-                {user?.position?.name}
-              </Text>
-            </View>
-            <View style={styles.actionContent}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Avatar.Icon
-                  icon={"toolbox"}
-                  style={{ backgroundColor: colors.background }}
-                  color={colors.primary}
-                  size={24}
-                />
-                <Text variant="titleSmall">Chuyên môn</Text>
-              </View>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  fontWeight: "bold",
-                  color: colors.onErrorContainer,
-                  marginBottom: 8,
-                }}
-              >
-                {user?.area?.name}
-              </Text>
-            </View>
-            <View style={styles.actionContent}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Avatar.Icon
-                  icon={"home-account"}
-                  style={{ backgroundColor: colors.background }}
-                  color={colors.primary}
-                  size={24}
-                />
-                <Text variant="titleSmall">Phòng ban</Text>
-              </View>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  fontWeight: "bold",
-                  color: colors.onErrorContainer,
-                  marginBottom: 8,
-                }}
-              >
-                {user?.department?.name}
-              </Text>
-            </View>
-            {/* <View style={styles.actionContent}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  gap: 10,
-                  alignItems: "center",
-                }}
-              >
-                <Avatar.Icon
-                  icon={"account"}
-                  style={{ backgroundColor: colors.background }}
-                  color={colors.primary}
-                  size={24}
-                />
-                <Text variant="titleSmall">Tổ nhóm</Text>
-              </View>
-              <Text
-                variant="bodyMedium"
-                style={{
-                  fontWeight: "bold",
-                  color: colors.onErrorContainer,
-                  marginBottom: 8,
-                }}
-              >
-                {user?.team.name}
-              </Text>
-            </View> */}
-          </Card.Content>
-        </Card>
-      </View>
+      <Card mode="outlined" style={styles.infoCard}>
+        <Card.Content style={styles.infoContent}>
+          <InfoRow
+            icon="star-outline"
+            label="Bậc thợ"
+            value={`${user?.currentRank ?? "—"}/${user?.rankScale ?? "—"}`}
+            accessory={
+              <StarRating value={user?.currentRank ?? 0} max={user?.rankScale} />
+            }
+          />
+          <InfoRow icon="briefcase-outline" label="Chức danh" value={user?.position?.name} />
+          <InfoRow icon="toolbox-outline" label="Chuyên môn" value={user?.area?.name} />
+          <InfoRow icon="office-building-outline" label="Phòng ban" value={user?.department?.name} />
+        </Card.Content>
+      </Card>
 
       <Portal>
         <Dialog
@@ -286,32 +244,118 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  container: { flex: 1, backgroundColor: "#f9f9f9" },
-  profile: { alignItems: "center", marginTop: 24 },
-  name: { marginTop: 8, fontSize: 18, fontWeight: "600" },
-  row: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 50,
-    marginTop: 16,
-    marginHorizontal: 20,
-    marginBottom: 16,
+  scrollContent: { paddingBottom: 28 },
+  hero: {
+    position: "relative",
+    overflow: "visible",
+    zIndex: 2,
   },
+  heroShape: {
+    position: "absolute",
+  },
+  heroTop: {
+    height: 64,
+    paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    zIndex: 2,
+  },
+  logoPill: {
+    width: 158,
+    height: 54,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    justifyContent: "center",
+    borderRadius: 14,
+    backgroundColor: "transparent",
+  },
+  logo: {
+    width: 144,
+    height: 48,
+    resizeMode: "contain",
+  },
+  heroActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  notificationAction: {
+    position: "relative",
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: 2,
+    right: 0,
+    backgroundColor: "#E53935",
+  },
+  dotPattern: {
+    position: "absolute",
+    right: 24,
+    bottom: 54,
+    width: 118,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+    gap: 9,
+    zIndex: 1,
+  },
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#FFFFFF",
+  },
+  floatingAvatar: {
+    position: "absolute",
+    zIndex: 3,
+  },
+  profile: {
+    alignItems: "center",
+    paddingTop: 0,
+    paddingHorizontal: 20,
+    zIndex: 1,
+  },
+  avatarCore: {
+    flex: 1,
+    borderRadius: 999,
+  },
+  codeBadge: {
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  fullName: { fontWeight: "700", marginTop: 4 },
   actions: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 16,
-    marginTop: 32,
-  },
-  actionContent: {
+    marginTop: 18,
     gap: 8,
   },
-  sectionTitle: {
-    marginTop: 24,
-    marginLeft: 16,
-    fontWeight: "600",
-    fontSize: 16,
+  actionButton: { flex: 1, borderRadius: 24 },
+  actionButtonContent: { height: 40 },
+  profileButtonLabel: { fontWeight: "600" },
+  infoCard: {
+    marginHorizontal: 16,
+    marginTop: 20,
+    borderRadius: 20,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
   },
+  infoContent: { gap: 18, paddingVertical: 16 },
+  sectionHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 2,
+  },
+  sectionTitle: { fontWeight: "700" },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  infoIcon: { backgroundColor: "#F1F4F8" },
+  infoCopy: { flex: 1, gap: 2 },
+  infoValue: { fontWeight: "600" },
+  infoAccessory: { marginTop: 4, alignSelf: "flex-start" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
 });

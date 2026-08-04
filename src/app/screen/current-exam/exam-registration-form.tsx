@@ -1,9 +1,12 @@
 import { useLoading } from "@/components/dialog/loadingProvider";
 import { useToast } from "@/components/dialog/useToast";
+import AppHeader from "@/components/app-header";
 import FormWrapper from "@/components/formWrapper";
 import useCurrentExam from "@/hooks/useCurrentExam";
 import { useData } from "@/hooks/zustand/useData";
 import { EXAM_REGISTRATION_STATUS } from "@/types/exam/enums/exam-registration-status.enum";
+import { EXAMINEE_STAGES } from "@/types/exam/enums/examinee-stage.enum";
+import { EXAM_STATUS } from "@/types/exam/enums/exam-status.enum";
 import { IEmployeeExam } from "@/types/exam/exam.model";
 import { api } from "@/utils/epsApi";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,6 +59,18 @@ export default function ExamRegistrationForm() {
   const { showToast } = useToast();
   const { show, hide } = useLoading();
   const { refetch } = useCurrentExam();
+  const now = new Date();
+  const isRegistrationWindowOpen =
+    currentExam.exam.status === EXAM_STATUS.REGISTRATION &&
+    !!currentExam.exam.registrationStartDate &&
+    !!currentExam.exam.registrationEndDate &&
+    now >= new Date(currentExam.exam.registrationStartDate) &&
+    now <= new Date(currentExam.exam.registrationEndDate);
+  const isReadOnly = !(
+    currentExam.examinee.stage === EXAMINEE_STAGES.REGISTRATION &&
+    currentExam.examinee.regStatus.status === EXAM_REGISTRATION_STATUS.PENDING &&
+    isRegistrationWindowOpen
+  );
 
   const {
     control,
@@ -95,17 +110,26 @@ export default function ExamRegistrationForm() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} />
-        <Appbar.Content title={"Đăng ký thi"} />
-      </Appbar.Header>
-      <FormWrapper style={{ flex: 1, padding: 20, gap: 8 }}>
+      <AppHeader
+        title={currentExam.exam.name}
+        subtitle="Đăng ký thi"
+        onBack={() => router.back()}
+      />
+      <FormWrapper
+        style={{
+          padding: 20,
+          paddingBottom: 0,
+          gap: 8,
+        }}
+      >
         <Controller
           control={control}
           name="status"
           render={({ field: { onChange, value } }) => (
             <RadioButton.Group
-              onValueChange={(value) => onChange(parseInt(value))}
+              onValueChange={(value) => {
+                if (!isReadOnly) onChange(parseInt(value));
+              }}
               value={String(value)}
             >
               <View
@@ -119,11 +143,13 @@ export default function ExamRegistrationForm() {
                   label="Tham gia thi"
                   labelStyle={{ fontWeight: "bold", color: "green" }}
                   value={EXAM_REGISTRATION_STATUS.SIGNED.toString()}
+                  disabled={isReadOnly}
                 />
                 <RadioButton.Item
                   label="Hoãn thi"
                   labelStyle={{ fontWeight: "bold", color: "red" }}
                   value={EXAM_REGISTRATION_STATUS.POSTPONED.toString()}
+                  disabled={isReadOnly}
                 />
               </View>
             </RadioButton.Group>
@@ -144,6 +170,7 @@ export default function ExamRegistrationForm() {
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value ?? ""}
+                  editable={!isReadOnly}
                   error={!!errors.reason}
                 />
                 {errors.reason && (
@@ -153,24 +180,27 @@ export default function ExamRegistrationForm() {
             )}
           />
         )}
+        <View style={{ height: isReadOnly ? 120 : 240 }} />
       </FormWrapper>
-      <Appbar
-        style={[
-          styles.bottom,
-          {
-            height: 100 + bottom,
-          },
-        ]}
-        safeAreaInsets={{ bottom }}
-      >
-        <Button
-          mode="contained"
-          style={{ flex: 1, padding: 10 }}
-          onPress={handleSubmit(onSubmit)}
+      {!isReadOnly && (
+        <Appbar
+          style={[
+            styles.bottom,
+            {
+              height: 100 + bottom,
+            },
+          ]}
+          safeAreaInsets={{ bottom }}
         >
-          Xác nhận
-        </Button>
-      </Appbar>
+          <Button
+            mode="contained"
+            style={{ flex: 1, padding: 10 }}
+            onPress={handleSubmit(onSubmit)}
+          >
+            Xác nhận
+          </Button>
+        </Appbar>
+      )}
     </View>
   );
 }

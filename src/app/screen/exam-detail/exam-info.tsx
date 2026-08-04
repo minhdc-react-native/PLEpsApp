@@ -1,6 +1,7 @@
-import { CustomAvatar } from "@/components/avatar";
 import { ListFields } from "@/components/detail-fields/list-fields";
 import { detailFieldStyles } from "@/components/detail-fields/styles";
+import DetailSectionHeader from "@/components/detail-section-header";
+import PersonSummary from "@/components/person-summary";
 import { ExamRegistrationStatusBadge } from "@/components/exam/exam-registration-status-badge";
 import { Field } from "@/components/Field";
 import { FileBadge } from "@/components/file-badge";
@@ -44,29 +45,26 @@ export default function ExamDetailExamInfo() {
     if (!schedule) return null;
 
     return (
-      <ListFields>
-        <Text
-          variant="titleSmall"
-          style={{ marginBottom: 16, color: colors.tertiary }}
-        >
-          {name}
-        </Text>
-        <Field
-          label="Thời gian bắt đầu"
-          value={displayDatetime(schedule.startDate)}
-        />
-        <Field
-          label="Thời gian kết thúc"
-          value={displayDatetime(schedule.endDate)}
-        />
-        <Field label="Địa điểm thi" value={schedule.location} />
-        <Field label="Ghi chú" value={schedule.note} />
-      </ListFields>
+      <View>
+        <DetailSectionHeader title={name} />
+        <ListFields style={{ marginTop: 0 }}>
+          <Field
+            label="Thời gian bắt đầu"
+            value={displayDatetime(schedule.startDate)}
+          />
+          <Field
+            label="Thời gian kết thúc"
+            value={displayDatetime(schedule.endDate)}
+          />
+          <Field label="Địa điểm thi" value={schedule.location} />
+          <Field label="Ghi chú" value={schedule.note} />
+        </ListFields>
+      </View>
     );
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.elevation.level1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={styles.container} contentContainerStyle={{ gap: 16 }}>
         <ListFields>
           <Field label="Tên kỳ thi" value={itemData.exam.name} />
@@ -107,38 +105,18 @@ export default function ExamDetailExamInfo() {
           />
           <Field
             label="Người kèm cặp"
+            layout="column"
             value={
               itemData.examinee.mentor && (
-                <View
-                  style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-                >
-                  <CustomAvatar
-                    src={itemData.examinee.mentor?.imageUrl}
-                    size={40}
-                  />
-                  <View>
-                    <Text style={{ fontWeight: "600", color: colors.tertiary }}>
-                      {itemData.examinee.mentor?.fullName}
-                    </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 8,
-                      }}
-                    >
-                      <Text>
-                        {itemData.examinee.mentor?.area?.name ??
-                          "Chưa có chuyên môn"}
-                      </Text>
-                      <Text>•</Text>
-                      <Text>
-                        Bậc{" "}
-                        {`${itemData.examinee.mentor?.rank?.rank}/${itemData.examinee.mentor?.rank?.rankScale}`}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
+                <PersonSummary
+                  name={itemData.examinee.mentor.fullName}
+                  imageUrl={itemData.examinee.mentor.imageUrl}
+                  details={[
+                    itemData.examinee.mentor.area?.name ??
+                      "Chưa có chuyên môn",
+                    `Bậc ${itemData.examinee.mentor.rank?.rank}/${itemData.examinee.mentor.rank?.rankScale}`,
+                  ]}
+                />
               )
             }
           />
@@ -165,6 +143,7 @@ export default function ExamDetailExamInfo() {
           />
           <Field
             label="File quyết định"
+            layout="column"
             value={
               itemData.exam.decision.file && (
                 <FileBadge file={itemData.exam.decision.file} />
@@ -185,6 +164,5 @@ export default function ExamDetailExamInfo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
 });

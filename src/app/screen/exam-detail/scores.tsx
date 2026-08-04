@@ -1,5 +1,6 @@
 import { ListFields } from "@/components/detail-fields/list-fields";
 import { detailFieldStyles } from "@/components/detail-fields/styles";
+import DetailSectionHeader from "@/components/detail-section-header";
 import { Field } from "@/components/Field";
 import { useData } from "@/hooks/zustand/useData";
 import { hasScoreMinimum } from "@/mappers/exam/exam-type.mapper";
@@ -7,7 +8,7 @@ import { ScoreKey } from "@/types/exam/exam-type.model";
 import { IEmployeeExamHistory } from "@/types/exam/exam.model";
 import * as React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { Icon, Text, useTheme } from "react-native-paper";
+import { Text, useTheme } from "react-native-paper";
 
 export default function ExamDetailScoresInfo() {
   const itemData = useData((state) => state.itemData) as IEmployeeExamHistory;
@@ -24,7 +25,7 @@ export default function ExamDetailScoresInfo() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.elevation.level1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView style={styles.container} contentContainerStyle={{ gap: 16 }}>
         <ListFields>
           {configuredScores.map(({ key, label }) => (
@@ -32,28 +33,10 @@ export default function ExamDetailScoresInfo() {
           ))}
         </ListFields>
         {itemData.exam.examType.hasPractical && (
-          <View
-            style={{
-              gap: 4,
-              flexDirection: "row",
-              alignItems: "center",
-              marginTop: 16,
-            }}
-          >
-            <Icon source="calendar" size={16} />
-            <View
-              style={{
-                flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text variant="titleMedium">
-                Giám khảo ({itemData.examinee.scores.examiners.length})
-              </Text>
-            </View>
-          </View>
+          <DetailSectionHeader
+            icon="calendar"
+            title={`Giám khảo (${itemData.examinee.scores.examiners.length})`}
+          />
         )}
         {itemData.exam.examType.hasPractical &&
           itemData.examinee.scores.examiners.map((examiner, index) => (
@@ -95,6 +78,5 @@ export default function ExamDetailScoresInfo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
 });

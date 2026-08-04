@@ -47,7 +47,9 @@ export default function RootLayout() {
                     />
                   </Stack>
                 </AuthProvider>
-                <StatusBar style="auto" />
+                <StatusBar
+                  style="dark"
+                />
               </PaperProvider>
             </LoadingProvider>
           </PopupProvider>
