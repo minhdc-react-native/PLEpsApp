@@ -5,6 +5,7 @@ import PersonSummary from "@/components/person-summary";
 import { ExamRegistrationStatusBadge } from "@/components/exam/exam-registration-status-badge";
 import { Field } from "@/components/Field";
 import { FileBadge } from "@/components/file-badge";
+import { getExamScoreConfig } from "@/helpers/exam/score-config.helper";
 import { helper } from "@/hooks/useHelper";
 import { useData } from "@/hooks/zustand/useData";
 import {
@@ -21,6 +22,7 @@ export default function ExamDetailExamInfo() {
   const itemData = useData((state) => state.itemData) as IEmployeeExamHistory;
   const { colors } = useTheme();
   const { displayDate, displayDatetime } = helper();
+  const scoreConfig = getExamScoreConfig(itemData.exam);
 
   const renderRegStatus = (status: IExamRegistrationRecord | null) => {
     if (!status) return null;
@@ -121,20 +123,12 @@ export default function ExamDetailExamInfo() {
             }
           />
         </ListFields>
-        {renderSchedule("Thi an toàn", itemData.exam.schedules.safetyExam)}
-        {renderSchedule(
-          "Thi văn hóa doanh nghiệp",
-          itemData.exam.schedules.corporateCulture
-        )}
-        {renderSchedule(
-          "Thi lý thuyết chuyên môn",
-          itemData.exam.schedules.professional
-        )}
-        {itemData.exam.examType.hasPractical &&
+        {scoreConfig.scoreColumns.map((column) =>
           renderSchedule(
-            "Thi vấn đáp (thực hành)",
-            itemData.examinee.schedules.practical
-          )}
+            column.name,
+            itemData.examinee.schedules[column.key]
+          )
+        )}
         <ListFields>
           <Field label="Quyết định số" value={itemData.exam.decision.number} />
           <Field

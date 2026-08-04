@@ -4,18 +4,22 @@ import { IPayroll } from "../system/payroll.model";
 import { IPosition } from "../system/position.model";
 import { IRank } from "../system/rank.model";
 import { IDecision, IFinalDecision } from "./decision.model";
-import { IExamType } from "./exam-type.model";
+import { IExamType, IExamTypeVersion } from "./exam-type.model";
 import { ExamRegistrationStatus } from "./enums/exam-registration-status.enum";
 import { ExamStatus } from "./enums/exam-status.enum";
 import { ExamineeStage } from "./enums/examinee-stage.enum";
 import { ExamineeTakenExamStatus } from "./enums/taken-exam-status.enum";
 import { IExamineeConditionGroup } from "./examinee-condition.model";
 import { IExamineeTopic } from "./topic.model";
+import { IExamScoreConfig } from "./score.model";
 
 export interface IExam {
   id: string;
   name: string;
   examType: IExamType;
+  examTypeVersionId: string | null;
+  examTypeVersion: IExamTypeVersion | null;
+  scoreConfig: IExamScoreConfig | null | undefined;
   round: IExamRound | null;
   eventMonth: Date;
   status: ExamStatus;
@@ -23,11 +27,6 @@ export interface IExam {
   registrationEndDate: Date | null;
   regApproval: Partial<IDecision>;
   decision: Partial<IFinalDecision>;
-  schedules: {
-    safetyExam: IExamSubjectSchedule | null;
-    corporateCulture: IExamSubjectSchedule | null;
-    professional: IExamSubjectSchedule | null;
-  };
   topicSchedule: {
     startDate: Date | null;
     endDate: Date | null;
@@ -42,10 +41,10 @@ export interface IExaminee extends IExamineeAttempt {
   adminRegStatus: IExamRegistrationRecord | null;
   finalRegStatus: IExamRegistrationRecord | null;
   takenExamStatus: ExamineeTakenExamStatus;
-  schedules: {
-    practical: IExamSubjectSchedule | null;
-  };
+  schedules: Record<string, IExamSubjectSchedule | null>;
   isPass: boolean | null;
+  failedColumns?: string[];
+  isBelowAverageMinimum?: boolean | null;
   topic: IExamineeTopic;
   scores: IExamScore;
   mentor: Partial<IEmployee> | null;
@@ -78,10 +77,7 @@ export interface IExamineeEducation {
 
 export interface IExamScore {
   average: number | null;
-  at: number | null;
-  vhdn: number | null;
-  ltcm: number | null;
-  th: number | null;
+  [key: string]: number | null | IExaminerScore[] | undefined;
   examiners: IExaminerScore[];
 }
 
@@ -89,7 +85,7 @@ export interface IExaminerScore {
   id: string;
   employee: Partial<IEmployee> | null;
   name: string | null;
-  score: number | null;
+  scores: Record<string, number | null>;
   evaluation: string | null;
   note: string | null;
   noteVisible: boolean;

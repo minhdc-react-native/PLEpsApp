@@ -3,11 +3,7 @@ import { Badge } from "../badge";
 
 export function ScheduleStatusBadge({ data }: { data: IEmployeeExam }) {
   const hasSchedule =
-    data.exam.schedules.safetyExam !== null ||
-    data.exam.schedules.corporateCulture !== null ||
-    data.exam.schedules.professional !== null ||
-    (data.exam.examType.hasPractical &&
-      data.examinee.schedules.practical !== null);
+    Object.values(data.examinee.schedules).some((schedule) => schedule !== null);
 
   return (
     <Badge variant={hasSchedule ? "success" : "default"}>

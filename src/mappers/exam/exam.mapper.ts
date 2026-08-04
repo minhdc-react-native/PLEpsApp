@@ -8,7 +8,6 @@ import {
   IExam,
   IExaminee,
   IExamineeAttempt,
-  IExaminerScore,
   IExamRound,
   IExamScore,
   IExamSubjectSchedule,
@@ -23,30 +22,34 @@ import { mapAreaShort } from "../area.mapper";
 import { mapDepartmentShort } from "../department.mapper";
 import { mapPositionShort } from "../position.mapper";
 import { mapTeamShort } from "../team.mapper";
-import { mapExamType } from "./exam-type.mapper";
+import {
+  mapExamScoreConfig,
+  mapExamType,
+  mapExamTypeVersion,
+} from "./exam-type.mapper";
 import { mapExamineeTopic } from "./topic.mapper";
 
 // Map GetExamRawSchema to IExamGeneralInfo
 export function mapExam(schema: any): IExam {
   const examType = mapExamType(schema.examType);
+  const examTypeVersion = schema.examTypeVersion
+    ? mapExamTypeVersion(schema.examTypeVersion)
+    : examType.versions.find(
+        (version) => version.id === String(schema.examTypeVersionId)
+      ) ?? null;
 
   return {
     id: schema.id,
     name: schema.name,
-    examType: {
-      ...examType,
-      scoreMinimums: schema.scores ?? examType.scoreMinimums,
-    },
+    examType,
+    examTypeVersionId: schema.examTypeVersionId ?? null,
+    examTypeVersion,
+    scoreConfig: mapExamScoreConfig(schema.scoreConfig),
     round: schema.examRound ? mapExamRound(schema.examRound) : null,
     eventMonth: schema.examMonth,
     status: schema.status as ExamStatus,
     registrationStartDate: schema.registrationStartDate,
     registrationEndDate: schema.registrationEndDate,
-    schedules: {
-      safetyExam: mapExamSchedule(schema.schedules?.at),
-      corporateCulture: mapExamSchedule(schema.schedules?.vhdn),
-      professional: mapExamSchedule(schema.schedules?.ltcm),
-    },
     topicSchedule: {
       startDate: schema.registrationTopicStartDate ?? null,
       endDate: schema.registrationTopicEndDate ?? null,
@@ -146,6 +149,8 @@ export function mapExaminee(schema: any): IExaminee {
     employee: mapExamineeEmployee(schema.employee),
     ...attempt,
     isPass: schema.isPass !== null ? schema.isPass : null,
+    failedColumns: schema.failedColumns,
+    isBelowAverageMinimum: schema.isBelowAverageMinimum ?? null,
     regStatus: {
       status: schema.registrationStatus as ExamRegistrationStatus,
       reason: schema.reason,
@@ -176,16 +181,7 @@ export function mapExaminee(schema: any): IExaminee {
           }
         : null,
     takenExamStatus: schema.executionExamStatus as ExamineeTakenExamStatus,
-    schedules: {
-      practical: schema.schedule
-        ? {
-            startDate: schema.schedule.startDate,
-            endDate: schema.schedule.endDate,
-            location: schema.schedule.location,
-            note: schema.schedule.note,
-          }
-        : null,
-    },
+    schedules: mapScheduleMap(schema.schedules),
     scores: mapExamScores(schema),
     topic: topic,
     mentor: schema.mentor ? mapExamineeEmployee(schema.mentor) : null,
@@ -200,49 +196,76 @@ export function mapExaminee(schema: any): IExaminee {
   };
 }
 
-function mapExamSchedule(schema: any): IExamSubjectSchedule | null {
-  if (!schema) return null;
+export function mapExamScores(schema: any): IExamScore {
+  const scores = schema.dynamicScores ?? {};
+  const normalizedScores = Object.fromEntries(
+    Object.entries(scores).map(([key, value]) => [
+      key,
+      value && typeof value === "object" && "score" in value
+        ? (value as { score?: number | null }).score ?? null
+        : value,
+    ])
+  ) as Record<string, number | null>;
 
   return {
-    startDate: schema.startDate ?? null,
-    endDate: schema.endDate ?? null,
-    location: schema.location ?? null,
-    note: schema.note ?? null,
+    ...normalizedScores,
+    average: schema.averageScore ?? null,
+    examiners: (schema.examinerScores ?? []).map((examiner: any) => ({
+      id: examiner.id,
+      employee: examiner.employee
+        ? {
+            id: examiner.employee.id,
+            fullName: examiner.employee.fullName,
+            code: examiner.employee.code,
+            rank: {
+              rank: examiner.employee.currentRank,
+              rankScale: examiner.employee.rankScale,
+            },
+            area: mapAreaShort(examiner.employee.area),
+          }
+        : null,
+      name: examiner.name,
+      scores: normalizeExaminerScores(examiner.scores),
+      evaluation: examiner.evaluation ?? null,
+      note: examiner.note ?? null,
+      noteVisible: examiner.noteVisibleEmployee ?? examiner.noteVisible ?? false,
+    })),
   };
 }
 
-export function mapExamScores(schema: any): IExamScore {
-  const scores = schema.scores ?? {};
+function normalizeExaminerScores(
+  scores: unknown
+): Record<string, number | null> {
+  if (!scores || typeof scores !== "object" || Array.isArray(scores)) return {};
 
-  return {
-    average: schema.finalScore ?? scores.finalScore ?? null,
-    at: scores.at?.score ?? null,
-    vhdn: scores.vhdn?.score ?? null,
-    ltcm: scores.ltcm?.score ?? null,
-    th: scores.th?.score ?? null,
-    examiners: (scores.th?.examinerScore ?? []).map((examiner: any) => {
-      return {
-        id: examiner.id,
-        employee: examiner.employee
-          ? {
-              id: examiner.employee.id,
-              fullName: examiner.employee.fullName,
-              code: examiner.employee.code,
-              rank: {
-                rank: examiner.employee.currentRank,
-                rankScale: examiner.employee.rankScale,
-              },
-              area: mapAreaShort(examiner.employee.area),
-            }
+  return Object.fromEntries(
+    Object.entries(scores as Record<string, unknown>).map(([key, value]) => [
+      key,
+      value && typeof value === "object" && "score" in value
+        ? (value as { score?: number | null }).score ?? null
+        : typeof value === "number"
+          ? value
           : null,
-        name: examiner.name,
-        score: examiner.score,
-        evaluation: examiner.evaluation,
-        note: examiner.note,
-        noteVisible: examiner.noteVisibleEmployee,
-      } as IExaminerScore;
-    }),
-  };
+    ])
+  );
+}
+
+function mapScheduleMap(
+  schedules: Record<string, any> | null | undefined
+): Record<string, IExamSubjectSchedule | null> {
+  return Object.fromEntries(
+    Object.entries(schedules ?? {}).map(([key, schedule]) => [
+      key,
+      schedule
+        ? {
+            startDate: schedule.startDate ?? null,
+            endDate: schedule.endDate ?? null,
+            location: schedule.location ?? null,
+            note: schedule.note ?? null,
+          }
+        : null,
+    ])
+  );
 }
 
 export function mapExamineeCondition({

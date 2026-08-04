@@ -1,6 +1,16 @@
-export type SubjectKey = "at" | "vhdn" | "ltcm" | "th";
-export type ScoreKey = "average" | SubjectKey;
-export type ScoreMinimums = Partial<Record<ScoreKey, number | null>>;
+import { IFile } from "../file.model";
+import { IExamScoreColumn } from "./score.model";
+
+export interface IExamTypeVersion {
+  id: string;
+  name: string;
+  active: boolean;
+  activatedDate: Date | null;
+  scoreColumns: IExamScoreColumn[];
+  averageScoreMinimum: number | null | undefined;
+  averageScoreFormula: string | null | undefined;
+  files: IFile[];
+}
 
 export interface IExamType {
   id: string;
@@ -11,7 +21,8 @@ export interface IExamType {
   canTakeExam: boolean;
   hasPractical: boolean;
   canDelete: boolean;
-  scoreMinimums: ScoreMinimums;
+  versions: IExamTypeVersion[];
+  activeVersion: IExamTypeVersion | null;
   isPrimary: boolean;
   parentId: string;
   hasMinutes: boolean;
@@ -31,7 +42,8 @@ export interface IRawExamType {
   hasTopic?: boolean;
   hasTraining?: boolean;
   canDelete?: boolean;
-  scores?: ScoreMinimums;
+  versions?: unknown[];
+  activeVersion?: unknown | null;
   isPrimary?: boolean;
   parentId?: string | null;
   hasMinutes?: boolean;
