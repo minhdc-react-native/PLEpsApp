@@ -1,14 +1,12 @@
 {
   "expo": {
-    "jsEngine": "hermes",
     "name": "EPS TRAINING",
     "slug": "eps-training",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
     "scheme": "eps-training",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "isTabletOnly": false,
@@ -20,7 +18,6 @@
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.evn.eps.training",
       "googleServicesFile": "./google-services.json"
     },
@@ -41,7 +38,10 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-image",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

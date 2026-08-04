@@ -84,7 +84,7 @@ const EmployeeInfo = () => {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      <StatusBar style="light" backgroundColor={colors.primary} />
+      <StatusBar style="light" />
       <View style={[styles.hero, { height: heroHeight, paddingTop: insets.top }]}>
         <LinearGradient
           colors={["#123B9B", colors.primary, "#347AF1"]}

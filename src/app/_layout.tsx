@@ -49,7 +49,6 @@ export default function RootLayout() {
                 </AuthProvider>
                 <StatusBar
                   style="dark"
-                  backgroundColor={theme.colors.background}
                 />
               </PaperProvider>
             </LoadingProvider>
