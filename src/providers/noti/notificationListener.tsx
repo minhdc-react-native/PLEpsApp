@@ -1,13 +1,25 @@
 import { useNotification } from "@/hooks/useNotification";
 import { useData } from "@/hooks/zustand/useData";
 import { api } from "@/utils/epsApi";
+import { isRunningInExpoGo } from "expo";
 import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
+import type * as NotificationsModule from "expo-notifications";
 import React, { useEffect, useState } from "react";
 import { Platform } from "react-native";
 import NotificationPopup from "./notificationPopup";
 
-Notifications.setNotificationHandler({
+const isExpoGoAndroid =
+  Platform.OS === "android" &&
+  isRunningInExpoGo();
+
+// expo-notifications initializes a push-token listener at module scope. That
+// initialization throws in Expo Go Android, so do not import it in that runtime.
+const Notifications: typeof NotificationsModule | null = isExpoGoAndroid
+  ? null
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  : require("expo-notifications");
+
+Notifications?.setNotificationHandler({
   handleNotification: async () => ({
     shouldPlaySound: false,
     shouldSetBadge: false,
@@ -27,34 +39,43 @@ export function NotificationListener() {
   } | null>(null);
 
   useEffect(() => {
+    if (!user?.id) return;
+
+    fetchNotificationCount();
+
+    // Expo Go Android does not load expo-notifications at all. The app can
+    // still debug all other screens and API flows without remote push.
+    if (!Notifications) return;
+
     const registerForPush = async () => {
       if (!Device.isDevice) {
         alert("⚠️ Chỉ hoạt động trên thiết bị thật");
         return;
       }
 
-      const { status } = await Notifications.getPermissionsAsync();
-      let finalStatus = status;
-      if (status !== "granted") {
-        const { status: newStatus } =
-          await Notifications.requestPermissionsAsync();
-        finalStatus = newStatus;
-      }
+      try {
+        const { status } = await Notifications.getPermissionsAsync();
+        let finalStatus = status;
+        if (status !== "granted") {
+          const { status: newStatus } =
+            await Notifications.requestPermissionsAsync();
+          finalStatus = newStatus;
+        }
 
-      if (finalStatus !== "granted") {
-        alert("🚫 Không có quyền nhận thông báo.");
-        return;
-      }
+        if (finalStatus !== "granted") {
+          alert("🚫 Không có quyền nhận thông báo.");
+          return;
+        }
 
-      const fcmToken = await Notifications.getDevicePushTokenAsync();
-      console.log("🔑 FCM Token:", fcmToken.data);
-      registerDeviceToken(fcmToken.data);
+        const fcmToken = await Notifications.getDevicePushTokenAsync();
+        console.log("🔑 FCM Token:", fcmToken.data);
+        await registerDeviceToken(fcmToken.data);
+      } catch (error) {
+        console.error("Unable to register remote push token:", error);
+      }
     };
 
-    if (!user?.id) return;
-
     registerForPush();
-    fetchNotificationCount();
 
     const foreground = Notifications.addNotificationReceivedListener(
       (notification) => {
