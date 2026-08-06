@@ -1,0 +1,43 @@
+import AppHeader from "@/components/app-header";
+import { Badge } from "@/components/badge";
+import { TrainingEmptyState } from "@/components/training/training-presentational";
+import { useTrainingResource } from "@/hooks/useTraining";
+import { useData } from "@/hooks/zustand/useData";
+import { getTrainingHistoryApi } from "@/services/training.service";
+import { router } from "expo-router";
+import { useCallback, useState } from "react";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Card, IconButton, Text, useTheme } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
+import LoadingScreen from "@/components/loading-screen";
+import { trainingHref } from "@/utils/training-navigation";
+
+export default function TrainingHistoryScreen() {
+  const { colors } = useTheme();
+  const user = useData((state) => state.user);
+  const userId = user?.id;
+  const [year, setYear] = useState(new Date().getFullYear());
+  const load = useCallback(() => userId ? getTrainingHistoryApi(userId, year) : Promise.resolve([]), [userId, year]);
+  const { data, loading, reload } = useTrainingResource(load, [userId, year]);
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
+      <AppHeader title="Lịch sử đào tạo" subtitle="Các khóa đã hoàn tất" onBack={() => router.back()} actions={<View style={styles.yearActions}><IconButton icon="chevron-left" size={20} onPress={() => setYear((value) => value - 1)} /><Text style={styles.year}>{year}</Text><IconButton icon="chevron-right" size={20} onPress={() => setYear((value) => value + 1)} /></View>} />
+      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void reload()} />}>
+        {loading && !data ? <LoadingScreen /> : data?.length ? data.map((item) => <Card key={item.id} mode="outlined" style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]} onPress={() => router.push(trainingHref(`/screen/training/class-detail?trainingCourseId=${encodeURIComponent(item.id)}`))}><Card.Content style={styles.cardContent}><View style={[styles.icon, { backgroundColor: colors.tertiaryContainer }]}><Text style={{ fontSize: 23 }}>🏅</Text></View><View style={{ flex: 1, gap: 5 }}><Text variant="titleMedium" style={styles.title}>{item.name}</Text><Text style={{ color: colors.onSurfaceVariant }}>{item.registeredClass?.name ?? "Khóa đào tạo"}</Text><View style={styles.meta}><Badge variant="success">Đã kết thúc</Badge>{item.score != null ? <Text style={{ color: colors.onSurfaceVariant }}>Điểm: {item.score}</Text> : null}</View></View></Card.Content></Card>) : <View style={[styles.empty, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><TrainingEmptyState icon="history" title="Chưa có lịch sử đào tạo" description="Các khóa đã hoàn tất sẽ được lưu tại đây." /></View>}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  content: { padding: 16, paddingBottom: 32 },
+  yearActions: { flexDirection: "row", alignItems: "center" },
+  year: { fontWeight: "800", minWidth: 38, textAlign: "center" },
+  card: { borderRadius: 20, marginBottom: 12 },
+  cardContent: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14 },
+  icon: { width: 50, height: 50, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  title: { fontWeight: "800" },
+  meta: { flexDirection: "row", alignItems: "center", gap: 10 },
+  empty: { borderWidth: 1, borderRadius: 20 },
+});
