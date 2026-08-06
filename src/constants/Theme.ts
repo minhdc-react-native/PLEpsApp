@@ -60,9 +60,6 @@ const ThemeEvnGenco3 = {
 
 export const theme = {
   ...DefaultTheme,
-  // React Native Paper multiplies MD3 Dialog radius by 7.
-  // Keep the global base small so dialogs do not become pill-shaped.
-  roundness: 4,
   colors: {
     ...DefaultTheme.colors,
     ...ThemeEvnGenco3,

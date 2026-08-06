@@ -79,11 +79,12 @@ const EmployeeInfo = () => {
     );
   }
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
+    <>
+      <ScrollView
+        style={{ backgroundColor: colors.background }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
       <StatusBar style="light" />
       <View style={[styles.hero, { height: heroHeight, paddingTop: insets.top }]}>
         <LinearGradient
@@ -217,11 +218,12 @@ const EmployeeInfo = () => {
         </Card.Content>
       </Card>
 
+      </ScrollView>
+
       <Portal>
         <Dialog
           visible={openLogout}
           onDismiss={() => setOpenLogout(false)}
-          style={{ backgroundColor: colors.background }}
         >
           <Dialog.Content>
             <Text variant="bodyMedium">Xác nhận đăng xuất?</Text>
@@ -232,7 +234,7 @@ const EmployeeInfo = () => {
           </Dialog.Actions>
         </Dialog>
       </Portal>
-    </ScrollView>
+    </>
   );
 };
 

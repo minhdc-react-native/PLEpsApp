@@ -1,10 +1,12 @@
-import LoadingScreen from "@/components/loading-screen";
 import { useData } from "@/hooks/zustand/useData";
 import { useTab } from "@/hooks/zustand/useTab";
-import React, { useEffect } from "react";
+import React from "react";
 import { StyleSheet } from "react-native";
-import { BottomNavigation, useTheme } from "react-native-paper";
-import { BaseRoute } from "react-native-paper/lib/typescript/components/BottomNavigation/BottomNavigation";
+import {
+  BottomNavigation,
+  type BottomNavigationRoute,
+  useTheme,
+} from "react-native-paper";
 import EmployeeInfo from ".";
 import CurrentExamPage from "./exam";
 import ManageTraining from "./manage-training";
@@ -33,7 +35,15 @@ export default function TabLayout() {
   const setIndex = useTab((state) => state.setIndex);
   const currentExam = useData((state) => state.currentExam);
   const { colors } = useTheme();
-  const [routes, setRouters] = React.useState<BaseRoute[]>([]);
+  const routes = React.useMemo<BottomNavigationRoute[]>(
+    () =>
+      routerBase.map((el) =>
+        el.key === "exam"
+          ? { ...el, badge: currentExam ? "1" : undefined }
+          : el
+      ),
+    [currentExam]
+  );
 
   const renderScene = BottomNavigation.SceneMap({
     index: EmployeeInfo,
@@ -41,26 +51,14 @@ export default function TabLayout() {
     "manage-training": ManageTraining,
   });
 
-  useEffect(() => {
-    setRouters(
-      routerBase.map((el) =>
-        el.key === "exam" ? { ...el, badge: currentExam ? "1" : undefined } : el
-      )
-    );
-  }, [currentExam]);
-
-  if (routes.length === 0) {
-    return <LoadingScreen />;
-  }
   return (
     <BottomNavigation
       navigationState={{ index, routes }}
       activeColor={colors.primary}
       inactiveColor={colors.onSurfaceVariant}
       barStyle={styles.bar}
-      activeIndicatorStyle={{
-        backgroundColor: colors.primaryContainer,
-      }}
+      labeled
+      shifting={false}
       onIndexChange={setIndex}
       renderScene={renderScene}
     />

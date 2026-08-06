@@ -24,12 +24,12 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <RootSiblingParent>
-        <NotificationProvider>
-          <NotificationListener />
-          <PopupProvider>
-            <LoadingProvider>
-              <PaperProvider theme={theme}>
+      <PaperProvider theme={theme}>
+        <RootSiblingParent>
+          <NotificationProvider>
+            <NotificationListener />
+            <PopupProvider>
+              <LoadingProvider>
                 <AuthProvider>
                   <Stack>
                     <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -50,11 +50,11 @@ export default function RootLayout() {
                 <StatusBar
                   style="dark"
                 />
-              </PaperProvider>
-            </LoadingProvider>
-          </PopupProvider>
-        </NotificationProvider>
-      </RootSiblingParent>
+              </LoadingProvider>
+            </PopupProvider>
+          </NotificationProvider>
+        </RootSiblingParent>
+      </PaperProvider>
     </GestureHandlerRootView>
   );
 }
