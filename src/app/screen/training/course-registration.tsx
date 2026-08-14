@@ -1,12 +1,12 @@
 import AppHeader from "@/components/app-header";
 import { TrainingCourseCard, TrainingEmptyState } from "@/components/training/training-presentational";
 import { useTrainingResource } from "@/hooks/useTraining";
-import { getTrainingCoursesApi, getMyTrainingCoursesApi, registerTrainingCourseApi, cancelTrainingCourseApi } from "@/services/training.service";
+import { getTrainingCoursesApi, getMyTrainingCoursesApi, registerTrainingCourseApi, cancelTrainingCourseApi, getMyTrainingProposalsApi, proposeTrainingContentApi, deleteTrainingProposalApi } from "@/services/training.service";
 import { useData } from "@/hooks/zustand/useData";
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, IconButton, Searchbar, SegmentedButtons, Text, useTheme } from "react-native-paper";
+import { Button, Card, Dialog, IconButton, Portal, Searchbar, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "@/components/loading-screen";
 import { useToast } from "@/components/dialog/useToast";
@@ -20,6 +20,10 @@ export default function TrainingCourseRegistrationScreen() {
   const [tab, setTab] = useState("available");
   const [search, setSearch] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [proposalOpen, setProposalOpen] = useState(false);
+  const [proposalCourseId, setProposalCourseId] = useState("");
+  const [proposalContent, setProposalContent] = useState("");
+  const [proposalProcessing, setProposalProcessing] = useState(false);
 
   const load = useCallback(async () => {
     const [courses, registered] = await Promise.all([
@@ -30,6 +34,8 @@ export default function TrainingCourseRegistrationScreen() {
     return courses.map((course) => ({ ...course, isRegistered: course.isRegistered || registeredIds.has(course.id) }));
   }, [userId, year]);
   const { data: courses, loading, reload } = useTrainingResource(load, [year, userId]);
+  const proposalLoad = useCallback(() => userId ? getMyTrainingProposalsApi(userId, year) : Promise.resolve([]), [userId, year]);
+  const { data: proposals, loading: proposalsLoading, reload: reloadProposals } = useTrainingResource(proposalLoad, [userId, year]);
 
   const filteredCourses = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -55,6 +61,32 @@ export default function TrainingCourseRegistrationScreen() {
       showToast(error?.message ?? "Không thể cập nhật đăng ký", { type: "error" });
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const submitProposal = async () => {
+    if (!proposalCourseId || !proposalContent.trim() || proposalProcessing) return;
+    setProposalProcessing(true);
+    try {
+      await proposeTrainingContentApi({ courseId: proposalCourseId, content: proposalContent.trim() });
+      showToast("Gửi đề xuất nội dung thành công", { type: "success" });
+      setProposalOpen(false);
+      setProposalContent("");
+      await reloadProposals();
+    } catch (error: any) {
+      showToast(error?.message ?? "Không thể gửi đề xuất nội dung", { type: "error" });
+    } finally {
+      setProposalProcessing(false);
+    }
+  };
+
+  const removeProposal = async (proposalId: string) => {
+    try {
+      await deleteTrainingProposalApi(proposalId);
+      showToast("Đã xóa đề xuất", { type: "success" });
+      await reloadProposals();
+    } catch (error: any) {
+      showToast(error?.message ?? "Không thể xóa đề xuất", { type: "error" });
     }
   };
 
@@ -93,10 +125,11 @@ export default function TrainingCourseRegistrationScreen() {
           buttons={[
             { value: "available", label: `Khóa có sẵn (${courses?.filter((item) => !item.isRegistered).length ?? 0})` },
             { value: "registered", label: `Đã đăng ký (${courses?.filter((item) => item.isRegistered).length ?? 0})` },
+            { value: "proposals", label: `Đề xuất (${proposals?.length ?? 0})` },
           ]}
         />
-        <Searchbar placeholder="Tìm khóa đào tạo..." value={search} onChangeText={setSearch} style={styles.search} />
-        {loading && !courses ? <LoadingScreen /> : filteredCourses.length ? filteredCourses.map((course) => (
+        {tab !== "proposals" ? <Searchbar placeholder="Tìm khóa đào tạo..." value={search} onChangeText={setSearch} style={styles.search} /> : null}
+        {tab === "proposals" ? <ProposalList proposals={proposals ?? []} courses={courses ?? []} loading={proposalsLoading} onCreate={() => setProposalOpen(true)} onDelete={(id) => void removeProposal(id)} /> : loading && !courses ? <LoadingScreen /> : filteredCourses.length ? filteredCourses.map((course) => (
           <TrainingCourseCard
             key={course.id}
             course={course}
@@ -118,8 +151,14 @@ export default function TrainingCourseRegistrationScreen() {
           </View>
         )}
       </ScrollView>
+      <Portal><Dialog visible={proposalOpen} onDismiss={() => setProposalOpen(false)}><Dialog.Title>Đề xuất nội dung đào tạo</Dialog.Title><Dialog.Content><Text style={styles.dialogHint}>Chọn một danh mục đào tạo và mô tả nội dung bạn muốn đề xuất.</Text><View style={styles.courseChoices}>{(courses ?? []).slice(0, 8).map((course) => <Button key={course.id} compact mode={proposalCourseId === course.id ? "contained" : "outlined"} onPress={() => setProposalCourseId(course.id)}>{course.name}</Button>)}</View><TextInput mode="outlined" label="Nội dung đề xuất" multiline numberOfLines={5} value={proposalContent} onChangeText={setProposalContent} /></Dialog.Content><Dialog.Actions><Button onPress={() => setProposalOpen(false)}>Hủy</Button><Button loading={proposalProcessing} disabled={!proposalCourseId || !proposalContent.trim() || proposalProcessing} onPress={() => void submitProposal()}>Gửi đề xuất</Button></Dialog.Actions></Dialog></Portal>
     </SafeAreaView>
   );
+}
+
+function ProposalList({ proposals, courses, loading, onCreate, onDelete }: { proposals: import("@/types/training.model").TrainingProposal[]; courses: import("@/types/training.model").TrainingCourse[]; loading: boolean; onCreate: () => void; onDelete: (id: string) => void }) {
+  const { colors } = useTheme();
+  return <View style={styles.proposalList}><View style={styles.proposalHeader}><Text variant="titleMedium" style={styles.title}>Nội dung đã đề xuất</Text><Button mode="contained" compact icon="plus" onPress={onCreate}>Đề xuất</Button></View>{loading ? <Text>Đang tải đề xuất...</Text> : proposals.length ? proposals.map((proposal) => <Card key={proposal.id} mode="outlined" style={[styles.proposalCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><Card.Content style={styles.proposalContent}><View style={{ flex: 1, gap: 5 }}><Text variant="titleSmall" style={styles.title}>{proposal.courseName ?? courses.find((course) => course.id === proposal.courseId)?.name ?? "Danh mục đào tạo"}</Text><Text style={{ color: colors.onSurfaceVariant, lineHeight: 20 }}>{proposal.content || "Chưa có nội dung mô tả."}</Text><Text style={{ color: colors.onSurfaceVariant, fontSize: 12 }}>{proposal.statusLabel ?? "Đang chờ xử lý"}</Text></View><IconButton icon="delete-outline" onPress={() => onDelete(proposal.id)} /></Card.Content></Card>) : <TrainingEmptyState icon="lightbulb-outline" title="Chưa có đề xuất" description="Gửi đề xuất để bổ sung nội dung đào tạo phù hợp với công việc." />}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -132,4 +171,11 @@ const styles = StyleSheet.create({
   introIcon: { width: 46, height: 46, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   search: { marginVertical: 14, borderRadius: 16 },
   emptyCard: { borderWidth: 1, borderRadius: 20 },
+  title: { fontWeight: "800" },
+  proposalList: { gap: 12 },
+  proposalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 },
+  proposalCard: { borderRadius: 18 },
+  proposalContent: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 12 },
+  dialogHint: { color: "#5B667A", lineHeight: 20, marginBottom: 12 },
+  courseChoices: { gap: 8, marginBottom: 14 },
 });

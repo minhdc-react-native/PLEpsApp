@@ -44,6 +44,16 @@ export interface TrainingRegistrationRecord {
   note: string | null;
 }
 
+export interface TrainingProposal {
+  id: string;
+  courseId?: string | null;
+  courseName?: string | null;
+  content?: string | null;
+  status?: number | null;
+  statusLabel?: string | null;
+  createdAt?: Date | null;
+}
+
 export interface TrainingFile {
   id: string;
   name?: string | null;
@@ -121,6 +131,9 @@ export interface TrainingCourse {
   evaluationStartDate?: Date | null;
   evaluationEndDate?: Date | null;
   evaluationFormConfig?: TrainingEvaluationConfig;
+  classRegistrationStartDate?: Date | null;
+  classRegistrationEndDate?: Date | null;
+  isSharedExam?: boolean;
 }
 
 export interface MyTrainingCourse extends TrainingCourse {
@@ -150,6 +163,7 @@ export interface TrainingStudentRegistration {
   instructors?: TrainingSurveyInstructor[];
   regStatus?: TrainingRegistrationRecord | null;
   finalRegStatus?: TrainingRegistrationRecord | null;
+  isPostponed?: boolean;
   classSessions: TrainingSessionAttendance[];
 }
 
@@ -193,6 +207,7 @@ export interface TrainingEvaluation {
   startDate: Date | null;
   endDate: Date | null;
   hasEvaluated?: boolean;
+  isPostponed?: boolean;
   courseRating?: number | null;
   coursePositive?: string | null;
   courseNegative?: string | null;
@@ -215,9 +230,20 @@ export interface TrainingExamSession {
   stage: "not_started" | "in_progress" | "grading" | "completed";
   startsAt?: string | null;
   endsAt?: string | null;
+  expiresAt?: string | null;
+  attemptId?: string | null;
+  instructions?: string | null;
+  serverTimeOffsetMs?: number;
+  lastSavedAt?: string | null;
+  submittedAt?: string | null;
+  totalScore?: number | null;
+  passingScore?: number | null;
+  canStart?: boolean;
   durationMinutes: number;
   score?: number | null;
   questions: TrainingExamQuestion[];
+  answers?: TrainingExamAnswer[];
+  results?: TrainingExamResult[];
 }
 
 export interface TrainingExamQuestion {
@@ -227,4 +253,22 @@ export interface TrainingExamQuestion {
   title: string;
   maxScore: number;
   options?: { id: string; label: string; content?: unknown }[];
+}
+
+export interface TrainingExamAnswer {
+  questionId: string;
+  selectedOptionId?: string | null;
+  essayText?: string | null;
+  isCorrect?: boolean | null;
+  score?: number | null;
+}
+
+export interface TrainingExamResult {
+  questionId: string;
+  selectedOptionId?: string | null;
+  correctOptionId?: string | null;
+  essayText?: string | null;
+  score?: number | null;
+  maxScore?: number | null;
+  isCorrect?: boolean | null;
 }

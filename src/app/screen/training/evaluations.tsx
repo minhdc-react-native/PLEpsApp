@@ -39,9 +39,9 @@ export default function TrainingEvaluationsScreen() {
         </Card>
         <Searchbar placeholder="Tìm khóa học..." value={search} onChangeText={setSearch} style={styles.search} />
         {loading && !data ? <LoadingScreen /> : evaluations.length ? evaluations.map((evaluation) => {
-          const isOpen = evaluation.status === "open" && !evaluation.hasEvaluated;
-          const statusLabel = evaluation.hasEvaluated ? "Đã hoàn tất" : evaluation.status === "open" ? "Đang mở" : evaluation.status === "completed" ? "Đã đóng" : "Chưa mở";
-          const statusVariant = evaluation.hasEvaluated || evaluation.status === "completed" ? "success" : evaluation.status === "open" ? "primary" : "default";
+          const isOpen = evaluation.status === "open" && !evaluation.hasEvaluated && !evaluation.isPostponed;
+          const statusLabel = evaluation.isPostponed ? "Đã xin hoãn" : evaluation.hasEvaluated ? "Đã hoàn tất" : evaluation.status === "open" ? "Đang mở" : evaluation.status === "completed" ? "Đã đóng" : "Chưa mở";
+          const statusVariant = evaluation.isPostponed ? "warning" : evaluation.hasEvaluated || evaluation.status === "completed" ? "success" : evaluation.status === "open" ? "primary" : "default";
           return (
             <Card key={evaluation.trainingCourseId} mode="outlined" style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]} onPress={() => router.push(trainingHref(`/screen/training/evaluation-form?trainingCourseId=${encodeURIComponent(evaluation.trainingCourseId)}`))}>
               <Card.Content style={styles.cardContent}>

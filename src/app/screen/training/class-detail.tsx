@@ -3,12 +3,12 @@ import { Badge } from "@/components/badge";
 import { SectionCard, SessionCard, TrainingEmptyState, TrainingStatusBadge } from "@/components/training/training-presentational";
 import { useTrainingResource, formatTrainingDate } from "@/hooks/useTraining";
 import { useData } from "@/hooks/zustand/useData";
-import { cancelTrainingClassApi, getMyTrainingClassesApi, getTrainingClassApi, getTrainingCourseApi, getTrainingCourseClassesApi, getTrainingRegistrationApi, registerTrainingClassApi } from "@/services/training.service";
-import { TrainingClass, TrainingCourse, TrainingStudentRegistration } from "@/types/training.model";
+import { cancelTrainingClassApi, getMyTrainingClassesApi, getTrainingClassApi, getTrainingCourseApi, getTrainingCourseClassesApi, getTrainingRegistrationApi, registerTrainingClassApi, requestTrainingPostponeApi, getTrainingExamStudentsApi } from "@/services/training.service";
+import { TrainingClass, TrainingCourse, TrainingStudentRegistration, TrainingExamSession } from "@/types/training.model";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, Divider, SegmentedButtons, Text, useTheme } from "react-native-paper";
+import { Button, Card, Dialog, Divider, Portal, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "@/components/loading-screen";
 import { useToast } from "@/components/dialog/useToast";
@@ -19,6 +19,7 @@ type DetailPayload = {
   trainingClass: TrainingClass | null;
   registration: TrainingStudentRegistration | null;
   availableClasses: TrainingClass[];
+  exams: TrainingExamSession[];
 };
 
 export default function TrainingClassDetailScreen() {
@@ -29,18 +30,24 @@ export default function TrainingClassDetailScreen() {
   const { trainingCourseId } = useLocalSearchParams<{ trainingCourseId?: string }>();
   const [tab, setTab] = useState("sessions");
   const [processingClassId, setProcessingClassId] = useState<string | null>(null);
+  const [postponeOpen, setPostponeOpen] = useState(false);
+  const [postponeReason, setPostponeReason] = useState("");
+  const [postponing, setPostponing] = useState(false);
 
   const load = useCallback(async (): Promise<DetailPayload> => {
-    if (!trainingCourseId || !userId) return { course: null, trainingClass: null, registration: null, availableClasses: [] };
+    if (!trainingCourseId || !userId) return { course: null, trainingClass: null, registration: null, availableClasses: [], exams: [] };
     const [course, registration, myClasses] = await Promise.all([
       getTrainingCourseApi(trainingCourseId),
       getTrainingRegistrationApi(userId, trainingCourseId),
       getMyTrainingClassesApi(trainingCourseId),
     ]);
     const registeredClassId = registration?.trainingClassId ?? myClasses[0]?.id ?? null;
-    const trainingClass = registeredClassId ? await getTrainingClassApi(registeredClassId) : null;
-    const availableClasses = trainingClass ? [] : await getTrainingCourseClassesApi(trainingCourseId);
-    return { course, trainingClass, registration, availableClasses };
+    const courseClasses = registeredClassId || !course ? [] : await getTrainingCourseClassesApi(trainingCourseId);
+    const onlineClass = course?.type === 0 ? courseClasses[0] ?? null : null;
+    const trainingClass = registeredClassId ? await getTrainingClassApi(registeredClassId) : onlineClass;
+    const availableClasses = trainingClass || course?.type === 0 ? [] : courseClasses;
+    const exams = await getTrainingExamStudentsApi({ trainingCourseId, classId: course?.isSharedExam ? null : trainingClass?.id });
+    return { course, trainingClass, registration, availableClasses, exams };
   }, [trainingCourseId, userId]);
   const { data, loading, error, reload } = useTrainingResource(load, [trainingCourseId, userId]);
 
@@ -63,6 +70,22 @@ export default function TrainingClassDetailScreen() {
     }
   };
 
+  const requestPostpone = async () => {
+    if (!trainingCourseId || !postponeReason.trim() || postponing) return;
+    setPostponing(true);
+    try {
+      await requestTrainingPostponeApi(trainingCourseId, postponeReason.trim());
+      setPostponeOpen(false);
+      setPostponeReason("");
+      showToast("Đã gửi yêu cầu xin hoãn", { type: "success" });
+      await reload();
+    } catch (requestError: any) {
+      showToast(requestError?.message ?? "Không thể gửi yêu cầu xin hoãn", { type: "error" });
+    } finally {
+      setPostponing(false);
+    }
+  };
+
   if (loading && !data) return <LoadingScreen />;
   if (!data?.course || error) {
     return (
@@ -73,8 +96,12 @@ export default function TrainingClassDetailScreen() {
     );
   }
 
-  const { course, trainingClass, registration, availableClasses } = data;
+  const { course, trainingClass, registration, availableClasses, exams } = data;
   const isOnline = course.type === 0;
+  const isPostponed = registration?.isPostponed === true;
+  const classRegistrationOpen = course.status === 40 && isWithinRegistrationWindow(course.classRegistrationStartDate, course.classRegistrationEndDate);
+  const canChooseClass = !isPostponed && classRegistrationOpen;
+  const sessions = trainingClass?.sessions ?? [];
   const attendanceBySession = new Map((registration?.classSessions ?? []).map((item) => [item.id, item]));
   const score = registration?.score;
   const result = evaluateTrainingScore(score, trainingClass?.scoreConfig);
@@ -93,9 +120,11 @@ export default function TrainingClassDetailScreen() {
           </Card.Content>
         </Card>
 
-        {!trainingClass && !isOnline ? (
+        {course.status === 30 ? <SectionCard title="Chờ triển khai" icon="clock-outline"><TrainingEmptyState icon="clock-outline" title="Khóa học đang chờ triển khai" description="Bạn sẽ có thể xem lớp học và lịch học sau khi khóa được triển khai." /></SectionCard> : null}
+        {isPostponed ? <SectionCard title="Đã xin hoãn đào tạo" icon="calendar-remove-outline"><Text style={[styles.helper, { color: colors.onSurfaceVariant }]}>Yêu cầu của bạn đã được ghi nhận. Khóa học đang ở chế độ chỉ xem.</Text><Text style={{ color: colors.onSurfaceVariant }}>{registration?.regStatus?.reason ?? registration?.finalRegStatus?.reason ?? "Chưa có lý do chi tiết."}</Text></SectionCard> : null}
+        {!trainingClass && !isOnline && course.status !== 30 ? (
           <SectionCard title="Chọn lớp học" icon="account-group-outline">
-            <Text style={[styles.helper, { color: colors.onSurfaceVariant }]}>Bạn chưa được xếp lớp. Chọn một lớp phù hợp để đăng ký.</Text>
+            <Text style={[styles.helper, { color: colors.onSurfaceVariant }]}>{classRegistrationOpen ? "Bạn chưa được xếp lớp. Chọn một lớp phù hợp để đăng ký." : "Thời gian đăng ký lớp chưa mở hoặc đã kết thúc."}</Text>
             {availableClasses.length ? availableClasses.map((item) => (
               <Card key={item.id} mode="outlined" style={[styles.classOption, { borderColor: colors.outlineVariant, backgroundColor: colors.surface }]}>
                 <Card.Content style={styles.optionContent}>
@@ -108,8 +137,8 @@ export default function TrainingClassDetailScreen() {
                     mode={item.isRegistered ? "outlined" : "contained"}
                     compact
                     loading={processingClassId === item.id}
-                    disabled={!!processingClassId}
                     onPress={() => void registerClass(item.id, !!item.isRegistered)}
+                    disabled={!!processingClassId || !canChooseClass}
                   >{item.isRegistered ? "Hủy" : "Đăng ký"}</Button>
                 </Card.Content>
               </Card>
@@ -117,24 +146,28 @@ export default function TrainingClassDetailScreen() {
           </SectionCard>
         ) : null}
 
+        {!trainingClass && !isOnline && course.status === 40 && !isPostponed ? <Button mode="outlined" icon="calendar-remove-outline" onPress={() => setPostponeOpen(true)}>Xin hoãn đào tạo</Button> : null}
+
         {trainingClass || isOnline ? (
           <>
             <SegmentedButtons
               value={tab}
               onValueChange={setTab}
-              buttons={[{ value: "sessions", label: `Buổi học (${trainingClass?.sessions.length ?? 0})`, icon: "calendar-outline" }, { value: "result", label: "Kết quả", icon: "chart-box-outline" }]}
+              buttons={[{ value: "sessions", label: `Buổi học (${sessions.length})`, icon: "calendar-outline" }, { value: "exams", label: `Bài thi (${exams.length})`, icon: "clipboard-text-outline" }, { value: "result", label: "Kết quả", icon: "chart-box-outline" }]}
             />
             {tab === "sessions" ? (
               <View style={styles.list}>
-                {isOnline ? <TrainingEmptyState icon="laptop-account" title="Khóa học trực tuyến" description="Nội dung tự học và tài liệu sẽ được cập nhật theo từng buổi học." /> : trainingClass?.sessions.length ? trainingClass.sessions.map((session) => (
+                {sessions.length ? sessions.map((session) => (
                   <SessionCard
                     key={session.id}
                     session={session}
                     attendanceLabel={attendanceBySession.get(session.id)?.isPresent === true ? "Đã điểm danh" : attendanceBySession.has(session.id) ? "Chưa điểm danh" : undefined}
-                  onPress={() => router.push(trainingHref(`/screen/training/session-detail?trainingCourseId=${encodeURIComponent(course.id)}&sessionId=${encodeURIComponent(session.id)}`))}
+                  onPress={() => router.push(trainingHref(`/screen/training/session-detail?trainingCourseId=${encodeURIComponent(course.id)}&sessionId=${encodeURIComponent(session.id)}&isOnline=${isOnline ? "true" : "false"}`))}
                   />
-                )) : <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><TrainingEmptyState title="Chưa có buổi học" /></View>}
+                )) : <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><TrainingEmptyState icon={isOnline ? "laptop-account" : "calendar-outline"} title="Chưa có buổi học" description={isOnline ? "Nội dung trực tuyến sẽ được cập nhật theo lịch triển khai." : undefined} /></View>}
               </View>
+            ) : tab === "exams" ? (
+              <View style={styles.list}>{exams.length ? exams.map((exam) => <Card key={exam.examId || exam.id} mode="outlined" style={[styles.examCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]} onPress={() => router.push(trainingHref(`/screen/training/exam-session?examId=${encodeURIComponent(exam.examId)}`))}><Card.Content style={styles.examContent}><View style={{ flex: 1, gap: 5 }}><Text variant="titleSmall" style={styles.title}>{exam.title}</Text><Text style={{ color: colors.onSurfaceVariant }}>{exam.durationMinutes ? `${exam.durationMinutes} phút` : "Không giới hạn thời gian"}{exam.score != null ? ` · Điểm: ${exam.score}` : ""}</Text></View><Badge variant={exam.status === "result" || exam.status === "submitted" ? "success" : exam.status === "in_progress" ? "primary" : "default"}>{exam.status === "not_started" ? "Bắt đầu" : exam.status === "in_progress" ? "Làm tiếp" : "Xem bài làm"}</Badge></Card.Content></Card>) : <TrainingEmptyState icon="clipboard-text-outline" title="Chưa có bài thi" description="Bài thi sẽ hiển thị khi được triển khai cho khóa học." />}</View>
             ) : (
               <SectionCard title="Kết quả học tập" icon="trophy-outline">
                 {score == null ? <TrainingEmptyState icon="chart-box-outline" title="Chưa có kết quả" description="Kết quả sẽ hiển thị sau khi khóa học hoàn tất." /> : (
@@ -151,6 +184,7 @@ export default function TrainingClassDetailScreen() {
           </>
         ) : null}
       </ScrollView>
+      <Portal><Dialog visible={postponeOpen} onDismiss={() => setPostponeOpen(false)}><Dialog.Title>Xin hoãn đào tạo</Dialog.Title><Dialog.Content><Text style={styles.helper}>Vui lòng cho biết lý do để đơn vị đào tạo xem xét.</Text><TextInput mode="outlined" label="Lý do xin hoãn" multiline numberOfLines={4} value={postponeReason} onChangeText={setPostponeReason} /></Dialog.Content><Dialog.Actions><Button onPress={() => setPostponeOpen(false)}>Hủy</Button><Button loading={postponing} disabled={!postponeReason.trim() || postponing} onPress={() => void requestPostpone()}>Gửi yêu cầu</Button></Dialog.Actions></Dialog></Portal>
     </SafeAreaView>
   );
 }
@@ -168,6 +202,11 @@ function evaluateTrainingScore(score: number | null | undefined, config?: Traini
   return { isPass: config.passingScore == null ? null : score >= config.passingScore, bandLabel: null };
 }
 
+function isWithinRegistrationWindow(start?: Date | null, end?: Date | null) {
+  const now = Date.now();
+  return (!start || now >= start.getTime()) && (!end || now <= end.getTime());
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 32, gap: 14 },
@@ -183,4 +222,6 @@ const styles = StyleSheet.create({
   resultList: { gap: 14 },
   resultRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 },
   resultValue: { fontWeight: "800", fontSize: 16 },
+  examCard: { borderRadius: 18, marginBottom: 10 },
+  examContent: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14 },
 });

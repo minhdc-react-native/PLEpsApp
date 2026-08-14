@@ -1,6 +1,6 @@
-import { mapEvaluation, mapMyTrainingCourse, mapRegistration, mapTrainingClass, mapTrainingCourse, mapTrainingSession } from "@/mappers/training.mapper";
+import { mapEvaluation, mapMyTrainingCourse, mapRegistration, mapTrainingClass, mapTrainingCourse, mapTrainingSession, mapTrainingExamSession, mapTrainingExamAnswer, mapTrainingExamResult, mapTrainingProposal } from "@/mappers/training.mapper";
 import { api } from "@/utils/epsApi";
-import { MyTrainingCourse, TrainingClass, TrainingCourse, TrainingEvaluation, TrainingSession, TrainingStudentRegistration } from "@/types/training.model";
+import { MyTrainingCourse, TrainingClass, TrainingCourse, TrainingEvaluation, TrainingSession, TrainingStudentRegistration, TrainingExamAnswer, TrainingExamSession, TrainingProposal } from "@/types/training.model";
 
 function unwrap<T = any>(value: any): T {
   const payload = value?.data ?? value;
@@ -86,6 +86,10 @@ export async function registerTrainingClassApi(classId: string) {
 
 export async function cancelTrainingClassApi(classId: string) {
   return api.delete({ link: `/classes/${classId}/register` });
+}
+
+export async function requestTrainingPostponeApi(trainingCourseId: string, reason?: string | null) {
+  return api.post({ link: `/training-courses/${trainingCourseId}/postpone`, data: { reason: reason ?? null } });
 }
 
 export async function getTrainingClassApi(id: string): Promise<TrainingClass | null> {
@@ -174,6 +178,58 @@ export async function submitTrainingEvaluationApi(evaluation: TrainingEvaluation
       })),
     },
   });
+}
+
+export async function getTrainingExamStudentApi(examId: string): Promise<TrainingExamSession | null> {
+  const response = await api.get({ link: `/training-exams/${examId}` });
+  const data = unwrap<any>(response);
+  return data ? mapTrainingExamSession(data) : null;
+}
+
+export async function getTrainingExamStudentsApi({ trainingCourseId, classId }: { trainingCourseId: string; classId?: string | null }): Promise<TrainingExamSession[]> {
+  const response = await api.get({ link: "/training-exams", config: { params: { trainingCourseId, ...(classId ? { classId } : {}) } } });
+  return asArray(response).map(mapTrainingExamSession);
+}
+
+export async function startTrainingExamAttemptApi(examId: string, metadata?: Partial<TrainingExamSession>) {
+  const response = await api.post({ link: `/training-exams/${examId}/start`, data: {} });
+  const data = unwrap<any>(response);
+  return mapTrainingExamSession({ ...metadata, ...data, examId, status: data?.status ?? "in_progress", attempt: data?.attempt ?? data });
+}
+
+export async function saveTrainingExamAnswersApi(attemptId: string, answers: TrainingExamAnswer[]) {
+  return api.post({
+    link: `/training-exams/attempts/${attemptId}/save`,
+    data: { answers: answers.map((answer) => ({ questionId: answer.questionId, selectedOptionId: answer.selectedOptionId ?? null, essayText: answer.essayText ?? null })) },
+  });
+}
+
+export async function getTrainingExamAttemptQuestionsApi(attemptId: string) {
+  const response = await api.get({ link: `/training-exams/attempts/${attemptId}/questions` });
+  return asArray(response).map((item) => mapTrainingExamSession({ questions: [item] }).questions[0]).filter(Boolean);
+}
+
+export async function getTrainingExamAttemptAnswersApi(attemptId: string) {
+  const response = await api.get({ link: `/training-exams/attempts/${attemptId}/answers` });
+  return asArray(response).map(mapTrainingExamAnswer);
+}
+
+export async function getTrainingExamAttemptCorrectAnswersApi(attemptId: string) {
+  const response = await api.get({ link: `/training-exams/attempts/${attemptId}/correct-answers` });
+  return asArray(response).map(mapTrainingExamResult);
+}
+
+export async function getMyTrainingProposalsApi(employeeId: string, year: number): Promise<TrainingProposal[]> {
+  const response = await api.get({ link: `/training-courses/employee/${employeeId}/proposals`, config: { params: { year } } });
+  return asArray(response).map(mapTrainingProposal);
+}
+
+export async function proposeTrainingContentApi({ planId, courseId, content }: { planId?: string | null; courseId: string; content?: string | null }) {
+  return api.post({ link: "/training-courses/propose", data: { trainingPlanId: planId ?? "", courseId, content: content ?? null } });
+}
+
+export async function deleteTrainingProposalApi(proposalId: string) {
+  return api.delete({ link: `/training-courses/propose/${proposalId}` });
 }
 
 export async function getTrainingHistoryApi(employeeId: string, year: number): Promise<MyTrainingCourse[]> {

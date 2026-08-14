@@ -29,7 +29,7 @@ export default function TrainingEvaluationFormScreen() {
     if (data) setForm(data);
   }, [data]);
 
-  const readOnly = !form || form.hasEvaluated || form.status !== "open";
+  const readOnly = !form || form.hasEvaluated || form.status !== "open" || form.isPostponed === true;
   const canSubmit = !!form && !readOnly && (form.courseRating ?? 0) >= 1 && form.instructors.every((item) => (item.expertise ?? 0) >= 1 && (item.pedagogy ?? 0) >= 1 && (item.content ?? 0) >= 1);
   const courseGroups = useMemo(() => (form?.evaluationFormConfig.groups ?? []).filter((group) => group.scope !== "instructor"), [form]);
   const instructorGroups = useMemo(() => (form?.evaluationFormConfig.groups ?? []).filter((group) => group.scope === "instructor"), [form]);
@@ -57,13 +57,13 @@ export default function TrainingEvaluationFormScreen() {
     return <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}><AppHeader title="Đánh giá khóa học" onBack={() => router.back()} /><View style={styles.error}><Text>Không tải được biểu mẫu đánh giá.</Text><Button mode="outlined" onPress={() => void reload()}>Thử lại</Button></View></SafeAreaView>;
   }
 
-  const statusLabel = form.hasEvaluated ? "Đã hoàn tất" : form.status === "open" ? "Đang mở" : form.status === "completed" ? "Đã đóng" : "Chưa mở";
+  const statusLabel = form.isPostponed ? "Đã xin hoãn" : form.hasEvaluated ? "Đã hoàn tất" : form.status === "open" ? "Đang mở" : form.status === "completed" ? "Đã đóng" : "Chưa mở";
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
       <AppHeader title="Đánh giá sau đào tạo" subtitle={form.courseName} onBack={() => router.back()} actions={<Button mode="contained" compact disabled={!canSubmit} loading={submitting} onPress={() => void submit()}>Gửi</Button>} />
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void reload()} />}>
-          <Card mode="outlined" style={[styles.headerCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><Card.Content style={{ gap: 7 }}><View style={styles.headerLine}><Text variant="titleLarge" style={styles.title}>{form.courseName}</Text><Badge variant={form.hasEvaluated ? "success" : form.status === "open" ? "primary" : "default"}>{statusLabel}</Badge></View><Text style={{ color: colors.onSurfaceVariant }}>{form.className ?? "Khóa đào tạo"} · {formatTrainingDate(form.startDate)} - {formatTrainingDate(form.endDate)}</Text>{readOnly ? <Text style={{ color: colors.onSurfaceVariant, lineHeight: 19 }}>Biểu mẫu ở chế độ chỉ xem.</Text> : null}</Card.Content></Card>
+          <Card mode="outlined" style={[styles.headerCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><Card.Content style={{ gap: 7 }}><View style={styles.headerLine}><Text variant="titleLarge" style={styles.title}>{form.courseName}</Text><Badge variant={form.isPostponed ? "warning" : form.hasEvaluated ? "success" : form.status === "open" ? "primary" : "default"}>{statusLabel}</Badge></View><Text style={{ color: colors.onSurfaceVariant }}>{form.className ?? "Khóa đào tạo"} · {formatTrainingDate(form.startDate)} - {formatTrainingDate(form.endDate)}</Text>{form.isPostponed ? <Text style={{ color: colors.onSurfaceVariant, lineHeight: 19 }}>Bạn đã xin hoãn khóa đào tạo nên chưa thể gửi đánh giá.</Text> : readOnly ? <Text style={{ color: colors.onSurfaceVariant, lineHeight: 19 }}>Biểu mẫu ở chế độ chỉ xem.</Text> : null}</Card.Content></Card>
 
           <SectionCard title="I. Đánh giá khóa học" icon="school-outline">
             <View style={styles.fieldGroup}><Text style={styles.fieldLabel}>1. Chất lượng khóa học</Text><RatingScale value={form.courseRating ?? 0} disabled={readOnly} onChange={(value) => updateForm({ courseRating: value })} /></View>

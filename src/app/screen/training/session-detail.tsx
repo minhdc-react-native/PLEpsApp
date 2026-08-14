@@ -18,7 +18,8 @@ export default function TrainingSessionDetailScreen() {
   const user = useData((state) => state.user);
   const userId = user?.id;
   const { showToast } = useToast();
-  const { trainingCourseId, sessionId } = useLocalSearchParams<{ trainingCourseId?: string; sessionId?: string }>();
+  const { trainingCourseId, sessionId, isOnline } = useLocalSearchParams<{ trainingCourseId?: string; sessionId?: string; isOnline?: string }>();
+  const isOnlineSession = isOnline === "true";
   const [marking, setMarking] = useState(false);
   const load = useCallback(async () => {
     if (!sessionId || !trainingCourseId || !userId) return { session: null, registration: null };
@@ -87,7 +88,7 @@ export default function TrainingSessionDetailScreen() {
           </View>
         </SectionCard>
 
-        <SectionCard title="Điểm danh" icon="calendar-check-outline">
+        {!isOnlineSession ? <SectionCard title="Điểm danh" icon="calendar-check-outline">
           <View style={styles.attendanceBox}>
             <View style={{ flex: 1, gap: 5 }}>
               <Text variant="titleSmall" style={styles.title}>{isPresent ? "Bạn đã điểm danh" : attendance ? "Chưa điểm danh" : "Chưa có dữ liệu"}</Text>
@@ -97,7 +98,7 @@ export default function TrainingSessionDetailScreen() {
               {isPresent ? "Đã điểm danh" : "Điểm danh"}
             </Button>
           </View>
-        </SectionCard>
+        </SectionCard> : null}
 
         <SectionCard title="Tài liệu" icon="file-document-multiple-outline">
           {session.fileIds.length || session.files.length ? (

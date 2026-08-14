@@ -11,6 +11,11 @@ import {
   TrainingSessionAttendance,
   TrainingStudentRegistration,
   MyTrainingCourse,
+  TrainingExamSession,
+  TrainingExamQuestion,
+  TrainingExamAnswer,
+  TrainingExamResult,
+  TrainingProposal,
 } from "@/types/training.model";
 
 const toDate = (value: any): Date | null => {
@@ -30,6 +35,14 @@ const mapRecord = (raw: any) =>
         note: raw.note ?? null,
       }
     : null;
+
+function registrationIsPostponed(...records: any[]) {
+  return records.some((record) =>
+    [record?.status, record?.value, record?.code].some(
+      (value) => value === TRAINING_REGISTRATION_STATUS.POSTPONED || String(value).toLowerCase() === "postponed",
+    ),
+  );
+}
 
 export function mapTrainingFile(raw: any): TrainingFile {
   return {
@@ -109,6 +122,9 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
     evaluationStartDate: toDate(raw?.evaluationStartDate ?? raw?.evaluationStart),
     evaluationEndDate: toDate(raw?.evaluationEndDate ?? raw?.evaluationEnd),
     evaluationFormConfig: mapEvaluationConfig(raw?.evaluationFormConfig),
+    classRegistrationStartDate: toDate(raw?.classRegistrationStartDate ?? raw?.registrationStartDate),
+    classRegistrationEndDate: toDate(raw?.classRegistrationEndDate ?? raw?.registrationEndDate),
+    isSharedExam: raw?.isSharedExam ?? raw?.sharedExam ?? false,
   };
 }
 
@@ -160,6 +176,15 @@ export function mapRegistration(raw: any): TrainingStudentRegistration {
     ),
     regStatus: mapRecord(raw?.regStatus ?? raw?.registration),
     finalRegStatus: mapRecord(raw?.finalRegStatus),
+    isPostponed: registrationIsPostponed(
+      raw?.regStatus,
+      raw?.registration,
+      raw?.finalRegStatus,
+      raw?.classRegStatus,
+      raw?.classFinalRegStatus,
+      raw?.classDepartmentRegStatus,
+      raw?.classAdminRegStatus,
+    ),
     classSessions: (raw?.classSessions ?? raw?.sessions ?? []).map(mapAttendance),
   };
 }
@@ -229,6 +254,7 @@ export function mapEvaluation(
     startDate,
     endDate,
     hasEvaluated: registration.hasEvaluated,
+    isPostponed: registration.isPostponed,
     courseRating: registration.evaluationRating,
     coursePositive: registration.coursePositive,
     courseNegative: registration.courseNegative,
@@ -237,5 +263,101 @@ export function mapEvaluation(
     instructors,
     evaluationFormConfig:
       registration.evaluationFormConfig ?? course?.evaluationFormConfig ?? { groups: [] },
+  };
+}
+
+export function mapTrainingProposal(raw: any): TrainingProposal {
+  return {
+    id: String(raw?.id ?? raw?.proposalId ?? ""),
+    courseId: raw?.courseId ?? raw?.trainingCourseId ?? null,
+    courseName: raw?.courseName ?? raw?.course?.name ?? raw?.name ?? null,
+    content: raw?.content ?? raw?.note ?? null,
+    status: raw?.status ?? null,
+    statusLabel: raw?.statusLabel ?? null,
+    createdAt: toDate(raw?.createdAt ?? raw?.createdDate),
+  };
+}
+
+function examStatus(raw: any): TrainingExamSession["status"] {
+  const value = String(raw?.status ?? raw?.examStatus ?? raw?.attempt?.status ?? "").toLowerCase();
+  if (["result", "completed", "graded"].some((item) => value.includes(item))) return "result";
+  if (value.includes("grading")) return "grading";
+  if (["in_progress", "in-progress", "started", "doing"].some((item) => value.includes(item))) return "in_progress";
+  if (["submitted", "submit"].some((item) => value.includes(item))) return "submitted";
+  return "not_started";
+}
+
+function examQuestionType(raw: any): TrainingExamQuestion["type"] {
+  const value = String(raw?.type ?? raw?.questionType ?? "").toLowerCase();
+  return raw?.type === 1 || value.includes("essay") || value.includes("text") ? "essay" : "multiple_choice";
+}
+
+export function mapTrainingExamSession(raw: any): TrainingExamSession {
+  const exam = raw?.exam ?? raw?.trainingExam ?? raw;
+  const attempt = raw?.attempt ?? raw?.myAttempt ?? null;
+  const questionsRaw = raw?.questions ?? exam?.questions ?? raw?.examQuestions ?? [];
+  const questions = (Array.isArray(questionsRaw) ? questionsRaw : []).map((question: any, index: number) => ({
+    id: String(question?.id ?? question?.questionId ?? ""),
+    order: question?.order ?? question?.sortOrder ?? index + 1,
+    type: examQuestionType(question),
+    title: firstString(question?.title, question?.text, question?.content, question?.question) || `Câu ${index + 1}`,
+    maxScore: Number(question?.maxScore ?? question?.points ?? question?.score ?? 0),
+    options: (question?.options ?? question?.answers ?? []).map((option: any, optionIndex: number) => ({
+      id: String(option?.id ?? option?.optionId ?? ""),
+      label: option?.label ?? String.fromCharCode(65 + optionIndex),
+      content: option?.content ?? option?.text ?? option?.name ?? "",
+    })),
+  })) as TrainingExamQuestion[];
+  const answers = (raw?.answers ?? attempt?.answers ?? []).map(mapTrainingExamAnswer);
+  const results = (raw?.results ?? raw?.review ?? attempt?.results ?? []).map(mapTrainingExamResult);
+  const status = examStatus(raw);
+  const expiresAt = raw?.expiresAt ?? attempt?.expiresAt ?? null;
+  return {
+    id: String(raw?.id ?? attempt?.id ?? exam?.id ?? ""),
+    examId: String(raw?.examId ?? exam?.id ?? raw?.trainingExamId ?? ""),
+    trainingCourseId: raw?.trainingCourseId ?? exam?.trainingCourseId ?? null,
+    title: firstString(raw?.title, exam?.title, exam?.name) || "Bài thi đào tạo",
+    courseName: firstString(raw?.courseName, exam?.courseName, exam?.trainingCourse?.name) || "Khóa đào tạo",
+    className: raw?.className ?? exam?.className ?? null,
+    status,
+    stage: status === "result" || status === "submitted" ? "completed" : status,
+    startsAt: raw?.startsAt ?? exam?.startsAt ?? exam?.startDate ?? null,
+    endsAt: raw?.endsAt ?? exam?.endsAt ?? exam?.endDate ?? null,
+    expiresAt,
+    attemptId: raw?.attemptId ?? attempt?.id ?? null,
+    instructions: raw?.instructions ?? exam?.instructions ?? exam?.description ?? null,
+    serverTimeOffsetMs: Number(raw?.serverTimeOffsetMs ?? 0),
+    lastSavedAt: raw?.lastSavedAt ?? attempt?.lastSavedAt ?? null,
+    submittedAt: raw?.submittedAt ?? attempt?.submittedAt ?? null,
+    totalScore: raw?.totalScore ?? exam?.totalScore ?? null,
+    passingScore: raw?.passingScore ?? exam?.passingScore ?? null,
+    canStart: raw?.canStart ?? status === "not_started",
+    durationMinutes: Number(raw?.durationMinutes ?? exam?.durationMinutes ?? exam?.duration ?? 0),
+    score: raw?.score ?? attempt?.score ?? null,
+    questions,
+    answers,
+    results,
+  };
+}
+
+export function mapTrainingExamAnswer(raw: any): TrainingExamAnswer {
+  return {
+    questionId: String(raw?.questionId ?? raw?.id ?? ""),
+    selectedOptionId: raw?.selectedOptionId ?? raw?.optionId ?? raw?.selectedAnswerId ?? null,
+    essayText: raw?.essayText ?? raw?.text ?? raw?.answerText ?? null,
+    isCorrect: raw?.isCorrect ?? null,
+    score: raw?.score ?? null,
+  };
+}
+
+export function mapTrainingExamResult(raw: any): TrainingExamResult {
+  return {
+    questionId: String(raw?.questionId ?? raw?.id ?? ""),
+    selectedOptionId: raw?.selectedOptionId ?? raw?.optionId ?? null,
+    correctOptionId: raw?.correctOptionId ?? raw?.answerId ?? null,
+    essayText: raw?.essayText ?? raw?.text ?? null,
+    score: raw?.score ?? null,
+    maxScore: raw?.maxScore ?? raw?.points ?? null,
+    isCorrect: raw?.isCorrect ?? null,
   };
 }
