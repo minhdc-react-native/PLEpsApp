@@ -8,29 +8,42 @@ import { useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TabView } from "react-native-tab-view";
 import EmployeeEducation from "./employee-education";
+import EmployeeInternalExpert from "./employee-internal-expert";
 import EmployeeHistory from "./employee-history";
 import EmployeeInfo from "./employee-info";
 import EmployeeResume from "./employee-resume";
 import EmployeeContract from "./empoyee-contract";
+import { useData } from "@/hooks/zustand/useData";
+
 const mapComponent = {
   info: EmployeeInfo,
   resume: EmployeeResume,
   education: EmployeeEducation,
   contract: EmployeeContract,
   history: EmployeeHistory,
+  internalExpert: EmployeeInternalExpert,
 };
 export default function EmployeeProfile() {
   const { colors } = useTheme();
+  const user = useData((state) => state.user);
   const layout = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const insets = useSafeAreaInsets();
-  const routes = [
-    { key: "info", title: "Thông tin cơ bản" },
-    { key: "resume", title: "Lý lịch" },
-    { key: "education", title: "Học vấn" },
-    { key: "contract", title: "Hợp đồng" },
-    { key: "history", title: "Khác" },
-  ];
+  const routes = useMemo(
+    () => [
+      { key: "info", title: "Thông tin cơ bản" },
+      { key: "resume", title: "Lý lịch" },
+      { key: "education", title: "Học vấn" },
+      { key: "contract", title: "Hợp đồng" },
+      { key: "history", title: "Khác" },
+      ...(user?.isExpert
+        ? [{ key: "internalExpert", title: "Chuyên gia nội bộ" }]
+        : []),
+    ],
+    [user?.isExpert],
+  );
+
+  const activeIndex = Math.min(index, routes.length - 1);
 
   const renderScene = ({
     route,
@@ -56,7 +69,7 @@ export default function EmployeeProfile() {
               id: route.key,
               value: route.title,
             }))}
-            value={routes[index].key}
+            value={routes[activeIndex].key}
             onChange={(value) =>
               setIndex(routes.findIndex((r) => r.key === value.id))
             }
@@ -65,7 +78,7 @@ export default function EmployeeProfile() {
         }
       />
       <TabView
-        navigationState={{ index, routes }}
+        navigationState={{ index: activeIndex, routes }}
         renderScene={renderScene}
         lazy
         renderLazyPlaceholder={() => LazyPlaceholder}

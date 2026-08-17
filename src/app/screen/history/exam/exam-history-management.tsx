@@ -83,7 +83,7 @@ export default function ExamHistoryManagement() {
       }
     >
       <HistoryOverviewCard
-        title="Lịch sử thi cử"
+        title="Quá trình thi cử"
         subtitle={`Đã thi ${data.length} kỳ`}
         icon="clipboard-text-outline"
         stats={stats}

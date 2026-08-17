@@ -188,7 +188,7 @@ const EmployeeInfo = () => {
           style={styles.actionButton}
           contentStyle={styles.actionButtonContent}
         >
-          Lịch sử
+          Quá trình
         </Button>
         <Button
           mode="contained"

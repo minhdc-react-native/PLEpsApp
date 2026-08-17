@@ -52,7 +52,7 @@ export default function SalaryHistoryManagement() {
       }
     >
       <HistoryOverviewCard
-        title="Lịch sử hưởng lương"
+        title="Quá trình hưởng lương"
         subtitle={`Đã có ${data.length} quyết định`}
         icon="cash-multiple"
       />

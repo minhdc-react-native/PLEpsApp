@@ -13,7 +13,7 @@ export default function EmployeeHistory() {
       <ScrollView style={[styles.container]}>
         <ListFields>
           <Field label="Ghi chú" value={user?.note} />
-          <Field label="Lịch sử công tác" value={user?.workHistory} />
+          <Field label="Quá trình công tác" value={user?.workHistory} />
         </ListFields>
         <View style={{ height: 100 }} />
       </ScrollView>

@@ -33,9 +33,9 @@ const ManageTraining = () => {
     },
     {
       icon: "history",
-      title: "Lịch sử đào tạo",
+      title: "Quá trình đào tạo",
       description: "Xem các khóa đã hoàn tất",
-      route: "/screen/training/history",
+      route: "/screen/history?tab=training",
       color: "#6D4AC7",
     },
   ] as const;
