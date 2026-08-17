@@ -14,7 +14,7 @@ import { useToast } from "@/components/dialog/useToast";
 export default function TrainingCourseRegistrationScreen() {
   const { colors } = useTheme();
   const user = useData((state) => state.user);
-  const userId = user?.id;
+  const employeeId = user?.employeeId;
   const { showToast } = useToast();
   const [year, setYear] = useState(new Date().getFullYear());
   const [tab, setTab] = useState("available");
@@ -28,14 +28,14 @@ export default function TrainingCourseRegistrationScreen() {
   const load = useCallback(async () => {
     const [courses, registered] = await Promise.all([
       getTrainingCoursesApi(year, false),
-      userId ? getMyTrainingCoursesApi(userId, year, { isDeployedCourse: false }) : Promise.resolve([]),
+      employeeId ? getMyTrainingCoursesApi(employeeId, year, { isDeployedCourse: false }) : Promise.resolve([]),
     ]);
     const registeredIds = new Set(registered.map((item) => item.id));
     return courses.map((course) => ({ ...course, isRegistered: course.isRegistered || registeredIds.has(course.id) }));
-  }, [userId, year]);
-  const { data: courses, loading, reload } = useTrainingResource(load, [year, userId]);
-  const proposalLoad = useCallback(() => userId ? getMyTrainingProposalsApi(userId, year) : Promise.resolve([]), [userId, year]);
-  const { data: proposals, loading: proposalsLoading, reload: reloadProposals } = useTrainingResource(proposalLoad, [userId, year]);
+  }, [employeeId, year]);
+  const { data: courses, loading, reload } = useTrainingResource(load, [year, employeeId]);
+  const proposalLoad = useCallback(() => employeeId ? getMyTrainingProposalsApi(employeeId, year) : Promise.resolve([]), [employeeId, year]);
+  const { data: proposals, loading: proposalsLoading, reload: reloadProposals } = useTrainingResource(proposalLoad, [employeeId, year]);
 
   const filteredCourses = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -46,7 +46,7 @@ export default function TrainingCourseRegistrationScreen() {
   }, [courses, search, tab]);
 
   const toggleRegistration = async (courseId: string, registered: boolean) => {
-    if (!userId || processingId) return;
+    if (!employeeId || processingId) return;
     setProcessingId(courseId);
     try {
       if (registered) {

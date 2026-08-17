@@ -19,16 +19,16 @@ export default function TrainingHistoryScreen({
 }) {
   const { colors } = useTheme();
   const user = useData((state) => state.user);
-  const userId = user?.id;
+  const employeeId = user?.employeeId;
   const [year, setYear] = useState(new Date().getFullYear());
   const load = useCallback(
     () =>
-      userId
-        ? getTrainingHistoryApi(userId, year)
+      employeeId
+        ? getTrainingHistoryApi(employeeId, year)
         : Promise.resolve([]),
-    [userId, year],
+    [employeeId, year],
   );
-  const { data, loading, reload } = useTrainingResource(load, [userId, year]);
+  const { data, loading, reload } = useTrainingResource(load, [employeeId, year]);
 
   const content = (
     <ScrollView

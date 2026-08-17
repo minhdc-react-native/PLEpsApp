@@ -46,7 +46,7 @@ export default function ExamHistoryManagement() {
 
   const onRefresh = () => {
     api.get({
-      link: `/employees/period-history/${user?.id}`,
+      link: `/employees/period-history/${user?.employeeId}`,
       callBack: (res) => {
         setData(res.returnData.map((item: any) => mapEmployeeExamHistory(item)));
       },

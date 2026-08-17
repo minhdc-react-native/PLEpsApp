@@ -25,7 +25,7 @@ type DetailPayload = {
 export default function TrainingClassDetailScreen() {
   const { colors } = useTheme();
   const user = useData((state) => state.user);
-  const userId = user?.id;
+  const employeeId = user?.employeeId;
   const { showToast } = useToast();
   const { trainingCourseId } = useLocalSearchParams<{ trainingCourseId?: string }>();
   const [tab, setTab] = useState("sessions");
@@ -35,10 +35,10 @@ export default function TrainingClassDetailScreen() {
   const [postponing, setPostponing] = useState(false);
 
   const load = useCallback(async (): Promise<DetailPayload> => {
-    if (!trainingCourseId || !userId) return { course: null, trainingClass: null, registration: null, availableClasses: [], exams: [] };
+    if (!trainingCourseId || !employeeId) return { course: null, trainingClass: null, registration: null, availableClasses: [], exams: [] };
     const [course, registration, myClasses] = await Promise.all([
       getTrainingCourseApi(trainingCourseId),
-      getTrainingRegistrationApi(userId, trainingCourseId),
+      getTrainingRegistrationApi(employeeId, trainingCourseId),
       getMyTrainingClassesApi(trainingCourseId),
     ]);
     const registeredClassId = registration?.trainingClassId ?? myClasses[0]?.id ?? null;
@@ -48,8 +48,8 @@ export default function TrainingClassDetailScreen() {
     const availableClasses = trainingClass || course?.type === 0 ? [] : courseClasses;
     const exams = await getTrainingExamStudentsApi({ trainingCourseId, classId: course?.isSharedExam ? null : trainingClass?.id });
     return { course, trainingClass, registration, availableClasses, exams };
-  }, [trainingCourseId, userId]);
-  const { data, loading, error, reload } = useTrainingResource(load, [trainingCourseId, userId]);
+  }, [trainingCourseId, employeeId]);
+  const { data, loading, error, reload } = useTrainingResource(load, [trainingCourseId, employeeId]);
 
   const registerClass = async (classId: string, isRegistered: boolean) => {
     if (processingClassId) return;

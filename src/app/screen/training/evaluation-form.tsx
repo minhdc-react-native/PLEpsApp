@@ -17,13 +17,13 @@ import { useToast } from "@/components/dialog/useToast";
 export default function TrainingEvaluationFormScreen() {
   const { colors } = useTheme();
   const user = useData((state) => state.user);
-  const userId = user?.id;
+  const employeeId = user?.employeeId;
   const { showToast } = useToast();
   const { trainingCourseId } = useLocalSearchParams<{ trainingCourseId?: string }>();
   const [form, setForm] = useState<TrainingEvaluation | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const load = useCallback(() => userId && trainingCourseId ? getTrainingEvaluationApi(userId, trainingCourseId) : Promise.resolve(null), [userId, trainingCourseId]);
-  const { data, loading, error, reload } = useTrainingResource(load, [userId, trainingCourseId]);
+  const load = useCallback(() => employeeId && trainingCourseId ? getTrainingEvaluationApi(employeeId, trainingCourseId) : Promise.resolve(null), [employeeId, trainingCourseId]);
+  const { data, loading, error, reload } = useTrainingResource(load, [employeeId, trainingCourseId]);
 
   useEffect(() => {
     if (data) setForm(data);

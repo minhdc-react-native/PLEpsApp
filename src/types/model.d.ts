@@ -14,6 +14,7 @@ declare global {
   }
   interface IUser {
     id: string;
+    employeeId: string;
     code: string;
     userName: string;
     fullName: string;

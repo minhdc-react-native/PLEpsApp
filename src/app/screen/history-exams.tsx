@@ -20,7 +20,7 @@ export default function HistoryExams() {
   const setItemData = useData((state) => state.setItemData);
   const onRefresh = () => {
     api.get({
-      link: `/employees/period-history/${user?.id}`,
+      link: `/employees/period-history/${user?.employeeId}`,
       callBack: (res) => {
         setData(
           res.returnData.map((item: any) => mapEmployeeExamHistory(item))

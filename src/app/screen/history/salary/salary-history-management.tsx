@@ -26,7 +26,7 @@ export default function SalaryHistoryManagement() {
 
   const onRefresh = () => {
     api.get({
-      link: `/employees/salary-decision/${user?.id}`,
+      link: `/employees/salary-decision/${user?.employeeId}`,
       callBack: (res) => {
         setData(res.returnData.map((item: any) => mapEmployeeSalaryHistory(item)));
       },

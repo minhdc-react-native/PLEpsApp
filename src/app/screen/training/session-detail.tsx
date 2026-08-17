@@ -16,20 +16,20 @@ import { useToast } from "@/components/dialog/useToast";
 export default function TrainingSessionDetailScreen() {
   const { colors } = useTheme();
   const user = useData((state) => state.user);
-  const userId = user?.id;
+  const employeeId = user?.employeeId;
   const { showToast } = useToast();
   const { trainingCourseId, sessionId, isOnline } = useLocalSearchParams<{ trainingCourseId?: string; sessionId?: string; isOnline?: string }>();
   const isOnlineSession = isOnline === "true";
   const [marking, setMarking] = useState(false);
   const load = useCallback(async () => {
-    if (!sessionId || !trainingCourseId || !userId) return { session: null, registration: null };
+    if (!sessionId || !trainingCourseId || !employeeId) return { session: null, registration: null };
     const [session, registration] = await Promise.all([
       getTrainingSessionApi(sessionId),
-      getTrainingRegistrationApi(userId, trainingCourseId),
+      getTrainingRegistrationApi(employeeId, trainingCourseId),
     ]);
     return { session, registration };
-  }, [sessionId, trainingCourseId, userId]);
-  const { data, loading, error, reload } = useTrainingResource(load, [sessionId, trainingCourseId, userId]);
+  }, [sessionId, trainingCourseId, employeeId]);
+  const { data, loading, error, reload } = useTrainingResource(load, [sessionId, trainingCourseId, employeeId]);
 
   const attendance = data?.registration?.classSessions.find((item) => item.id === sessionId);
   const session = data?.session;

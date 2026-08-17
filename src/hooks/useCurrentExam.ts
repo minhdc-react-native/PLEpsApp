@@ -10,7 +10,7 @@ const useCurrentExam = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const refetch = useCallback(async () => {
-    if (!user?.id) {
+    if (!user?.employeeId) {
       setCurrentExam(null);
       return;
     }
@@ -20,7 +20,7 @@ const useCurrentExam = () => {
 
       // fetch exam periods for the user
       const listRes: any = await api.get({
-        link: `/exams/employee/${user.id}/exam-periods`,
+        link: `/exams/employee/${user.employeeId}/exam-periods`,
         setLoading: undefined,
       });
 
@@ -41,7 +41,7 @@ const useCurrentExam = () => {
 
       // fetch detailed exam period (current exam)
       const detailRes: any = await api.get({
-        link: `/exams/employee/${user.id}/exam-periods/${activeExam.exam.id}`,
+        link: `/exams/employee/${user.employeeId}/exam-periods/${activeExam.exam.id}`,
         setLoading: undefined,
       });
 

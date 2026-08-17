@@ -15,11 +15,11 @@ import { trainingHref } from "@/utils/training-navigation";
 export default function TrainingEvaluationsScreen() {
   const { colors } = useTheme();
   const user = useData((state) => state.user);
-  const userId = user?.id;
+  const employeeId = user?.employeeId;
   const [year, setYear] = useState(new Date().getFullYear());
   const [search, setSearch] = useState("");
-  const load = useCallback(() => userId ? getTrainingEvaluationsApi(userId, year) : Promise.resolve([]), [userId, year]);
-  const { data, loading, reload } = useTrainingResource(load, [userId, year]);
+  const load = useCallback(() => employeeId ? getTrainingEvaluationsApi(employeeId, year) : Promise.resolve([]), [employeeId, year]);
+  const { data, loading, reload } = useTrainingResource(load, [employeeId, year]);
   const evaluations = useMemo(() => {
     const query = search.trim().toLowerCase();
     return (data ?? []).filter((item) => `${item.courseName} ${item.className ?? ""}`.toLowerCase().includes(query));
