@@ -16,7 +16,7 @@ interface HistoryListItemProps {
     label: string;
     color: string;
   };
-  onPress: () => void;
+  onPress?: () => void;
   last?: boolean;
 }
 
@@ -52,6 +52,7 @@ export function HistoryListItem({
   return (
     <Pressable
       onPress={onPress}
+      disabled={!onPress}
       style={({ pressed }) => [styles.item, !last && styles.itemDivider, pressed && styles.pressed]}
     >
       <View style={[styles.iconContainer, { backgroundColor: iconBackgroundColor }]}>
@@ -71,9 +72,11 @@ export function HistoryListItem({
           </Text>
         )}
       </View>
-      <View style={styles.trailing}>
-        <Icon source="chevron-right" size={20} color={colors.onSurfaceVariant} />
-      </View>
+      {onPress && (
+        <View style={styles.trailing}>
+          <Icon source="chevron-right" size={20} color={colors.onSurfaceVariant} />
+        </View>
+      )}
     </Pressable>
   );
 }

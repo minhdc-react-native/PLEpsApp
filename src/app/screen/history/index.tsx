@@ -8,11 +8,19 @@ import { TabView } from "react-native-tab-view";
 import ExamHistoryManagement from "./exam/exam-history-management";
 import SalaryHistoryManagement from "./salary/salary-history-management";
 import TrainingHistoryScreen from "../training/history";
+import WorkHistoryManagement from "./work-history/work-history-management";
+import ProjectHistoryManagement from "./project-history/project-history-management";
+import CertificateHistoryManagement from "./certificate/certificate-history-management";
+import SkillStandardManagement from "./skill-standard/skill-standard-management";
 
 const routes = [
-  { key: "salary", title: "Hưởng lương" },
-  { key: "exam", title: "Thi cử" },
-  { key: "training", title: "Đào tạo" },
+  { key: "salary", title: "Quá trình hưởng lương" },
+  { key: "work-history", title: "Quá trình công tác" },
+  { key: "project-history", title: "Quá trình tham gia công trình" },
+  { key: "exam", title: "Quá trình thi" },
+  { key: "training", title: "Quá trình đào tạo" },
+  { key: "certificate", title: "Chứng chỉ" },
+  { key: "skill-standard", title: "Tiêu chuẩn bậc thợ" },
 ];
 
 export default function History() {
@@ -29,6 +37,10 @@ export default function History() {
   const renderScene = ({ route }: { route: { key: string } }) => {
     if (route.key === "exam") return <ExamHistoryManagement />;
     if (route.key === "training") return <TrainingHistoryScreen embedded />;
+    if (route.key === "work-history") return <WorkHistoryManagement />;
+    if (route.key === "project-history") return <ProjectHistoryManagement />;
+    if (route.key === "certificate") return <CertificateHistoryManagement />;
+    if (route.key === "skill-standard") return <SkillStandardManagement />;
     return <SalaryHistoryManagement />;
   };
 
@@ -47,7 +59,7 @@ export default function History() {
             onChange={(value) =>
               setIndex(routes.findIndex((route) => route.key === value.id))
             }
-            mode="fit"
+            mode="full"
           />
         }
       />
