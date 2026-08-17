@@ -10,11 +10,31 @@ export function CustomAvatar({
   size?: number;
 }) {
   if (src) {
+    const normalizedSrc = normalizeUrl(src);
+    if (__DEV__) {
+      console.log("[CustomAvatar] render", {
+        src,
+        normalizedSrc,
+        size,
+      });
+    }
+
     return (
       <Avatar.Image
         size={size}
         source={{
-          uri: normalizeUrl(src),
+          uri: normalizedSrc,
+        }}
+        onLoad={() => {
+          if (__DEV__) console.log("[CustomAvatar] load success", normalizedSrc);
+        }}
+        onError={(event) => {
+          if (__DEV__) {
+            console.error("[CustomAvatar] load failed", {
+              normalizedSrc,
+              error: event.nativeEvent?.error,
+            });
+          }
         }}
       />
     );

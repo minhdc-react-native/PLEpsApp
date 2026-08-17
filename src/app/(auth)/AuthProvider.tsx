@@ -29,7 +29,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             api.get({
                 link: `/employees/current-user/`,
                 callBack: (res) => {
-                    setUser(res?.returnData ?? null);
+                    const currentUser = res?.returnData ?? null;
+                    if (__DEV__) {
+                        console.log("[AuthProvider] current-user avatar debug", {
+                            keys: currentUser && typeof currentUser === "object"
+                                ? Object.keys(currentUser)
+                                : [],
+                            imageUrl: currentUser?.imageUrl ?? null,
+                            employeeImageUrl: currentUser?.employee?.imageUrl ?? null,
+                            userImageUrl: currentUser?.user?.imageUrl ?? null,
+                            avatar: currentUser?.avatar ?? null,
+                            id: currentUser?.id ?? null,
+                            employeeId: currentUser?.employeeId ?? currentUser?.employee?.id ?? null,
+                        });
+                    }
+                    setUser(currentUser);
                     resolve();
                 },
                 callError: (err) => {

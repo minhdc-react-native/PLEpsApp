@@ -6,6 +6,6 @@ export function normalizeUrl(url: string | null | undefined): string {
     return url;
   }
 
-  // Nếu link chỉ là domain/ip + path → thêm http://
-  return `http://${url}`;
+  // Giữ cùng quy ước với web client: URL ảnh từ API dùng HTTPS.
+  return `https://${url}`;
 }
