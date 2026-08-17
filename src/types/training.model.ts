@@ -30,6 +30,19 @@ export const TRAINING_SESSION_STATUS = {
 
 export type TrainingSessionStatus = number;
 
+export interface TrainingSummary {
+  year: number;
+  courses: {
+    participating: number;
+    completed: number;
+  };
+  badges: {
+    openRegistration: number;
+    attendanceDue: number;
+    evaluationDue: number;
+  };
+}
+
 export const TRAINING_REGISTRATION_STATUS = {
   PENDING: 0,
   SIGNED: 1,

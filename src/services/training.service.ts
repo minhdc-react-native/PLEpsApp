@@ -1,6 +1,6 @@
 import { mapEvaluation, mapMyTrainingCourse, mapRegistration, mapTrainingClass, mapTrainingCourse, mapTrainingSession, mapTrainingExamSession, mapTrainingExamAnswer, mapTrainingExamResult, mapTrainingProposal } from "@/mappers/training.mapper";
 import { api } from "@/utils/epsApi";
-import { MyTrainingCourse, TrainingClass, TrainingCourse, TrainingEvaluation, TrainingSession, TrainingStudentRegistration, TrainingExamAnswer, TrainingExamSession, TrainingProposal } from "@/types/training.model";
+import { MyTrainingCourse, TrainingClass, TrainingCourse, TrainingEvaluation, TrainingSession, TrainingStudentRegistration, TrainingExamAnswer, TrainingExamSession, TrainingProposal, TrainingSummary } from "@/types/training.model";
 
 function unwrap<T = any>(value: any): T {
   const payload = value?.data ?? value;
@@ -10,6 +10,31 @@ function unwrap<T = any>(value: any): T {
 function asArray<T = any>(value: any): T[] {
   const data = unwrap<any>(value);
   return Array.isArray(data) ? data : [];
+}
+
+function asCount(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
+}
+
+export async function getMyTrainingSummaryApi(year: number): Promise<TrainingSummary> {
+  const response = await api.get({
+    link: "/training/me/summary",
+    config: { params: { year } },
+  });
+  const data = unwrap<Partial<TrainingSummary>>(response) ?? {};
+
+  return {
+    year: typeof data.year === "number" ? data.year : year,
+    courses: {
+      participating: asCount(data.courses?.participating),
+      completed: asCount(data.courses?.completed),
+    },
+    badges: {
+      openRegistration: asCount(data.badges?.openRegistration),
+      attendanceDue: asCount(data.badges?.attendanceDue),
+      evaluationDue: asCount(data.badges?.evaluationDue),
+    },
+  };
 }
 
 export async function getTrainingCoursesApi(year: number, isDeployedCourse = false) {
