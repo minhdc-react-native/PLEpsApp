@@ -25,15 +25,11 @@ export async function getMyTrainingSummaryApi(year: number): Promise<TrainingSum
 
   return {
     year: typeof data.year === "number" ? data.year : year,
-    courses: {
-      participating: asCount(data.courses?.participating),
-      completed: asCount(data.courses?.completed),
-    },
-    badges: {
-      openRegistration: asCount(data.badges?.openRegistration),
-      attendanceDue: asCount(data.badges?.attendanceDue),
-      evaluationDue: asCount(data.badges?.evaluationDue),
-    },
+    participatingCount: asCount(data.participatingCount),
+    completedCount: asCount(data.completedCount),
+    openRegistrationCount: asCount(data.openRegistrationCount),
+    attendanceDueCount: asCount(data.attendanceDueCount),
+    evaluationDueCount: asCount(data.evaluationDueCount),
   };
 }
 

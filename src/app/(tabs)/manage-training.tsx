@@ -1,11 +1,8 @@
 import LoadingScreen from "@/components/loading-screen";
+import { Badge } from "@/components/badge";
 import { useTrainingResource } from "@/hooks/useTraining";
-import { useData } from "@/hooks/zustand/useData";
-import { getMyTrainingCoursesApi } from "@/services/training.service";
-import {
-  MyTrainingCourse,
-  TRAINING_COURSE_STATUS,
-} from "@/types/training.model";
+import { getMyTrainingSummaryApi } from "@/services/training.service";
+import { TrainingSummary } from "@/types/training.model";
 import { trainingHref } from "@/utils/training-navigation";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -21,21 +18,34 @@ import {
 import { Card, Divider, Icon, Text, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const menuItems = [
+type TrainingBadgeKey = keyof Pick<
+  TrainingSummary,
+  "openRegistrationCount" | "attendanceDueCount" | "evaluationDueCount"
+>;
+
+const menuItems: Array<{
+  icon: string;
+  title: string;
+  route: string;
+  badgeKey?: TrainingBadgeKey;
+}> = [
   {
     icon: "clipboard-text-search-outline",
     title: "Đăng ký khóa đào tạo",
     route: "/screen/training/course-registration",
+    badgeKey: "openRegistrationCount",
   },
   {
     icon: "account-school-outline",
     title: "Lớp học của tôi",
     route: "/screen/training/classes",
+    badgeKey: "attendanceDueCount",
   },
   {
     icon: "star-check-outline",
     title: "Đánh giá sau đào tạo",
     route: "/screen/training/evaluations",
+    badgeKey: "evaluationDueCount",
   },
   {
     icon: "history",
@@ -80,35 +90,12 @@ function TrainingStatCard({
   );
 }
 
-function countMyCourses(courses: MyTrainingCourse[] | null) {
-  const items = courses ?? [];
-  return {
-    active: items.filter(
-      (course) =>
-        course.status >= TRAINING_COURSE_STATUS.REGISTRATION &&
-        course.status < TRAINING_COURSE_STATUS.FINISHED,
-    ).length,
-    completed: items.filter(
-      (course) => course.status === TRAINING_COURSE_STATUS.FINISHED,
-    ).length,
-  };
-}
-
 const ManageTraining = () => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const user = useData((state) => state.user);
-  const employeeId = user?.employeeId;
   const year = new Date().getFullYear();
-  const load = useCallback(
-    () =>
-      employeeId
-        ? getMyTrainingCoursesApi(employeeId, year, { isDeployedCourse: true })
-        : Promise.resolve([]),
-    [employeeId, year],
-  );
-  const { data, loading, reload } = useTrainingResource(load, [employeeId, year]);
-  const counts = countMyCourses(data);
+  const load = useCallback(() => getMyTrainingSummaryApi(year), [year]);
+  const { data: summary, loading, reload } = useTrainingResource(load, [year]);
 
   return (
     <View
@@ -151,25 +138,27 @@ const ManageTraining = () => {
         <View style={styles.statRow}>
           <TrainingStatCard
             label="Đang tham gia"
-            value={loading && !data ? "—" : String(counts.active)}
+            value={loading && !summary ? "—" : String(summary?.participatingCount ?? 0)}
             icon="book-open-page-variant-outline"
             color={colors.primary}
           />
           <TrainingStatCard
             label="Đã hoàn thành"
-            value={loading && !data ? "—" : String(counts.completed)}
+            value={loading && !summary ? "—" : String(summary?.completedCount ?? 0)}
             icon="check-circle-outline"
             color="#087A52"
           />
         </View>
 
-        {loading && !data ? <LoadingScreen style={styles.loading} /> : null}
+        {loading && !summary ? <LoadingScreen style={styles.loading} /> : null}
 
         <Text variant="titleMedium" style={styles.sectionTitle}>
           Chức năng đào tạo
         </Text>
         <View style={styles.menuList}>
-          {menuItems.map((item, index) => (
+          {menuItems.map((item, index) => {
+            const badgeCount = item.badgeKey ? summary?.[item.badgeKey] ?? 0 : 0;
+            return (
             <View key={item.title}>
               <Pressable
                 onPress={() => router.push(trainingHref(item.route))}
@@ -185,15 +174,15 @@ const ManageTraining = () => {
                 >
                   {item.title}
                 </Text>
-                <Icon
-                  source="chevron-right"
-                  size={20}
-                  color={colors.onSurfaceVariant}
-                />
+                <View style={styles.menuActions}>
+                  {badgeCount > 0 ? <Badge variant="error">{badgeCount}</Badge> : null}
+                  <Icon source="chevron-right" size={20} color={colors.onSurfaceVariant} />
+                </View>
               </Pressable>
               {index < menuItems.length - 1 ? <Divider /> : null}
             </View>
-          ))}
+            );
+          })}
         </View>
       </ScrollView>
     </View>
@@ -257,6 +246,7 @@ const styles = StyleSheet.create({
   },
   menuPressed: { opacity: 0.65 },
   menuTitle: { flex: 1, fontSize: 15, lineHeight: 20, fontWeight: "700" },
+  menuActions: { flexDirection: "row", alignItems: "center", gap: 8 },
 });
 
 export default ManageTraining;

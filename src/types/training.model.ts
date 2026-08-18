@@ -32,15 +32,11 @@ export type TrainingSessionStatus = number;
 
 export interface TrainingSummary {
   year: number;
-  courses: {
-    participating: number;
-    completed: number;
-  };
-  badges: {
-    openRegistration: number;
-    attendanceDue: number;
-    evaluationDue: number;
-  };
+  participatingCount: number;
+  completedCount: number;
+  openRegistrationCount: number;
+  attendanceDueCount: number;
+  evaluationDueCount: number;
 }
 
 export const TRAINING_REGISTRATION_STATUS = {
