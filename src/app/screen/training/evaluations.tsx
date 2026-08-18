@@ -8,7 +8,6 @@ import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Card, IconButton, Searchbar, Text, useTheme } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "@/components/loading-screen";
 import { trainingHref } from "@/utils/training-navigation";
 
@@ -26,7 +25,7 @@ export default function TrainingEvaluationsScreen() {
   }, [data, search]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <AppHeader
         title="Đánh giá sau đào tạo"
         subtitle="Chia sẻ trải nghiệm học tập của bạn"
@@ -53,7 +52,7 @@ export default function TrainingEvaluationsScreen() {
           );
         }) : <View style={[styles.empty, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><TrainingEmptyState icon="star-check-outline" title="Chưa có khảo sát" description="Khảo sát sẽ xuất hiện khi khóa học được mở đánh giá." /></View>}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

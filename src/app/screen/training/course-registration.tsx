@@ -1,13 +1,12 @@
 import AppHeader from "@/components/app-header";
 import { TrainingCourseCard, TrainingEmptyState } from "@/components/training/training-presentational";
-import { useTrainingResource } from "@/hooks/useTraining";
+import { formatTrainingDate, useTrainingResource } from "@/hooks/useTraining";
 import { getTrainingCoursesApi, getMyTrainingCoursesApi, registerTrainingCourseApi, cancelTrainingCourseApi, getMyTrainingProposalsApi, proposeTrainingContentApi, deleteTrainingProposalApi } from "@/services/training.service";
 import { useData } from "@/hooks/zustand/useData";
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, Dialog, IconButton, Portal, Searchbar, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Button, Card, Chip, Dialog, Icon, IconButton, Portal, Text, TextInput, useTheme } from "react-native-paper";
 import LoadingScreen from "@/components/loading-screen";
 import { useToast } from "@/components/dialog/useToast";
 
@@ -18,7 +17,6 @@ export default function TrainingCourseRegistrationScreen() {
   const { showToast } = useToast();
   const [year, setYear] = useState(new Date().getFullYear());
   const [tab, setTab] = useState("available");
-  const [search, setSearch] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [proposalOpen, setProposalOpen] = useState(false);
   const [proposalCourseId, setProposalCourseId] = useState("");
@@ -38,12 +36,22 @@ export default function TrainingCourseRegistrationScreen() {
   const { data: proposals, loading: proposalsLoading, reload: reloadProposals } = useTrainingResource(proposalLoad, [employeeId, year]);
 
   const filteredCourses = useMemo(() => {
-    const query = search.trim().toLowerCase();
     return (courses ?? []).filter((course) => {
-      const matchesTab = tab === "registered" ? course.isRegistered : !course.isRegistered;
-      return matchesTab && (!query || `${course.name} ${course.description ?? ""}`.toLowerCase().includes(query));
+      return tab === "registered" ? course.isRegistered : !course.isRegistered;
     });
-  }, [courses, search, tab]);
+  }, [courses, tab]);
+
+  const registrationSchedule = useMemo(() => {
+    const ranges = (courses ?? [])
+      .map((course) => ({
+        start: course.classRegistrationStartDate,
+        end: course.classRegistrationEndDate,
+      }))
+      .filter((range) => range.start || range.end);
+    const uniqueRanges = new Set(ranges.map((range) => `${range.start?.getTime() ?? ""}-${range.end?.getTime() ?? ""}`));
+    if (uniqueRanges.size !== 1 || !ranges.length) return "Theo thời hạn từng khóa";
+    return `${formatTrainingDate(ranges[0].start)} - ${formatTrainingDate(ranges[0].end)}`;
+  }, [courses]);
 
   const toggleRegistration = async (courseId: string, registered: boolean) => {
     if (!employeeId || processingId) return;
@@ -91,10 +99,9 @@ export default function TrainingCourseRegistrationScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <AppHeader
-        title="Đăng ký khóa đào tạo"
-        subtitle="Chọn khóa phù hợp với kế hoạch của bạn"
+        title="Đăng ký khóa"
         onBack={() => router.back()}
         actions={
           <View style={styles.yearActions}>
@@ -111,24 +118,23 @@ export default function TrainingCourseRegistrationScreen() {
         <Card mode="outlined" style={[styles.introCard, { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer }]}>
           <Card.Content style={styles.introContent}>
             <View style={[styles.introIcon, { backgroundColor: colors.surface }]}>
-              <Text style={{ fontSize: 24 }}>🎓</Text>
+              <Icon source="calendar-clock-outline" size={25} color={colors.primary} />
             </View>
             <View style={{ flex: 1, gap: 4 }}>
               <Text variant="titleSmall" style={{ color: colors.onPrimaryContainer, fontWeight: "800" }}>Khóa đang mở đăng ký</Text>
               <Text style={{ color: colors.onPrimaryContainer, lineHeight: 19 }}>Đăng ký trước thời hạn để được ghi nhận vào kế hoạch đào tạo.</Text>
+              <View style={styles.scheduleRow}>
+                <Icon source="calendar-range-outline" size={15} color={colors.onPrimaryContainer} />
+                <Text style={[styles.scheduleText, { color: colors.onPrimaryContainer }]}>Lịch đăng ký: {registrationSchedule}</Text>
+              </View>
             </View>
           </Card.Content>
         </Card>
-        <SegmentedButtons
-          value={tab}
-          onValueChange={setTab}
-          buttons={[
-            { value: "available", label: `Khóa có sẵn (${courses?.filter((item) => !item.isRegistered).length ?? 0})` },
-            { value: "registered", label: `Đã đăng ký (${courses?.filter((item) => item.isRegistered).length ?? 0})` },
-            { value: "proposals", label: `Đề xuất (${proposals?.length ?? 0})` },
-          ]}
-        />
-        {tab !== "proposals" ? <Searchbar placeholder="Tìm khóa đào tạo..." value={search} onChangeText={setSearch} style={styles.search} /> : null}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll} contentContainerStyle={styles.tabChips}>
+          <Chip mode={tab === "available" ? "outlined" : "flat"} onPress={() => setTab("available")} style={styles.tabChip} textStyle={tab === "available" ? styles.activeTabText : undefined}>Khóa có sẵn ({courses?.filter((item) => !item.isRegistered).length ?? 0})</Chip>
+          <Chip mode={tab === "registered" ? "outlined" : "flat"} onPress={() => setTab("registered")} style={styles.tabChip} textStyle={tab === "registered" ? styles.activeTabText : undefined}>Đã đăng ký ({courses?.filter((item) => item.isRegistered).length ?? 0})</Chip>
+          <Chip mode={tab === "proposals" ? "outlined" : "flat"} onPress={() => setTab("proposals")} style={styles.tabChip} textStyle={tab === "proposals" ? styles.activeTabText : undefined}>Đề xuất ({proposals?.length ?? 0})</Chip>
+        </ScrollView>
         {tab === "proposals" ? <ProposalList proposals={proposals ?? []} courses={courses ?? []} loading={proposalsLoading} onCreate={() => setProposalOpen(true)} onDelete={(id) => void removeProposal(id)} /> : loading && !courses ? <LoadingScreen /> : filteredCourses.length ? filteredCourses.map((course) => (
           <TrainingCourseCard
             key={course.id}
@@ -145,14 +151,10 @@ export default function TrainingCourseRegistrationScreen() {
               </Button>
             }
           />
-        )) : (
-          <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
-            <TrainingEmptyState title="Chưa có khóa phù hợp" description="Thử đổi năm hoặc tìm kiếm với từ khóa khác." />
-          </View>
-        )}
+        )) : <Text style={[styles.emptyText, { color: colors.onSurfaceVariant }]}>Chưa có khóa phù hợp</Text>}
       </ScrollView>
       <Portal><Dialog visible={proposalOpen} onDismiss={() => setProposalOpen(false)}><Dialog.Title>Đề xuất nội dung đào tạo</Dialog.Title><Dialog.Content><Text style={styles.dialogHint}>Chọn một danh mục đào tạo và mô tả nội dung bạn muốn đề xuất.</Text><View style={styles.courseChoices}>{(courses ?? []).slice(0, 8).map((course) => <Button key={course.id} compact mode={proposalCourseId === course.id ? "contained" : "outlined"} onPress={() => setProposalCourseId(course.id)}>{course.name}</Button>)}</View><TextInput mode="outlined" label="Nội dung đề xuất" multiline numberOfLines={5} value={proposalContent} onChangeText={setProposalContent} /></Dialog.Content><Dialog.Actions><Button onPress={() => setProposalOpen(false)}>Hủy</Button><Button loading={proposalProcessing} disabled={!proposalCourseId || !proposalContent.trim() || proposalProcessing} onPress={() => void submitProposal()}>Gửi đề xuất</Button></Dialog.Actions></Dialog></Portal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -169,8 +171,13 @@ const styles = StyleSheet.create({
   introCard: { borderRadius: 20, marginBottom: 16 },
   introContent: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14 },
   introIcon: { width: 46, height: 46, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  search: { marginVertical: 14, borderRadius: 16 },
-  emptyCard: { borderWidth: 1, borderRadius: 20 },
+  scheduleRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 },
+  scheduleText: { flex: 1, fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  tabScroll: { marginBottom: 10 },
+  tabChips: { gap: 10, paddingVertical: 4, paddingHorizontal: 1 },
+  tabChip: { flexShrink: 0 },
+  activeTabText: { fontWeight: "700" },
+  emptyText: { paddingVertical: 12, fontSize: 15 },
   title: { fontWeight: "800" },
   proposalList: { gap: 12 },
   proposalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 10 },

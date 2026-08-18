@@ -8,7 +8,6 @@ import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Card, Icon, IconButton, Searchbar, Text, useTheme } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "@/components/loading-screen";
 import { trainingHref } from "@/utils/training-navigation";
 
@@ -29,7 +28,7 @@ export default function TrainingClassesScreen() {
   }, [data, search]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <AppHeader
         title="Lớp học của tôi"
         subtitle="Theo dõi tiến độ học tập cá nhân"
@@ -66,7 +65,7 @@ export default function TrainingClassesScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -10,7 +10,6 @@ import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Card, IconButton, Text, useTheme } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TrainingHistoryScreen({
   embedded = false,
@@ -117,9 +116,8 @@ export default function TrainingHistoryScreen({
   }
 
   return (
-    <SafeAreaView
+    <View
       style={[styles.container, { backgroundColor: colors.background }]}
-      edges={["top"]}
     >
       <AppHeader
         title="Quá trình đào tạo"
@@ -142,7 +140,7 @@ export default function TrainingHistoryScreen({
         }
       />
       {content}
-    </SafeAreaView>
+    </View>
   );
 }
 

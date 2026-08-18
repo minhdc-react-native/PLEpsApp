@@ -34,6 +34,7 @@ export default function Layout() {
         />
         <Stack.Screen name="contest-info" options={{ headerShown: false }} />
         <Stack.Screen name="history" options={{ headerShown: false }} />
+        <Stack.Screen name="training" options={{ headerShown: false }} />
         <Stack.Screen name="current-exam" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
