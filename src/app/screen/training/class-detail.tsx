@@ -4,7 +4,7 @@ import { Field } from "@/components/Field";
 import DetailSectionHeader from "@/components/detail-section-header";
 import DetailTabBar from "@/components/detail-tab-bar";
 import { ListFields } from "@/components/detail-fields/list-fields";
-import { TrainingEmptyState, TrainingStatusBadge } from "@/components/training/training-presentational";
+import { TrainingEmptyState } from "@/components/training/training-presentational";
 import { formatTrainingDate, formatTrainingDateTime, useTrainingResource } from "@/hooks/useTraining";
 import { useData } from "@/hooks/zustand/useData";
 import { cancelTrainingClassApi, getMyTrainingClassesApi, getTrainingClassApi, getTrainingCourseApi, getTrainingCourseClassesApi, getTrainingExamStudentsApi, getTrainingRegistrationApi, markTrainingSessionAttendanceApi, registerTrainingClassApi, requestTrainingPostponeApi } from "@/services/training.service";
@@ -13,7 +13,7 @@ import { trainingHref } from "@/utils/training-navigation";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
-import { Button, Card, Divider, Text, TextInput, useTheme } from "react-native-paper";
+import { Button, Card, Text, TextInput, useTheme } from "react-native-paper";
 import { TabView } from "react-native-tab-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingScreen from "@/components/loading-screen";
@@ -180,29 +180,22 @@ function FunctionTab({ course, trainingClass, registration, availableClasses, ex
   onOpenExam: (examId: string) => void;
 }) {
   const { colors } = useTheme();
-  const currentSessions = (trainingClass?.sessions ?? []).filter((session) => session.status === 1 && !isOnline);
+  const sessions = trainingClass?.sessions ?? [];
   const canRequestPostpone = !trainingClass && course.status === 40 && !isPostponed;
 
   return (
     <DetailTabScreen>
       <ScrollView contentContainerStyle={styles.tabContent}>
-        <DetailSectionHeader title="Tổng quan" icon="information-outline" />
-        <ListFields style={styles.groupFields}>
-          <Field label="Tên khóa" value={course.name} />
-          <Field label="Trạng thái" value={<TrainingStatusBadge status={course.status} />} />
-          {!isOnline && trainingClass?.name ? <Field label="Lớp học" value={trainingClass.name} /> : null}
-        </ListFields>
-
-        <DetailSectionHeader title="Thực hiện chức năng" icon="gesture-tap-button" />
-        <ListFields style={styles.groupFields}>
-          {!isOnline ? currentSessions.length ? currentSessions.map((session) => {
+        <DetailSectionHeader title="Danh sách buổi học" icon="calendar-outline" />
+        {sessions.length ? sessions.map((session) => {
             const attendance = attendanceBySession.get(session.id);
             const isPresent = attendance?.isPresent === true;
-            return <View key={session.id} style={styles.actionRow}><View style={styles.actionCopy}><Text style={styles.actionTitle}>{session.name}</Text><Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>{formatTrainingDateTime(session.startDate)}{session.endDate ? ` - ${formatTrainingDateTime(session.endDate)}` : ""}</Text></View><Button mode={isPresent ? "outlined" : "contained"} compact loading={markingSessionId === session.id} disabled={isPresent || !!markingSessionId} onPress={() => onMarkAttendance(session.id)}>{isPresent ? "Đã điểm danh" : "Điểm danh"}</Button></View>;
-          }) : <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>Hiện không có buổi học đang mở điểm danh.</Text> : <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>Khóa học trực tuyến không yêu cầu điểm danh tại lớp.</Text>}
-          <Divider />
-          {exams.length ? exams.map((exam) => <View key={exam.examId || exam.id} style={styles.actionRow}><View style={styles.actionCopy}><Text style={styles.actionTitle}>{exam.title}</Text><Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>{exam.durationMinutes ? `${exam.durationMinutes} phút` : "Không giới hạn thời gian"}</Text></View><Button mode="outlined" compact onPress={() => onOpenExam(exam.examId)}>{exam.status === "not_started" ? "Làm bài" : "Mở bài thi"}</Button></View>) : <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>Chưa có bài thi được triển khai.</Text>}
-        </ListFields>
+            const canMark = !isOnline && session.status === 1;
+            return <ListFields key={session.id} style={styles.groupFields}><View style={styles.actionRow}><View style={styles.actionCopy}><Text style={styles.actionTitle}>{session.name}</Text><Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>{formatTrainingDateTime(session.startDate)}{session.endDate ? ` - ${formatTrainingDateTime(session.endDate)}` : ""}</Text><Text style={[styles.actionMeta, { color: session.status === 1 ? colors.primary : colors.onSurfaceVariant }]}>{sessionStatusLabel(session.status)}</Text></View>{canMark ? <Button mode={isPresent ? "outlined" : "contained"} compact loading={markingSessionId === session.id} disabled={isPresent || !!markingSessionId} onPress={() => onMarkAttendance(session.id)}>{isPresent ? "Đã điểm danh" : "Điểm danh"}</Button> : null}</View></ListFields>;
+          }) : <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>Chưa có buổi học.</Text>}
+
+        <DetailSectionHeader title="Danh sách bài thi" icon="clipboard-text-outline" />
+        {exams.length ? exams.map((exam) => <ListFields key={exam.examId || exam.id} style={styles.groupFields}><View style={styles.actionRow}><View style={styles.actionCopy}><Text style={styles.actionTitle}>{exam.title}</Text><Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>{exam.durationMinutes ? `${exam.durationMinutes} phút` : "Không giới hạn thời gian"}</Text></View><Button mode="outlined" compact onPress={() => onOpenExam(exam.examId)}>{exam.status === "not_started" ? "Làm bài" : "Mở bài thi"}</Button></View></ListFields>) : <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>Chưa có bài thi được triển khai.</Text>}
 
         {!trainingClass && !isOnline && course.status !== 30 ? <>
           <DetailSectionHeader title="Đăng ký lớp" icon="account-group-outline" />
