@@ -19,6 +19,8 @@ export default function DetailSectionHeader({
       {icon && <Icon source={icon} size={18} color={colors.primary} />}
       <Text
         variant="labelSmall"
+        numberOfLines={1}
+        ellipsizeMode="tail"
         style={[styles.title, { color: colors.onSurfaceVariant }]}
       >
         {title}
@@ -40,6 +42,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   title: {
+    flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
     fontSize: 12,
     lineHeight: 16,
     fontWeight: "800",

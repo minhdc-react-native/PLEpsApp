@@ -29,12 +29,7 @@ type DetailPayload = {
 
 const detailRoutes = [
   { key: "functions", title: "Chức năng" },
-  { key: "student", title: "Học viên" },
-  { key: "course", title: "Khóa học" },
-  { key: "registration", title: "Đăng ký" },
-  { key: "result", title: "Kết quả" },
-  { key: "evaluation", title: "Đánh giá" },
-  { key: "sessions", title: "Ngày học" },
+  { key: "info", title: "Thông tin học viên" },
 ];
 
 export default function TrainingClassDetailScreen() {
@@ -148,12 +143,7 @@ export default function TrainingClassDetailScreen() {
         navigationState={{ index: activeIndex, routes: detailRoutes }}
         renderScene={({ route }) => {
           if (route.key === "functions") return <FunctionTab course={course} trainingClass={trainingClass} registration={registration} availableClasses={availableClasses} exams={exams} isOnline={isOnline} isPostponed={isPostponed} classRegistrationOpen={classRegistrationOpen} canChooseClass={canChooseClass} processingClassId={processingClassId} markingSessionId={markingSessionId} attendanceBySession={attendanceBySession} postponeOpen={postponeOpen} postponeReason={postponeReason} postponing={postponing} onRegisterClass={registerClass} onMarkAttendance={markAttendance} onPostpone={() => setPostponeOpen(true)} onClosePostpone={() => setPostponeOpen(false)} onPostponeReasonChange={setPostponeReason} onSubmitPostpone={() => void requestPostpone()} onOpenExam={(examId) => router.push(trainingHref(`/screen/training/exam-session?examId=${encodeURIComponent(examId)}`))} />;
-          if (route.key === "student") return <StudentInfoTab user={user} registration={registration} />;
-          if (route.key === "course") return <CourseInfoTab course={course} trainingClass={trainingClass} isOnline={isOnline} />;
-          if (route.key === "registration") return <RegistrationInfoTab registration={registration} isOnline={isOnline} />;
-          if (route.key === "result") return <ResultInfoTab registration={registration} />;
-          if (route.key === "evaluation") return <EvaluationInfoTab registration={registration} course={course} />;
-          return <SessionsInfoTab trainingClass={trainingClass} registration={registration} isOnline={isOnline} />;
+          return <ReadOnlyInfoTab user={user} course={course} trainingClass={trainingClass} registration={registration} isOnline={isOnline} />;
         }}
         lazy
         renderLazyPlaceholder={() => <LoadingScreen />}
@@ -229,18 +219,22 @@ function FunctionTab({ course, trainingClass, registration, availableClasses, ex
   );
 }
 
-function StudentInfoTab({ user, registration }: { user: any; registration: TrainingStudentRegistration | null }) {
+function ReadOnlyInfoTab({ user, course, trainingClass, registration, isOnline }: { user: any; course: TrainingCourse; trainingClass: TrainingClass | null; registration: TrainingStudentRegistration | null; isOnline: boolean }) {
+  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><StudentInfoGroup user={user} registration={registration} /><CourseInfoGroup course={course} trainingClass={trainingClass} isOnline={isOnline} /><RegistrationInfoGroup registration={registration} isOnline={isOnline} /><ResultInfoGroup registration={registration} /><SessionsInfoGroup trainingClass={trainingClass} registration={registration} isOnline={isOnline} /><EvaluationInfoGroup registration={registration} course={course} /></ScrollView></DetailTabScreen>;
+}
+
+function StudentInfoGroup({ user, registration }: { user: any; registration: TrainingStudentRegistration | null }) {
   const certificate = registration?.certificate;
   const certificateValue = certificate ? [certificate.certificateNumber, certificate.issueDate ? `Cấp ngày ${formatTrainingDate(certificate.issueDate)}` : null].filter(Boolean).join(" · ") : "";
-  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><ListFields style={styles.groupFields}><Field label="Họ tên" value={user?.fullName ?? ""} /><Field label="Mã nhân viên" value={user?.code ?? ""} /><Field label="Phòng ban" value={user?.department?.name ?? ""} /><Field label="Tổ/Nhóm" value={user?.team?.name ?? ""} /><Field label="Chức danh" value={user?.position?.name ?? ""} /><Field label="Chuyên môn" value={user?.area?.name ?? ""} /><Field label="Chứng chỉ" value={certificateValue} /></ListFields></ScrollView></DetailTabScreen>;
+  return <><DetailSectionHeader title="Học viên" icon="account-outline" /><ListFields style={styles.groupFields}><Field label="Họ tên" value={user?.fullName ?? ""} /><Field label="Mã nhân viên" value={user?.code ?? ""} /><Field label="Phòng ban" value={user?.department?.name ?? ""} /><Field label="Tổ/Nhóm" value={user?.team?.name ?? ""} /><Field label="Chức danh" value={user?.position?.name ?? ""} /><Field label="Chuyên môn" value={user?.area?.name ?? ""} /><Field label="Chứng chỉ" value={certificateValue} /></ListFields></>;
 }
 
-function CourseInfoTab({ course, trainingClass, isOnline }: { course: TrainingCourse; trainingClass: TrainingClass | null; isOnline: boolean }) {
-  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><ListFields style={styles.groupFields}><Field label="Tên khóa" value={course.name} /><Field label="Danh mục khóa" value={course.courseCategoryName ?? ""} /><Field label="Hình thức" value={isOnline ? "Trực tuyến" : "Tập trung"} /><Field label="Có chứng chỉ" value={yesNo(course.hasCertificate)} /><Field label="Khóa đề xuất" value={yesNo(course.isProposal)} /><Field label="Khóa bổ sung" value={yesNo(course.isAdditional)} />{!isOnline ? <><Field label="Tên lớp" value={trainingClass?.name ?? ""} /><Field label="Ngày bắt đầu lớp" value={formatTrainingDate(trainingClass?.startDate)} /><Field label="Ngày kết thúc lớp" value={formatTrainingDate(trainingClass?.endDate)} /></> : null}<Field label="Ngày mở đánh giá" value={formatTrainingDate(course.evaluationStartDate)} /><Field label="Ngày kết thúc đánh giá" value={formatTrainingDate(course.evaluationEndDate)} /></ListFields></ScrollView></DetailTabScreen>;
+function CourseInfoGroup({ course, trainingClass, isOnline }: { course: TrainingCourse; trainingClass: TrainingClass | null; isOnline: boolean }) {
+  return <><DetailSectionHeader title="Khóa học" icon="book-open-outline" /><ListFields style={styles.groupFields}><Field label="Tên khóa" value={course.name} /><Field label="Danh mục khóa" value={course.courseCategoryName ?? ""} /><Field label="Hình thức" value={isOnline ? "Trực tuyến" : "Tập trung"} /><Field label="Có chứng chỉ" value={yesNo(course.hasCertificate)} /><Field label="Khóa đề xuất" value={yesNo(course.isProposal)} /><Field label="Khóa bổ sung" value={yesNo(course.isAdditional)} />{!isOnline ? <><Field label="Tên lớp" value={trainingClass?.name ?? ""} /><Field label="Ngày bắt đầu lớp" value={formatTrainingDate(trainingClass?.startDate)} /><Field label="Ngày kết thúc lớp" value={formatTrainingDate(trainingClass?.endDate)} /></> : null}<Field label="Ngày mở đánh giá" value={formatTrainingDate(course.evaluationStartDate)} /><Field label="Ngày kết thúc đánh giá" value={formatTrainingDate(course.evaluationEndDate)} /></ListFields></>;
 }
 
-function RegistrationInfoTab({ registration, isOnline }: { registration: TrainingStudentRegistration | null; isOnline: boolean }) {
-  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><ListFields style={styles.groupFields}><RegistrationField label="Học viên đăng ký" record={registration?.regStatus} /><RegistrationField label="Phòng ban rà soát" record={registration?.departmentRegStatus} /><RegistrationField label="Quản trị rà soát" record={registration?.adminRegStatus} /><RegistrationField label="Kết quả đăng ký" record={registration?.finalRegStatus} /></ListFields>{!isOnline ? <ListFields style={styles.groupFields}><RegistrationField label="Học viên đăng ký" record={registration?.classRegStatus} /><RegistrationField label="Phòng ban rà soát" record={registration?.classDepartmentRegStatus} /><RegistrationField label="Quản trị rà soát" record={registration?.classAdminRegStatus} /><RegistrationField label="Kết quả đăng ký" record={registration?.classFinalRegStatus} /></ListFields> : null}</ScrollView></DetailTabScreen>;
+function RegistrationInfoGroup({ registration, isOnline }: { registration: TrainingStudentRegistration | null; isOnline: boolean }) {
+  return <><DetailSectionHeader title="Đăng ký khóa" icon="clipboard-text-outline" /><ListFields style={styles.groupFields}><RegistrationField label="Học viên đăng ký" record={registration?.regStatus} /><RegistrationField label="Phòng ban rà soát" record={registration?.departmentRegStatus} /><RegistrationField label="Quản trị rà soát" record={registration?.adminRegStatus} /><RegistrationField label="Kết quả đăng ký" record={registration?.finalRegStatus} /></ListFields>{!isOnline ? <><DetailSectionHeader title="Đăng ký lớp" icon="account-group-outline" /><ListFields style={styles.groupFields}><RegistrationField label="Học viên đăng ký" record={registration?.classRegStatus} /><RegistrationField label="Phòng ban rà soát" record={registration?.classDepartmentRegStatus} /><RegistrationField label="Quản trị rà soát" record={registration?.classAdminRegStatus} /><RegistrationField label="Kết quả đăng ký" record={registration?.classFinalRegStatus} /></ListFields></> : null}</>;
 }
 
 function RegistrationField({ label, record }: { label: string; record?: TrainingRegistrationRecord | null }) {
@@ -249,29 +243,30 @@ function RegistrationField({ label, record }: { label: string; record?: Training
   return <Field label={label} value={<View style={styles.recordValue}><Badge variant={registrationVariant(record.status)}>{registrationLabel(record.status)}</Badge>{record.reason ? <Text style={[styles.recordMeta, { color: colors.onSurfaceVariant }]}>Lý do: {record.reason}</Text> : null}{record.note ? <Text style={[styles.recordMeta, { color: colors.onSurfaceVariant }]}>Ghi chú: {record.note}</Text> : null}{record.reviewedAt ? <Text style={[styles.recordMeta, { color: colors.onSurfaceVariant }]}>Duyệt ngày {formatTrainingDate(record.reviewedAt)}</Text> : null}</View>} />;
 }
 
-function ResultInfoTab({ registration }: { registration: TrainingStudentRegistration | null }) {
-  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><ListFields style={styles.groupFields}><Field label="Điểm" value={registration?.score == null ? "" : String(registration.score)} /><Field label="Kết quả" value={registration?.result == null ? "" : <Badge variant={registration.result ? "success" : "error"}>{registration.result ? "Đạt" : "Không đạt"}</Badge>} /><Field label="Đánh giá/Ghi chú" value={registration?.resultNote ?? ""} layout="column" />{registration?.suspension?.enabled ? <><Field label="Đình chỉ" value="Có" /><Field label="Lý do đình chỉ" value={registration.suspension.reason ?? ""} /><Field label="Ngày đình chỉ" value={formatTrainingDate(registration.suspension.date)} /></> : null}</ListFields></ScrollView></DetailTabScreen>;
+function ResultInfoGroup({ registration }: { registration: TrainingStudentRegistration | null }) {
+  return <><DetailSectionHeader title="Kết quả" icon="trophy-outline" /><ListFields style={styles.groupFields}><Field label="Điểm" value={registration?.score == null ? "" : String(registration.score)} /><Field label="Kết quả" value={registration?.result == null ? "" : <Badge variant={registration.result ? "success" : "error"}>{registration.result ? "Đạt" : "Không đạt"}</Badge>} /><Field label="Đánh giá/Ghi chú" value={registration?.resultNote ?? ""} layout="column" />{registration?.suspension?.enabled ? <><Field label="Đình chỉ" value="Có" /><Field label="Lý do đình chỉ" value={registration.suspension.reason ?? ""} /><Field label="Ngày đình chỉ" value={formatTrainingDate(registration.suspension.date)} /></> : null}</ListFields></>;
 }
 
-function EvaluationInfoTab({ registration, course }: { registration: TrainingStudentRegistration | null; course: TrainingCourse }) {
+function EvaluationInfoGroup({ registration, course }: { registration: TrainingStudentRegistration | null; course: TrainingCourse }) {
+  const { colors } = useTheme();
   const config = registration?.evaluationFormConfig ?? course.evaluationFormConfig;
   const courseGroups = (config?.groups ?? []).filter((group) => group.scope !== "instructor");
   const instructorGroups = (config?.groups ?? []).filter((group) => group.scope === "instructor");
   const hasEvaluation = !!registration?.hasEvaluated || registration?.evaluationRating != null || !!registration?.evaluationSubmittedAt || !!registration?.coursePositive || !!registration?.courseNegative || !!registration?.courseSuggestion || !!registration?.instructors?.length || courseGroups.length > 0;
-  if (!hasEvaluation) return <DetailTabScreen><TrainingEmptyState icon="star-outline" title="Chưa có dữ liệu đánh giá" description="Thông tin đánh giá sẽ hiển thị sau khi bạn gửi phản hồi." /></DetailTabScreen>;
-  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><DetailSectionHeader title="Đánh giá khóa học" icon="star-check-outline" /><ListFields style={styles.groupFields}><Field label="Điểm đánh giá" value={ratingValue(registration?.evaluationRating)} /><Field label="Ngày gửi đánh giá" value={formatTrainingDate(registration?.evaluationSubmittedAt)} /><Field label="Điểm tích cực" value={registration?.coursePositive ?? ""} layout="column" /><Field label="Điểm hạn chế" value={registration?.courseNegative ?? ""} layout="column" /><Field label="Đề xuất" value={registration?.courseSuggestion ?? ""} layout="column" /></ListFields>{courseGroups.length ? <EvaluationGroups title="Tiêu chí bổ sung" groups={courseGroups} values={registration?.additional ?? {}} /> : null}{registration?.instructors?.length ? <><DetailSectionHeader title="Đánh giá giảng viên" icon="account-tie-outline" />{registration.instructors.map((instructor, index) => <ListFields key={`${instructor.instructorId}-${index}`} style={styles.groupFields}><Field label="Giảng viên" value={instructor.instructorName ?? `Giảng viên ${index + 1}`} /><Field label="Chuyên môn" value={ratingValue(instructor.expertise)} /><Field label="Phương pháp" value={ratingValue(instructor.pedagogy)} /><Field label="Nội dung" value={ratingValue(instructor.content)} /><Field label="Nhận xét" value={instructor.comment ?? ""} layout="column" />{instructorGroups.length ? <EvaluationGroups title="Tiêu chí bổ sung" groups={instructorGroups} values={instructor.additional ?? {}} /> : null}</ListFields>)}</> : null}</ScrollView></DetailTabScreen>;
+  if (!hasEvaluation) return <><DetailSectionHeader title="Đánh giá" icon="star-check-outline" /><Text style={[styles.emptyInfoText, { color: colors.onSurfaceVariant }]}>Chưa có dữ liệu đánh giá.</Text></>;
+  return <><DetailSectionHeader title="Đánh giá" icon="star-check-outline" /><ListFields style={styles.groupFields}><Field label="Điểm đánh giá" value={ratingValue(registration?.evaluationRating)} /><Field label="Ngày gửi đánh giá" value={formatTrainingDate(registration?.evaluationSubmittedAt)} /><Field label="Điểm tích cực" value={registration?.coursePositive ?? ""} layout="column" /><Field label="Điểm hạn chế" value={registration?.courseNegative ?? ""} layout="column" /><Field label="Đề xuất" value={registration?.courseSuggestion ?? ""} layout="column" /></ListFields>{courseGroups.length ? <EvaluationGroups title="Tiêu chí bổ sung" groups={courseGroups} values={registration?.additional ?? {}} /> : null}{registration?.instructors?.length ? <><DetailSectionHeader title="Đánh giá giảng viên" icon="account-tie-outline" />{registration.instructors.map((instructor, index) => <ListFields key={`${instructor.instructorId}-${index}`} style={styles.groupFields}><Field label="Giảng viên" value={instructor.instructorName ?? `Giảng viên ${index + 1}`} /><Field label="Chuyên môn" value={ratingValue(instructor.expertise)} /><Field label="Phương pháp" value={ratingValue(instructor.pedagogy)} /><Field label="Nội dung" value={ratingValue(instructor.content)} /><Field label="Nhận xét" value={instructor.comment ?? ""} layout="column" />{instructorGroups.length ? <EvaluationGroups title="Tiêu chí bổ sung" groups={instructorGroups} values={instructor.additional ?? {}} /> : null}</ListFields>)}</> : null}</>;
 }
 
 function EvaluationGroups({ title, groups, values }: { title: string; groups: { id: string; label: string; fields: Record<string, { label: string; type: string }> }[]; values: Record<string, string | number | null> }) {
   return <><DetailSectionHeader title={title} icon="format-list-bulleted" />{groups.map((group) => <ListFields key={group.id} style={styles.groupFields}><Text style={styles.groupTitle}>{group.label}</Text>{Object.entries(group.fields ?? {}).map(([key, field]) => <Field key={key} label={field.label} value={field.type === "rating" ? ratingValue(values[key]) : String(values[key] ?? "")} layout="column" />)}</ListFields>)}</>;
 }
 
-function SessionsInfoTab({ trainingClass, registration, isOnline }: { trainingClass: TrainingClass | null; registration: TrainingStudentRegistration | null; isOnline: boolean }) {
+function SessionsInfoGroup({ trainingClass, registration, isOnline }: { trainingClass: TrainingClass | null; registration: TrainingStudentRegistration | null; isOnline: boolean }) {
   const { colors } = useTheme();
   const sessions = trainingClass?.sessions ?? [];
   const attendanceBySession = new Map((registration?.classSessions ?? []).map((item) => [item.id, item]));
-  if (!sessions.length) return <DetailTabScreen><TrainingEmptyState icon="calendar-outline" title="Chưa có dữ liệu ngày học" /></DetailTabScreen>;
-  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}>{sessions.map((session) => { const attendance = attendanceBySession.get(session.id); return <ListFields key={session.id} style={styles.groupFields}><Field label="Buổi học" value={session.name} /><Field label="Bắt đầu" value={formatTrainingDateTime(session.startDate)} /><Field label="Kết thúc" value={formatTrainingDateTime(session.endDate)} /><Field label="Trạng thái" value={<Text style={{ color: session.status === 1 ? colors.primary : colors.onSurface }}>{sessionStatusLabel(session.status)}</Text>} />{!isOnline ? <Field label="Điểm danh" value={attendance?.isPresent == null ? "Chưa điểm danh" : attendance.isPresent ? <Badge variant="success">Có mặt</Badge> : <Badge variant="error">Vắng mặt</Badge>} /> : null}{!isOnline && attendance?.attendanceTime ? <Field label="Thời gian điểm danh" value={formatTrainingDateTime(attendance.attendanceTime)} /> : null}</ListFields>; })}</ScrollView></DetailTabScreen>;
+  if (!sessions.length) return <><DetailSectionHeader title="Ngày học" icon="calendar-outline" /><TrainingEmptyState icon="calendar-outline" title="Chưa có dữ liệu ngày học" /></>;
+  return <><DetailSectionHeader title="Ngày học" icon="calendar-outline" />{sessions.map((session) => { const attendance = attendanceBySession.get(session.id); return <ListFields key={session.id} style={styles.groupFields}><Field label="Buổi học" value={session.name} /><Field label="Bắt đầu" value={formatTrainingDateTime(session.startDate)} /><Field label="Kết thúc" value={formatTrainingDateTime(session.endDate)} /><Field label="Trạng thái" value={<Text style={{ color: session.status === 1 ? colors.primary : colors.onSurface }}>{sessionStatusLabel(session.status)}</Text>} />{!isOnline ? <Field label="Điểm danh" value={attendance?.isPresent == null ? "Chưa điểm danh" : attendance.isPresent ? <Badge variant="success">Có mặt</Badge> : <Badge variant="error">Vắng mặt</Badge>} /> : null}{!isOnline && attendance?.attendanceTime ? <Field label="Thời gian điểm danh" value={formatTrainingDateTime(attendance.attendanceTime)} /> : null}</ListFields>; })}</>;
 }
 
 function DetailTabScreen({ children }: { children: React.ReactNode }) {
@@ -304,5 +299,6 @@ const styles = StyleSheet.create({
   dialogActions: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
   recordValue: { alignItems: "flex-end", gap: 4, maxWidth: "100%" },
   recordMeta: { textAlign: "right", fontSize: 12, lineHeight: 17 },
+  emptyInfoText: { marginHorizontal: 16, marginBottom: 12, flexShrink: 1, fontSize: 14, lineHeight: 20 },
   groupTitle: { fontSize: 14, fontWeight: "700", paddingHorizontal: 12, paddingTop: 12 },
 });
