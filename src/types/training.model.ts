@@ -148,6 +148,17 @@ export interface TrainingCourse {
   classRegistrationStartDate?: Date | null;
   classRegistrationEndDate?: Date | null;
   isSharedExam?: boolean;
+  courseCategoryName?: string | null;
+  hasCertificate?: boolean | null;
+  isProposal?: boolean | null;
+}
+
+export interface TrainingCertificateSummary {
+  certificateNumber?: string | null;
+  issueDate?: Date | null;
+  imageUrl?: string | null;
+  downloadUrl?: string | null;
+  status?: string | null;
 }
 
 export interface MyTrainingCourse extends TrainingCourse {
@@ -164,6 +175,7 @@ export interface TrainingStudentRegistration {
   id: string;
   trainingCourseId: string;
   courseName?: string | null;
+  certificate?: TrainingCertificateSummary | null;
   className?: string | null;
   trainingClassId?: string | null;
   score?: number | null;
@@ -171,6 +183,7 @@ export interface TrainingStudentRegistration {
   evaluationRating?: number | null;
   evaluationStartDate?: Date | null;
   evaluationEndDate?: Date | null;
+  evaluationSubmittedAt?: Date | null;
   evaluationFormConfig?: TrainingEvaluationConfig;
   coursePositive?: string | null;
   courseNegative?: string | null;
@@ -179,6 +192,15 @@ export interface TrainingStudentRegistration {
   instructors?: TrainingSurveyInstructor[];
   regStatus?: TrainingRegistrationRecord | null;
   finalRegStatus?: TrainingRegistrationRecord | null;
+  departmentRegStatus?: TrainingRegistrationRecord | null;
+  adminRegStatus?: TrainingRegistrationRecord | null;
+  classRegStatus?: TrainingRegistrationRecord | null;
+  classDepartmentRegStatus?: TrainingRegistrationRecord | null;
+  classAdminRegStatus?: TrainingRegistrationRecord | null;
+  classFinalRegStatus?: TrainingRegistrationRecord | null;
+  result?: boolean | null;
+  resultNote?: string | null;
+  suspension?: { enabled: boolean; reason?: string | null; date?: Date | null } | null;
   isPostponed?: boolean;
   classSessions: TrainingSessionAttendance[];
 }

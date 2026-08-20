@@ -1,13 +1,13 @@
 import AppHeader from "@/components/app-header";
-import { TrainingCourseCard, TrainingEmptyState } from "@/components/training/training-presentational";
-import { useTrainingResource } from "@/hooks/useTraining";
+import { TrainingEmptyState } from "@/components/training/training-presentational";
+import { formatTrainingDateTime, useTrainingResource } from "@/hooks/useTraining";
 import { getMyTrainingCoursesApi } from "@/services/training.service";
 import { MyTrainingCourse } from "@/types/training.model";
 import { useData } from "@/hooks/zustand/useData";
 import { router } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { Card, Icon, IconButton, Searchbar, Text, useTheme } from "react-native-paper";
+import { useCallback, useState } from "react";
+import { Image, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { Card, Icon, IconButton, Text, useTheme } from "react-native-paper";
 import LoadingScreen from "@/components/loading-screen";
 import { trainingHref } from "@/utils/training-navigation";
 
@@ -16,16 +16,12 @@ export default function TrainingClassesScreen() {
   const user = useData((state) => state.user);
   const employeeId = user?.employeeId;
   const [year, setYear] = useState(new Date().getFullYear());
-  const [search, setSearch] = useState("");
   const load = useCallback(
     () => (employeeId ? getMyTrainingCoursesApi(employeeId, year, { status: 30, isDeployedCourse: true }) : Promise.resolve([])),
     [employeeId, year],
   );
   const { data, loading, reload } = useTrainingResource(load, [employeeId, year]);
-  const courses = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return (data ?? []).filter((item) => `${item.name} ${item.registeredClass?.name ?? ""}`.toLowerCase().includes(query));
-  }, [data, search]);
+  const courses = data ?? [];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -42,21 +38,7 @@ export default function TrainingClassesScreen() {
         }
       />
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void reload()} />}>
-        <View style={styles.summaryRow}>
-          <Card mode="outlined" style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
-            <Card.Content>
-              <Text style={[styles.summaryLabel, { color: colors.onSurfaceVariant }]}>Tổng khóa</Text>
-              <Text style={[styles.summaryValue, { color: colors.primary }]}>{data?.length ?? 0}</Text>
-            </Card.Content>
-          </Card>
-          <Card mode="outlined" style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
-            <Card.Content>
-              <Text style={[styles.summaryLabel, { color: colors.onSurfaceVariant }]}>Có lớp</Text>
-              <Text style={[styles.summaryValue, { color: colors.tertiary }]}>{data?.filter((item) => !!item.registeredClass).length ?? 0}</Text>
-            </Card.Content>
-          </Card>
-        </View>
-        <Searchbar placeholder="Tìm khóa hoặc lớp..." value={search} onChangeText={setSearch} style={styles.search} />
+        <Text style={[styles.classCount, { color: colors.onSurfaceVariant }]}>Số lượng lớp: {data?.filter((item) => !!item.registeredClass).length ?? 0}</Text>
         {loading && !data ? <LoadingScreen /> : courses.length ? courses.map((course) => (
           <TrainingClassCard key={course.id} course={course} onPress={() => router.push(trainingHref(`/screen/training/class-detail?trainingCourseId=${encodeURIComponent(course.id)}`))} />
         )) : (
@@ -71,13 +53,82 @@ export default function TrainingClassesScreen() {
 
 function TrainingClassCard({ course, onPress }: { course: MyTrainingCourse; onPress: () => void }) {
   const { colors } = useTheme();
+  const schedule = getClassSchedule(course);
+
   return (
-    <TrainingCourseCard
-      course={course}
+    <Card
+      mode="outlined"
+      style={[styles.classCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}
       onPress={onPress}
-      action={<Icon source="chevron-right" size={22} color={colors.onSurfaceVariant} />}
-    />
+    >
+      <Card.Content style={styles.classCardContent}>
+        <Image
+          source={course.type === 0
+            ? require("@/assets/images/training/video-lesson.png")
+            : require("@/assets/images/training/teacher.png")}
+          style={styles.classIcon}
+          resizeMode="contain"
+        />
+        <View style={styles.classCardCopy}>
+          <Text variant="titleMedium" style={styles.className} numberOfLines={1}>{course.name}</Text>
+          {course.registeredClass?.name ? <Text style={[styles.classLabel, { color: colors.onSurfaceVariant }]} numberOfLines={1}>{course.registeredClass.name}</Text> : null}
+          <View style={styles.scheduleRow}>
+            <Icon source={schedule.isOngoing ? "clock-play-outline" : "calendar-clock-outline"} size={16} color={schedule.isOngoing ? colors.primary : colors.onSurfaceVariant} />
+            <View style={styles.scheduleCopy}>
+              <Text style={[styles.scheduleLabel, { color: schedule.isOngoing ? colors.primary : colors.onSurfaceVariant }]}>{schedule.label}</Text>
+              {schedule.dateLabel ? <Text style={[styles.scheduleDate, { color: schedule.isOngoing ? colors.primary : colors.onSurfaceVariant }]}>{schedule.dateLabel}</Text> : null}
+            </View>
+          </View>
+        </View>
+        <Icon source="chevron-right" size={22} color={colors.onSurfaceVariant} />
+      </Card.Content>
+    </Card>
   );
+}
+
+function getClassSchedule(course: MyTrainingCourse) {
+  const sessions = (course.registeredClass?.sessions ?? [])
+    .filter((session) => session.startDate)
+    .sort((left, right) => (left.startDate?.getTime() ?? 0) - (right.startDate?.getTime() ?? 0));
+  const now = Date.now();
+  const ongoing = sessions.find((session) => {
+    const start = session.startDate?.getTime() ?? 0;
+    const end = session.endDate?.getTime();
+    return start <= now && (end == null || now <= end);
+  });
+
+  if (ongoing) {
+    return {
+      isOngoing: true,
+      label: "Lịch đang diễn ra",
+      dateLabel: formatScheduleDate(ongoing.startDate, ongoing.endDate),
+    };
+  }
+
+  const next = sessions.find((session) => (session.startDate?.getTime() ?? 0) > now);
+  if (next) {
+    return {
+      isOngoing: false,
+      label: "Lịch kế tiếp",
+      dateLabel: formatScheduleDate(next.startDate, next.endDate),
+    };
+  }
+
+  const classStart = course.registeredClass?.startDate;
+  const classEnd = course.registeredClass?.endDate;
+  if (classStart) {
+    return {
+      isOngoing: false,
+      label: "Lịch học",
+      dateLabel: formatScheduleDate(classStart, classEnd),
+    };
+  }
+
+  return { isOngoing: false, label: "Lịch học", dateLabel: "Chưa có lịch học" };
+}
+
+function formatScheduleDate(startDate: Date | null | undefined, endDate: Date | null | undefined) {
+  return `${formatTrainingDateTime(startDate)}${endDate ? ` - ${formatTrainingDateTime(endDate)}` : ""}`;
 }
 
 const styles = StyleSheet.create({
@@ -85,10 +136,16 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 32 },
   yearActions: { flexDirection: "row", alignItems: "center" },
   year: { fontWeight: "800", minWidth: 38, textAlign: "center" },
-  summaryRow: { flexDirection: "row", gap: 12, marginBottom: 14 },
-  summaryCard: { flex: 1, borderRadius: 18 },
-  summaryLabel: { fontSize: 12 },
-  summaryValue: { fontSize: 26, lineHeight: 32, fontWeight: "800", marginTop: 4 },
-  search: { borderRadius: 16, marginBottom: 14 },
+  classCount: { fontSize: 14, lineHeight: 20, marginBottom: 14 },
+  classCard: { borderRadius: 18, marginBottom: 12 },
+  classCardContent: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12 },
+  classIcon: { width: 42, height: 42 },
+  classCardCopy: { flex: 1, gap: 3, minWidth: 0 },
+  className: { fontWeight: "800" },
+  classLabel: { fontSize: 12, lineHeight: 17 },
+  scheduleRow: { flexDirection: "row", alignItems: "flex-start", gap: 5, marginTop: 2 },
+  scheduleCopy: { flex: 1, minWidth: 0, gap: 1 },
+  scheduleLabel: { fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  scheduleDate: { fontSize: 12, lineHeight: 17 },
   emptyCard: { borderWidth: 1, borderRadius: 20 },
 });

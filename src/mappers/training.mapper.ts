@@ -28,9 +28,9 @@ const firstString = (...values: any[]) =>
   values.find((value) => typeof value === "string" && value.trim()) ?? "";
 
 const mapRecord = (raw: any) =>
-  raw
+  raw && raw.status != null
     ? {
-        status: raw.status ?? TRAINING_REGISTRATION_STATUS.PENDING,
+        status: raw.status,
         reason: raw.reason ?? null,
         note: raw.note ?? null,
         reviewedBy: raw.reviewedBy?.id ?? raw.reviewedBy ?? null,
@@ -142,6 +142,9 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
         raw?.registrationEndDate,
     ),
     isSharedExam: raw?.isSharedExam ?? raw?.sharedExam ?? false,
+    courseCategoryName: raw?.courseCategoryName ?? raw?.course?.courseCategory?.name ?? null,
+    hasCertificate: raw?.hasCertificate ?? null,
+    isProposal: raw?.isProposal ?? null,
   };
 }
 
@@ -197,6 +200,15 @@ export function mapRegistration(raw: any): TrainingStudentRegistration {
     id: raw?.id ?? raw?.registrationId ?? "",
     trainingCourseId: raw?.trainingCourseId ?? raw?.courseId ?? "",
     courseName: raw?.courseName ?? raw?.trainingCourse?.name ?? null,
+    certificate: raw?.certificate
+      ? {
+          certificateNumber: raw.certificate.certificateNumber ?? raw.certificate.number ?? null,
+          issueDate: toDate(raw.certificate.issueDate ?? raw.certificate.issuedAt),
+          imageUrl: raw.certificate.imageUrl ?? raw.certificate.previewImageUrl ?? null,
+          downloadUrl: raw.certificate.downloadUrl ?? null,
+          status: raw.certificate.status ?? null,
+        }
+      : null,
     className: raw?.className ?? raw?.trainingClass?.name ?? raw?.class?.name ?? null,
     trainingClassId: raw?.trainingClassId ?? raw?.classId ?? raw?.class?.id ?? null,
     score: raw?.score ?? null,
@@ -204,6 +216,7 @@ export function mapRegistration(raw: any): TrainingStudentRegistration {
     evaluationRating: raw?.evaluationRating ?? raw?.evaluation?.courseRating ?? null,
     evaluationStartDate: toDate(raw?.evaluationStartDate ?? raw?.evaluation?.startDate),
     evaluationEndDate: toDate(raw?.evaluationEndDate ?? raw?.evaluation?.endDate),
+    evaluationSubmittedAt: toDate(raw?.evaluationSubmittedAt ?? raw?.evaluation?.submittedAt),
     evaluationFormConfig: mapEvaluationConfig(
       raw?.evaluationFormConfig ?? raw?.trainingCourse?.evaluationFormConfig,
     ),
@@ -215,7 +228,22 @@ export function mapRegistration(raw: any): TrainingStudentRegistration {
       (item: any) => mapInstructorRating(item),
     ),
     regStatus: mapRecord(raw?.regStatus ?? raw?.registration),
+    departmentRegStatus: mapRecord(raw?.departmentRegStatus ?? raw?.departmentRegistration ?? raw?.registration?.departmentRegStatus),
+    adminRegStatus: mapRecord(raw?.adminRegStatus ?? raw?.adminRegistration ?? raw?.registration?.adminRegStatus),
     finalRegStatus: mapRecord(raw?.finalRegStatus),
+    classRegStatus: mapRecord(raw?.classRegStatus ?? raw?.classRegistration),
+    classDepartmentRegStatus: mapRecord(raw?.classDepartmentRegStatus ?? raw?.classDepartmentRegistration),
+    classAdminRegStatus: mapRecord(raw?.classAdminRegStatus ?? raw?.classAdminRegistration),
+    classFinalRegStatus: mapRecord(raw?.classFinalRegStatus),
+    result: raw?.result ?? raw?.isPassed ?? raw?.exam?.systemIsPassed ?? null,
+    resultNote: raw?.resultNote ?? raw?.note ?? null,
+    suspension: raw?.suspension
+      ? {
+          enabled: raw.suspension.enabled ?? false,
+          reason: raw.suspension.reason ?? null,
+          date: toDate(raw.suspension.date),
+        }
+      : null,
     isPostponed: registrationIsPostponed(
       raw?.regStatus,
       raw?.registration,
