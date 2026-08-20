@@ -37,9 +37,7 @@ export default function CertificateHistoryManagement() {
 
   return (
     <EmployeeProcessList
-      title="Chứng chỉ"
       listTitle="Danh sách chứng chỉ"
-      overviewIcon="certificate-outline"
       emptyText="Chưa có chứng chỉ"
       loadItems={loadItems}
       onItemPress={onItemPress}

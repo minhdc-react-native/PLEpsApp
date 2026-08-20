@@ -1,7 +1,7 @@
 import AppHeader from "@/components/app-header";
 import { Badge } from "@/components/badge";
+import DetailSectionHeader from "@/components/detail-section-header";
 import LoadingScreen from "@/components/loading-screen";
-import { TrainingEmptyState } from "@/components/training/training-presentational";
 import { useTrainingResource } from "@/hooks/useTraining";
 import { useData } from "@/hooks/zustand/useData";
 import { getTrainingHistoryApi } from "@/services/training.service";
@@ -40,69 +40,64 @@ export default function TrainingHistoryScreen({
         />
       }
     >
-      {loading && !data ? (
-        <LoadingScreen />
-      ) : data?.length ? (
-        data.map((item) => (
-          <Card
-            key={item.id}
-            mode="outlined"
-            style={[
-              styles.card,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.outlineVariant,
-              },
-            ]}
-            onPress={() =>
-              router.push(
-                trainingHref(
-                  `/screen/training/class-detail?trainingCourseId=${encodeURIComponent(item.id)}`,
-                ),
-              )
-            }
-          >
-            <Card.Content style={styles.cardContent}>
-              <View
-                style={[styles.icon, { backgroundColor: colors.tertiaryContainer }]}
-              >
-                <Text style={{ fontSize: 23 }}>🏅</Text>
-              </View>
-              <View style={styles.cardCopy}>
-                <Text variant="titleMedium" style={styles.title}>
-                  {item.name}
-                </Text>
-                <Text style={{ color: colors.onSurfaceVariant }}>
-                  {item.registeredClass?.name ?? "Khóa đào tạo"}
-                </Text>
-                <View style={styles.meta}>
-                  <Badge variant="success">Đã kết thúc</Badge>
-                  {item.score != null ? (
-                    <Text style={{ color: colors.onSurfaceVariant }}>
-                      Điểm: {item.score}
-                    </Text>
-                  ) : null}
-                </View>
-              </View>
-            </Card.Content>
-          </Card>
-        ))
-      ) : (
-        <View
-          style={[
-            styles.empty,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.outlineVariant,
-            },
-          ]}
-        >
-          <TrainingEmptyState
-            icon="history"
-            title="Chưa có quá trình đào tạo"
-            description="Các khóa đã hoàn tất sẽ được lưu tại đây."
+      {loading && !data ? <LoadingScreen /> : (
+        <>
+          <DetailSectionHeader
+            title="Danh sách khóa đào tạo"
+            count={data?.length ?? 0}
+            inset={false}
           />
-        </View>
+          {data?.length ? data.map((item) => (
+            <Card
+              key={item.id}
+              mode="outlined"
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.outlineVariant,
+                },
+              ]}
+              onPress={() =>
+                router.push(
+                  trainingHref(
+                    `/screen/training/class-detail?trainingCourseId=${encodeURIComponent(item.id)}`,
+                  ),
+                )
+              }
+            >
+              <Card.Content style={styles.cardContent}>
+                <View
+                  style={[styles.icon, { backgroundColor: colors.tertiaryContainer }]}
+                >
+                  <Text style={{ fontSize: 23 }}>🏅</Text>
+                </View>
+                <View style={styles.cardCopy}>
+                  <Text variant="titleMedium" style={styles.title}>
+                    {item.name}
+                  </Text>
+                  <Text style={{ color: colors.onSurfaceVariant }}>
+                    {item.registeredClass?.name ?? "Khóa đào tạo"}
+                  </Text>
+                  <View style={styles.meta}>
+                    <Badge variant="success">Đã kết thúc</Badge>
+                    {item.score != null ? (
+                      <Text style={{ color: colors.onSurfaceVariant }}>
+                        Điểm: {item.score}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+              </Card.Content>
+            </Card>
+          )) : (
+            <View style={styles.emptyState}>
+              <Text style={{ color: colors.onSurfaceVariant }}>
+                Chưa có quá trình đào tạo
+              </Text>
+            </View>
+          )}
+        </>
       )}
     </ScrollView>
   );
@@ -167,5 +162,9 @@ const styles = StyleSheet.create({
   cardCopy: { flex: 1, gap: 5 },
   title: { fontWeight: "800" },
   meta: { flexDirection: "row", alignItems: "center", gap: 10 },
-  empty: { borderWidth: 1, borderRadius: 20 },
+  emptyState: {
+    minHeight: 96,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

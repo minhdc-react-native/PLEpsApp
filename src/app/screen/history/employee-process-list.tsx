@@ -4,7 +4,6 @@ import {
   HistoryListCard,
   HistoryListItem,
 } from "@/components/history/history-list";
-import { HistoryOverviewCard } from "@/components/history/history-overview-card";
 import { useData } from "@/hooks/zustand/useData";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
@@ -23,9 +22,7 @@ export interface EmployeeProcessListItem {
 }
 
 interface EmployeeProcessListProps {
-  title: string;
   listTitle: string;
-  overviewIcon: string;
   emptyText: string;
   loadItems: (employeeId: string) => Promise<EmployeeProcessListItem[]>;
   onItemPress: (item: EmployeeProcessListItem) => void;
@@ -44,9 +41,7 @@ export function formatProcessPeriod(startDate: unknown, endDate: unknown) {
 }
 
 export default function EmployeeProcessList({
-  title,
   listTitle,
-  overviewIcon,
   emptyText,
   loadItems,
   onItemPress,
@@ -90,13 +85,7 @@ export default function EmployeeProcessList({
         />
       }
     >
-      <HistoryOverviewCard
-        title={title}
-        subtitle={`Đã có ${items.length} mục`}
-        icon={overviewIcon}
-      />
-
-      <DetailSectionHeader title={listTitle} inset={false} />
+      <DetailSectionHeader title={listTitle} count={items.length} inset={false} />
       {items.length > 0 ? (
         <HistoryListCard>
           {items.map((item, index) => (

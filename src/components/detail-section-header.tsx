@@ -5,12 +5,14 @@ interface DetailSectionHeaderProps {
   title: string;
   icon?: string;
   inset?: boolean;
+  count?: number;
 }
 
 export default function DetailSectionHeader({
   title,
   icon,
   inset = true,
+  count,
 }: DetailSectionHeaderProps) {
   const { colors } = useTheme();
 
@@ -25,6 +27,11 @@ export default function DetailSectionHeader({
       >
         {title}
       </Text>
+      {count !== undefined ? (
+        <Text variant="labelSmall" style={[styles.count, { color: colors.onSurfaceVariant }]}>
+          {count}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -50,5 +57,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 0.5,
     textTransform: "uppercase",
+  },
+  count: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "800",
   },
 });

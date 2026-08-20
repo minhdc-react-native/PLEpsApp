@@ -29,9 +29,7 @@ export default function WorkHistoryManagement() {
 
   return (
     <EmployeeProcessList
-      title="Quá trình công tác"
       listTitle="Danh sách quá trình công tác"
-      overviewIcon="briefcase-outline"
       emptyText="Chưa có quá trình công tác"
       loadItems={loadItems}
       onItemPress={onItemPress}

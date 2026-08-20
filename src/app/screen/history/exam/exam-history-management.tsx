@@ -89,7 +89,7 @@ export default function ExamHistoryManagement() {
         stats={stats}
       />
 
-      <DetailSectionHeader title="Danh sách kỳ thi" inset={false} />
+      <DetailSectionHeader title="Danh sách kỳ thi" count={data.length} inset={false} />
       {data.length > 0 ? (
         <HistoryListCard>
           {data.map((item, index) => {

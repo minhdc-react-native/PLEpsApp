@@ -41,9 +41,7 @@ export default function SkillStandardManagement() {
 
   return (
     <EmployeeProcessList
-      title="Tiêu chuẩn bậc thợ"
       listTitle="Danh sách tiêu chuẩn"
-      overviewIcon="clipboard-check-outline"
       emptyText="Chưa có tiêu chuẩn bậc thợ"
       loadItems={loadItems}
       onItemPress={onItemPress}

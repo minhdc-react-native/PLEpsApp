@@ -1,6 +1,3 @@
-import {
-  HistoryOverviewCard,
-} from "@/components/history/history-overview-card";
 import DetailSectionHeader from "@/components/detail-section-header";
 import {
   HistoryListCard,
@@ -51,13 +48,11 @@ export default function SalaryHistoryManagement() {
         />
       }
     >
-      <HistoryOverviewCard
-        title="Quá trình hưởng lương"
-        subtitle={`Đã có ${data.length} quyết định`}
-        icon="cash-multiple"
+      <DetailSectionHeader
+        title="Danh sách quyết định"
+        count={data.length}
+        inset={false}
       />
-
-      <DetailSectionHeader title="Danh sách quyết định" inset={false} />
       {data.length > 0 ? (
         <HistoryListCard>
           {data.map((item, index) => (

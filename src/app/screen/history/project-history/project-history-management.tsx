@@ -29,9 +29,7 @@ export default function ProjectHistoryManagement() {
 
   return (
     <EmployeeProcessList
-      title="Quá trình tham gia công trình"
       listTitle="Danh sách công trình"
-      overviewIcon="office-building-outline"
       emptyText="Chưa có quá trình tham gia công trình"
       loadItems={loadItems}
       onItemPress={onItemPress}
