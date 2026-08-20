@@ -1,12 +1,14 @@
 import AppHeader from "@/components/app-header";
+import { Badge } from "@/components/badge";
 import { TrainingCourseCard, TrainingEmptyState } from "@/components/training/training-presentational";
 import { formatTrainingDate, useTrainingResource } from "@/hooks/useTraining";
 import { getTrainingCoursesApi, getMyTrainingCoursesApi, registerTrainingCourseApi, cancelTrainingCourseApi, getMyTrainingProposalsApi, proposeTrainingContentApi, deleteTrainingProposalApi } from "@/services/training.service";
+import { MyTrainingCourse, TRAINING_COURSE_STATUS, TRAINING_REGISTRATION_STATUS, TrainingRegistrationRecord } from "@/types/training.model";
 import { useData } from "@/hooks/zustand/useData";
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, Chip, Dialog, Icon, IconButton, Portal, Text, TextInput, useTheme } from "react-native-paper";
+import { Button, Card, Chip, Dialog, IconButton, Portal, Text, TextInput, useTheme } from "react-native-paper";
 import LoadingScreen from "@/components/loading-screen";
 import { useToast } from "@/components/dialog/useToast";
 
@@ -28,8 +30,18 @@ export default function TrainingCourseRegistrationScreen() {
       getTrainingCoursesApi(year, false),
       employeeId ? getMyTrainingCoursesApi(employeeId, year, { isDeployedCourse: false }) : Promise.resolve([]),
     ]);
-    const registeredIds = new Set(registered.map((item) => item.id));
-    return courses.map((course) => ({ ...course, isRegistered: course.isRegistered || registeredIds.has(course.id) }));
+    const registeredById = new Map(registered.map((item) => [item.id, item]));
+    return courses.map((course): MyTrainingCourse => {
+      const registeredCourse = registeredById.get(course.id);
+      return {
+        ...course,
+        isRegistered: course.isRegistered || !!registeredCourse,
+        regStatus: registeredCourse?.regStatus ?? null,
+        departmentRegStatus: registeredCourse?.departmentRegStatus ?? null,
+        adminRegStatus: registeredCourse?.adminRegStatus ?? null,
+        finalRegStatus: registeredCourse?.finalRegStatus ?? null,
+      };
+    });
   }, [employeeId, year]);
   const { data: courses, loading, reload } = useTrainingResource(load, [year, employeeId]);
   const proposalLoad = useCallback(() => employeeId ? getMyTrainingProposalsApi(employeeId, year) : Promise.resolve([]), [employeeId, year]);
@@ -40,18 +52,6 @@ export default function TrainingCourseRegistrationScreen() {
       return tab === "registered" ? course.isRegistered : !course.isRegistered;
     });
   }, [courses, tab]);
-
-  const registrationSchedule = useMemo(() => {
-    const ranges = (courses ?? [])
-      .map((course) => ({
-        start: course.classRegistrationStartDate,
-        end: course.classRegistrationEndDate,
-      }))
-      .filter((range) => range.start || range.end);
-    const uniqueRanges = new Set(ranges.map((range) => `${range.start?.getTime() ?? ""}-${range.end?.getTime() ?? ""}`));
-    if (uniqueRanges.size !== 1 || !ranges.length) return "Theo thời hạn từng khóa";
-    return `${formatTrainingDate(ranges[0].start)} - ${formatTrainingDate(ranges[0].end)}`;
-  }, [courses]);
 
   const toggleRegistration = async (courseId: string, registered: boolean) => {
     if (!employeeId || processingId) return;
@@ -115,47 +115,97 @@ export default function TrainingCourseRegistrationScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void reload()} />}
       >
-        <Card mode="outlined" style={[styles.introCard, { backgroundColor: colors.primaryContainer, borderColor: colors.primaryContainer }]}>
-          <Card.Content style={styles.introContent}>
-            <View style={[styles.introIcon, { backgroundColor: colors.surface }]}>
-              <Icon source="calendar-clock-outline" size={25} color={colors.primary} />
-            </View>
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text variant="titleSmall" style={{ color: colors.onPrimaryContainer, fontWeight: "800" }}>Khóa đang mở đăng ký</Text>
-              <Text style={{ color: colors.onPrimaryContainer, lineHeight: 19 }}>Đăng ký trước thời hạn để được ghi nhận vào kế hoạch đào tạo.</Text>
-              <View style={styles.scheduleRow}>
-                <Icon source="calendar-range-outline" size={15} color={colors.onPrimaryContainer} />
-                <Text style={[styles.scheduleText, { color: colors.onPrimaryContainer }]}>Lịch đăng ký: {registrationSchedule}</Text>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll} contentContainerStyle={styles.tabChips}>
           <Chip mode={tab === "available" ? "outlined" : "flat"} onPress={() => setTab("available")} style={styles.tabChip} textStyle={tab === "available" ? styles.activeTabText : undefined}>Khóa có sẵn ({courses?.filter((item) => !item.isRegistered).length ?? 0})</Chip>
           <Chip mode={tab === "registered" ? "outlined" : "flat"} onPress={() => setTab("registered")} style={styles.tabChip} textStyle={tab === "registered" ? styles.activeTabText : undefined}>Đã đăng ký ({courses?.filter((item) => item.isRegistered).length ?? 0})</Chip>
           <Chip mode={tab === "proposals" ? "outlined" : "flat"} onPress={() => setTab("proposals")} style={styles.tabChip} textStyle={tab === "proposals" ? styles.activeTabText : undefined}>Đề xuất ({proposals?.length ?? 0})</Chip>
         </ScrollView>
-        {tab === "proposals" ? <ProposalList proposals={proposals ?? []} courses={courses ?? []} loading={proposalsLoading} onCreate={() => setProposalOpen(true)} onDelete={(id) => void removeProposal(id)} /> : loading && !courses ? <LoadingScreen /> : filteredCourses.length ? filteredCourses.map((course) => (
-          <TrainingCourseCard
-            key={course.id}
-            course={course}
-            action={
-              <Button
-                mode={course.isRegistered ? "outlined" : "contained"}
-                compact
-                loading={processingId === course.id}
-                disabled={!!processingId || (course.status !== 10 && !course.isRegistered)}
-                onPress={() => void toggleRegistration(course.id, !!course.isRegistered)}
-              >
-                {course.isRegistered ? "Hủy đăng ký" : "Đăng ký"}
-              </Button>
-            }
-          />
-        )) : <Text style={[styles.emptyText, { color: colors.onSurfaceVariant }]}>Chưa có khóa phù hợp</Text>}
+        {tab === "proposals" ? <ProposalList proposals={proposals ?? []} courses={courses ?? []} loading={proposalsLoading} onCreate={() => setProposalOpen(true)} onDelete={(id) => void removeProposal(id)} /> : loading && !courses ? <LoadingScreen /> : filteredCourses.length ? filteredCourses.map((course) => {
+          const registrationState = getRegistrationState(course);
+          return (
+            <TrainingCourseCard
+              key={course.id}
+              course={course}
+              statusBadge={tab === "registered" ? registrationState.badge : null}
+              meta={tab === "available" ? <RegistrationSchedule course={course} /> : null}
+              action={
+                <Button
+                  mode={course.isRegistered ? "outlined" : "contained"}
+                  compact
+                  loading={processingId === course.id}
+                  disabled={!!processingId || (course.isRegistered ? !registrationState.canCancel : course.status !== 10)}
+                  onPress={() => void toggleRegistration(course.id, !!course.isRegistered)}
+                >
+                  {course.isRegistered ? "Hủy đăng ký" : "Đăng ký"}
+                </Button>
+              }
+            />
+          );
+        }) : <Text style={[styles.emptyText, { color: colors.onSurfaceVariant }]}>Chưa có khóa phù hợp</Text>}
       </ScrollView>
       <Portal><Dialog visible={proposalOpen} onDismiss={() => setProposalOpen(false)}><Dialog.Title>Đề xuất nội dung đào tạo</Dialog.Title><Dialog.Content><Text style={styles.dialogHint}>Chọn một danh mục đào tạo và mô tả nội dung bạn muốn đề xuất.</Text><View style={styles.courseChoices}>{(courses ?? []).slice(0, 8).map((course) => <Button key={course.id} compact mode={proposalCourseId === course.id ? "contained" : "outlined"} onPress={() => setProposalCourseId(course.id)}>{course.name}</Button>)}</View><TextInput mode="outlined" label="Nội dung đề xuất" multiline numberOfLines={5} value={proposalContent} onChangeText={setProposalContent} /></Dialog.Content><Dialog.Actions><Button onPress={() => setProposalOpen(false)}>Hủy</Button><Button loading={proposalProcessing} disabled={!proposalCourseId || !proposalContent.trim() || proposalProcessing} onPress={() => void submitProposal()}>Gửi đề xuất</Button></Dialog.Actions></Dialog></Portal>
     </View>
   );
+}
+
+function getRegistrationState(course: MyTrainingCourse) {
+  const reviewSources: Array<[
+    "admin" | "phòng ban",
+    TrainingRegistrationRecord | null | undefined,
+  ]> = [
+    ["admin", course.adminRegStatus],
+    ["phòng ban", course.departmentRegStatus],
+  ];
+  const reviewSource = reviewSources.find(([, record]) => record != null);
+
+  if (!reviewSource) {
+    return { canCancel: true, badge: null };
+  }
+
+  const badgeSource =
+    reviewSources.find(([, record]) =>
+      [
+        TRAINING_REGISTRATION_STATUS.ADDED,
+        TRAINING_REGISTRATION_STATUS.REJECTED,
+        -1,
+      ].includes(record?.status ?? NaN),
+    ) ?? reviewSource;
+  const source = badgeSource[0];
+  const record = badgeSource[1];
+
+  if (record?.status === TRAINING_REGISTRATION_STATUS.ADDED) {
+    return {
+      canCancel: false,
+      badge: <Badge variant="success">Bổ sung bởi {source}</Badge>,
+    };
+  }
+  if (record?.status === TRAINING_REGISTRATION_STATUS.REJECTED) {
+    return {
+      canCancel: false,
+      badge: <Badge variant="error">Từ chối bởi {source}</Badge>,
+    };
+  }
+  if (record?.status === -1) {
+    return {
+      canCancel: false,
+      badge: <Badge variant="error">Đã hủy bởi {source}</Badge>,
+    };
+  }
+
+  return { canCancel: false, badge: null };
+}
+
+function RegistrationSchedule({ course }: { course: MyTrainingCourse }) {
+  const { colors } = useTheme();
+  const start = course.registrationStartDate;
+  const end = course.registrationEndDate;
+  const isClosed = course.status !== TRAINING_COURSE_STATUS.REGISTRATION || (!!end && new Date() > end);
+  const label = isClosed
+    ? "Đã đóng"
+    : start || end
+      ? `Lịch đăng ký: ${formatTrainingDate(start)} - ${formatTrainingDate(end)}`
+      : "Chưa có lịch đăng ký";
+  return <Text style={[styles.registrationSchedule, { color: isClosed ? colors.error : colors.onSurfaceVariant }]}>{label}</Text>;
 }
 
 function ProposalList({ proposals, courses, loading, onCreate, onDelete }: { proposals: import("@/types/training.model").TrainingProposal[]; courses: import("@/types/training.model").TrainingCourse[]; loading: boolean; onCreate: () => void; onDelete: (id: string) => void }) {
@@ -168,11 +218,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 32 },
   yearActions: { flexDirection: "row", alignItems: "center" },
   year: { fontWeight: "800", minWidth: 38, textAlign: "center" },
-  introCard: { borderRadius: 20, marginBottom: 16 },
-  introContent: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14 },
-  introIcon: { width: 46, height: 46, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  scheduleRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 },
-  scheduleText: { flex: 1, fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  registrationSchedule: { fontSize: 12, lineHeight: 17 },
   tabScroll: { marginBottom: 10 },
   tabChips: { gap: 10, paddingVertical: 4, paddingHorizontal: 1 },
   tabChip: { flexShrink: 0 },

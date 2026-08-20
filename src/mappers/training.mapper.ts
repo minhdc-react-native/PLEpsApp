@@ -33,6 +33,8 @@ const mapRecord = (raw: any) =>
         status: raw.status ?? TRAINING_REGISTRATION_STATUS.PENDING,
         reason: raw.reason ?? null,
         note: raw.note ?? null,
+        reviewedBy: raw.reviewedBy?.id ?? raw.reviewedBy ?? null,
+        reviewedAt: raw.reviewedAt ?? null,
       }
     : null;
 
@@ -119,11 +121,26 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
     studentCount: raw?.studentCount ?? 0,
     classCount: raw?.classCount ?? 0,
     examCount: raw?.examCount ?? 0,
+    isAdditional: raw?.isAdditional ?? false,
+    registrationStartDate: toDate(
+      raw?.registrationStartDate ?? raw?.registrationDates?.startDate,
+    ),
+    registrationEndDate: toDate(
+      raw?.registrationEndDate ?? raw?.registrationDates?.endDate,
+    ),
     evaluationStartDate: toDate(raw?.evaluationStartDate ?? raw?.evaluationStart),
     evaluationEndDate: toDate(raw?.evaluationEndDate ?? raw?.evaluationEnd),
     evaluationFormConfig: mapEvaluationConfig(raw?.evaluationFormConfig),
-    classRegistrationStartDate: toDate(raw?.classRegistrationStartDate ?? raw?.registrationStartDate),
-    classRegistrationEndDate: toDate(raw?.classRegistrationEndDate ?? raw?.registrationEndDate),
+    classRegistrationStartDate: toDate(
+      raw?.classRegistrationStartDate ??
+        raw?.classRegistrationDates?.startDate ??
+        raw?.registrationStartDate,
+    ),
+    classRegistrationEndDate: toDate(
+      raw?.classRegistrationEndDate ??
+        raw?.classRegistrationDates?.endDate ??
+        raw?.registrationEndDate,
+    ),
     isSharedExam: raw?.isSharedExam ?? raw?.sharedExam ?? false,
   };
 }
@@ -138,6 +155,29 @@ export function mapMyTrainingCourse(raw: any): MyTrainingCourse {
     registeredClassId: registeredClass?.id ?? raw?.registeredClassId ?? null,
     registeredClass,
     regStatus: mapRecord(raw?.regStatus ?? raw?.registration),
+    departmentRegStatus: mapRecord(
+      raw?.departmentRegStatus ?? raw?.departmentRegistration ??
+        raw?.registration?.departmentRegStatus ??
+        (raw?.departmentStatus != null
+          ? {
+              status: raw.departmentStatus,
+              reason: raw.departmentReason,
+              note: raw.departmentNote,
+            }
+          : null),
+    ),
+    adminRegStatus: mapRecord(
+      raw?.adminRegStatus ?? raw?.adminRegistration ??
+        raw?.registration?.adminRegStatus ??
+        (raw?.adminStatus != null
+          ? {
+              status: raw.adminStatus,
+              reason: raw.adminReason,
+              note: raw.adminNote,
+              reviewedBy: raw.approvedBy,
+            }
+          : null),
+    ),
     finalRegStatus: mapRecord(raw?.finalRegStatus),
   };
 }

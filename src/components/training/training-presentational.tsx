@@ -21,7 +21,7 @@ export function TrainingEmptyState({ icon = "inbox-outline", title, description 
   );
 }
 
-export function TrainingCourseCard({ course, action, onPress }: { course: TrainingCourse; action?: React.ReactNode; onPress?: () => void }) {
+export function TrainingCourseCard({ course, action, onPress, statusBadge, meta }: { course: TrainingCourse; action?: React.ReactNode; onPress?: () => void; statusBadge?: React.ReactNode; meta?: React.ReactNode }) {
   const { colors } = useTheme();
   return (
     <Card mode="outlined" style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]} onPress={onPress}>
@@ -32,9 +32,10 @@ export function TrainingCourseCard({ course, action, onPress }: { course: Traini
         <View style={styles.cardCopy}>
           <Text variant="titleMedium" style={styles.courseName}>{course.name}</Text>
           <View style={styles.metaRow}>
-            <TrainingStatusBadge status={course.status} />
+            {statusBadge !== undefined ? statusBadge : <TrainingStatusBadge status={course.status} />}
             {course.year ? <Text style={[styles.meta, { color: colors.onSurfaceVariant }]}>{course.year}</Text> : null}
           </View>
+          {meta}
           {course.description ? <Text numberOfLines={2} style={[styles.description, { color: colors.onSurfaceVariant }]}>{course.description}</Text> : null}
         </View>
         {action}

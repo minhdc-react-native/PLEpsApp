@@ -51,6 +51,8 @@ export interface TrainingRegistrationRecord {
   status: number;
   reason: string | null;
   note: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: Date | string | null;
 }
 
 export interface TrainingProposal {
@@ -137,6 +139,9 @@ export interface TrainingCourse {
   studentCount?: number;
   classCount?: number;
   examCount?: number;
+  isAdditional?: boolean;
+  registrationStartDate?: Date | null;
+  registrationEndDate?: Date | null;
   evaluationStartDate?: Date | null;
   evaluationEndDate?: Date | null;
   evaluationFormConfig?: TrainingEvaluationConfig;
@@ -150,6 +155,8 @@ export interface MyTrainingCourse extends TrainingCourse {
   registeredClassId?: string | null;
   registeredClass?: TrainingClass | null;
   regStatus?: TrainingRegistrationRecord | null;
+  departmentRegStatus?: TrainingRegistrationRecord | null;
+  adminRegStatus?: TrainingRegistrationRecord | null;
   finalRegStatus?: TrainingRegistrationRecord | null;
 }
 
