@@ -122,6 +122,12 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
     classCount: raw?.classCount ?? 0,
     examCount: raw?.examCount ?? 0,
     isAdditional: raw?.isAdditional ?? false,
+    examPeriodName:
+      raw?.examPeriod?.name ??
+      raw?.examPeriodName ??
+      raw?.exam?.name ??
+      raw?.examName ??
+      null,
     registrationStartDate: toDate(
       raw?.registrationStartDate ?? raw?.registrationDates?.startDate,
     ),

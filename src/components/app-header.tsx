@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { Image, ImageSourcePropType, StyleSheet, View } from "react-native";
 import { Appbar, Text, useTheme } from "react-native-paper";
 
 interface AppHeaderProps {
   title: string;
+  titleIcon?: ImageSourcePropType;
   subtitle?: string;
   onBack?: () => void;
   actions?: ReactNode;
@@ -12,6 +13,7 @@ interface AppHeaderProps {
 
 export default function AppHeader({
   title,
+  titleIcon,
   subtitle,
   onBack,
   actions,
@@ -42,13 +44,16 @@ export default function AppHeader({
       >
         {onBack && <Appbar.BackAction onPress={onBack} />}
         <View style={styles.titleBlock}>
-          <Text
-            numberOfLines={1}
-            ellipsizeMode="tail"
-            style={[styles.title, { color: colors.onSurface }]}
-          >
-            {title}
-          </Text>
+          <View style={styles.titleRow}>
+            {titleIcon ? <Image source={titleIcon} style={styles.titleIcon} resizeMode="contain" /> : null}
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={[styles.title, { color: colors.onSurface }]}
+            >
+              {title}
+            </Text>
+          </View>
           {subtitle && (
             <Text
               numberOfLines={1}
@@ -83,7 +88,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 1,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  titleIcon: {
+    width: 24,
+    height: 24,
+  },
   title: {
+    flex: 1,
     fontSize: 17,
     lineHeight: 24,
     fontWeight: "700",

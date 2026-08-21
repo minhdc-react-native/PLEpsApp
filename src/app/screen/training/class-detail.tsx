@@ -12,8 +12,8 @@ import { TrainingClass, TrainingCourse, TrainingExamSession, TrainingRegistratio
 import { trainingHref } from "@/utils/training-navigation";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
-import { Button, Card, Text, TextInput, useTheme } from "react-native-paper";
+import { Image, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Button, Card, Icon, Text, TextInput, useTheme } from "react-native-paper";
 import { TabView } from "react-native-tab-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingScreen from "@/components/loading-screen";
@@ -29,7 +29,8 @@ type DetailPayload = {
 
 const detailRoutes = [
   { key: "functions", title: "Chức năng" },
-  { key: "info", title: "Thông tin học viên" },
+  { key: "course-info", title: "Thông tin khóa đào tạo" },
+  { key: "student-info", title: "Thông tin học viên" },
 ];
 
 export default function TrainingClassDetailScreen() {
@@ -135,6 +136,7 @@ export default function TrainingClassDetailScreen() {
     <View style={[styles.container, { backgroundColor: colors.background, marginBottom: insets.bottom }]}>
       <AppHeader
         title={course.name}
+        titleIcon={course.type === 0 ? require("@/assets/images/training/video-lesson.png") : require("@/assets/images/training/teacher.png")}
         subtitle="Chi tiết lớp đào tạo"
         onBack={() => router.back()}
         bottom={<DetailTabBar data={detailRoutes.map((route) => ({ id: route.key, value: route.title }))} value={detailRoutes[activeIndex].key} onChange={(value) => setIndex(detailRoutes.findIndex((route) => route.key === value.id))} mode="full" />}
@@ -143,7 +145,8 @@ export default function TrainingClassDetailScreen() {
         navigationState={{ index: activeIndex, routes: detailRoutes }}
         renderScene={({ route }) => {
           if (route.key === "functions") return <FunctionTab course={course} trainingClass={trainingClass} registration={registration} availableClasses={availableClasses} exams={exams} isOnline={isOnline} isPostponed={isPostponed} classRegistrationOpen={classRegistrationOpen} canChooseClass={canChooseClass} processingClassId={processingClassId} markingSessionId={markingSessionId} attendanceBySession={attendanceBySession} postponeOpen={postponeOpen} postponeReason={postponeReason} postponing={postponing} onRegisterClass={registerClass} onMarkAttendance={markAttendance} onPostpone={() => setPostponeOpen(true)} onClosePostpone={() => setPostponeOpen(false)} onPostponeReasonChange={setPostponeReason} onSubmitPostpone={() => void requestPostpone()} onOpenExam={(examId) => router.push(trainingHref(`/screen/training/exam-session?examId=${encodeURIComponent(examId)}`))} />;
-          return <ReadOnlyInfoTab user={user} course={course} trainingClass={trainingClass} registration={registration} isOnline={isOnline} />;
+          if (route.key === "student-info") return <ReadOnlyInfoTab user={user} course={course} trainingClass={trainingClass} registration={registration} isOnline={isOnline} />;
+          return <CourseInfoTab course={course} trainingClass={trainingClass} />;
         }}
         lazy
         renderLazyPlaceholder={() => <LoadingScreen />}
@@ -213,17 +216,30 @@ function FunctionTab({ course, trainingClass, registration, availableClasses, ex
 }
 
 function ReadOnlyInfoTab({ user, course, trainingClass, registration, isOnline }: { user: any; course: TrainingCourse; trainingClass: TrainingClass | null; registration: TrainingStudentRegistration | null; isOnline: boolean }) {
-  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><StudentInfoGroup user={user} registration={registration} /><CourseInfoGroup course={course} trainingClass={trainingClass} isOnline={isOnline} /><RegistrationInfoGroup registration={registration} isOnline={isOnline} /><ResultInfoGroup registration={registration} /><SessionsInfoGroup trainingClass={trainingClass} registration={registration} isOnline={isOnline} /><EvaluationInfoGroup registration={registration} course={course} /></ScrollView></DetailTabScreen>;
+  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><StudentInfoGroup user={user} registration={registration} /><RegistrationInfoGroup registration={registration} isOnline={isOnline} /><ResultInfoGroup registration={registration} /><SessionsInfoGroup trainingClass={trainingClass} registration={registration} isOnline={isOnline} /><EvaluationInfoGroup registration={registration} course={course} /></ScrollView></DetailTabScreen>;
 }
 
 function StudentInfoGroup({ user, registration }: { user: any; registration: TrainingStudentRegistration | null }) {
   const certificate = registration?.certificate;
-  const certificateValue = certificate ? [certificate.certificateNumber, certificate.issueDate ? `Cấp ngày ${formatTrainingDate(certificate.issueDate)}` : null].filter(Boolean).join(" · ") : "";
-  return <><DetailSectionHeader title="Học viên" icon="account-outline" /><ListFields style={styles.groupFields}><Field label="Họ tên" value={user?.fullName ?? ""} /><Field label="Mã nhân viên" value={user?.code ?? ""} /><Field label="Phòng ban" value={user?.department?.name ?? ""} /><Field label="Tổ/Nhóm" value={user?.team?.name ?? ""} /><Field label="Chức danh" value={user?.position?.name ?? ""} /><Field label="Chuyên môn" value={user?.area?.name ?? ""} /><Field label="Chứng chỉ" value={certificateValue} /></ListFields></>;
+  return <><DetailSectionHeader title="Học viên" icon="account-outline" /><ListFields style={styles.groupFields}><Field label="Họ tên" value={user?.fullName ?? ""} /><Field label="Mã nhân viên" value={user?.code ?? ""} /><Field label="Phòng ban" value={user?.department?.name ?? ""} /><Field label="Tổ/Nhóm" value={user?.team?.name ?? ""} /><Field label="Chức danh" value={user?.position?.name ?? ""} /><Field label="Chuyên môn" value={user?.area?.name ?? ""} /><Field label="Chứng chỉ" value={certificate ? <CertificateInfoValue certificate={certificate} /> : ""} /></ListFields></>;
 }
 
-function CourseInfoGroup({ course, trainingClass, isOnline }: { course: TrainingCourse; trainingClass: TrainingClass | null; isOnline: boolean }) {
-  return <><DetailSectionHeader title="Khóa học" icon="book-open-outline" /><ListFields style={styles.groupFields}><Field label="Tên khóa" value={course.name} /><Field label="Danh mục khóa" value={course.courseCategoryName ?? ""} /><Field label="Hình thức" value={isOnline ? "Trực tuyến" : "Tập trung"} /><Field label="Có chứng chỉ" value={yesNo(course.hasCertificate)} /><Field label="Khóa đề xuất" value={yesNo(course.isProposal)} /><Field label="Khóa bổ sung" value={yesNo(course.isAdditional)} />{!isOnline ? <><Field label="Tên lớp" value={trainingClass?.name ?? ""} /><Field label="Ngày bắt đầu lớp" value={formatTrainingDate(trainingClass?.startDate)} /><Field label="Ngày kết thúc lớp" value={formatTrainingDate(trainingClass?.endDate)} /></> : null}<Field label="Ngày mở đánh giá" value={formatTrainingDate(course.evaluationStartDate)} /><Field label="Ngày kết thúc đánh giá" value={formatTrainingDate(course.evaluationEndDate)} /></ListFields></>;
+function CertificateInfoValue({ certificate }: { certificate: NonNullable<TrainingStudentRegistration["certificate"]> }) {
+  return <View style={styles.certificateValue}><Text style={styles.certificateMeta}>{certificate.certificateNumber ?? ""}</Text><Text style={styles.certificateMeta}>{certificate.issueDate ? `Ngày cấp: ${formatTrainingDate(certificate.issueDate)}` : ""}</Text>{certificate.imageUrl ? <Image source={{ uri: certificate.imageUrl }} style={styles.certificateImage} resizeMode="contain" /> : null}</View>;
+}
+
+function ClassInfoGroup({ trainingClass }: { trainingClass: TrainingClass | null }) {
+  return <><DetailSectionHeader title="Lớp học" icon="account-group-outline" /><ListFields style={styles.groupFields}><Field label="Tên lớp" value={trainingClass?.name ?? ""} /><Field label="Ngày bắt đầu lớp" value={formatTrainingDate(trainingClass?.startDate)} /><Field label="Ngày kết thúc lớp" value={formatTrainingDate(trainingClass?.endDate)} /></ListFields></>;
+}
+
+function CourseInfoTab({ course, trainingClass }: { course: TrainingCourse; trainingClass: TrainingClass | null }) {
+  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><CourseGeneralInfoGroup course={course} /><ClassInfoGroup trainingClass={trainingClass} /></ScrollView></DetailTabScreen>;
+}
+
+function CourseGeneralInfoGroup({ course }: { course: TrainingCourse }) {
+  const { colors } = useTheme();
+  const examTypeValue = course.isSharedExam == null ? "" : <View style={styles.inlineValue}><Icon source={course.isSharedExam ? "account-multiple-outline" : "account-group-outline"} size={18} color={colors.primary} /><Text style={[styles.inlineValueText, { color: colors.onSurface }]}>{course.isSharedExam ? "Thi tập trung" : "Thi riêng từng lớp"}</Text></View>;
+  return <><DetailSectionHeader title="Thông tin khóa" icon="information-outline" /><ListFields style={styles.groupFields}><Field label="Tên khóa đào tạo" value={course.name} /><Field label="Danh mục đào tạo" value={course.courseCategoryName ?? ""} /><Field label="Nội dung đào tạo" value={course.description ?? ""} layout="column" /><Field label="Phương pháp giảng dạy" value={trainingCourseTypeLabel(course.type)} /><Field label="Hình thức đào tạo" value={trainingFormLabel(course.trainingForm)} /><Field label="Hình thức tổ chức" value={organizationFormLabel(course.organizationForm)} /><Field label="Loại bài thi" value={examTypeValue} /><Field label="Kỳ thi" value={course.examPeriodName ?? ""} /><Field label="Khóa đề xuất" value={yesNo(course.isProposal)} /><Field label="Khóa bổ sung" value={yesNo(course.isAdditional)} /><Field label="Ngày mở đánh giá" value={formatTrainingDate(course.evaluationStartDate)} /><Field label="Ngày kết thúc đánh giá" value={formatTrainingDate(course.evaluationEndDate)} /></ListFields></>;
 }
 
 function RegistrationInfoGroup({ registration, isOnline }: { registration: TrainingStudentRegistration | null; isOnline: boolean }) {
@@ -267,6 +283,9 @@ function DetailTabScreen({ children }: { children: React.ReactNode }) {
   return <View style={[styles.tabScreen, { backgroundColor: colors.background }]}>{children}</View>;
 }
 
+function trainingCourseTypeLabel(value?: number | null) { if (value == null) return ""; return value === 0 ? "Đào tạo trực tuyến" : value === 1 ? "Giảng viên đào tạo" : ""; }
+function trainingFormLabel(value?: number | null) { if (value == null) return ""; return ({ 0: "Tập trung", 1: "OJT", 2: "Trực tuyến", 3: "Bồi dưỡng NB,GB,KTSHN" } as Record<number, string>)[value] ?? ""; }
+function organizationFormLabel(value?: number | null) { if (value == null) return ""; return ({ 0: "Ngắn hạn", 1: "Dài hạn", 2: "Chuyên gia", 3: "Cán bộ quản lý" } as Record<number, string>)[value] ?? ""; }
 function yesNo(value?: boolean | null) { if (value == null) return ""; return value ? "Có" : "Không"; }
 function ratingValue(value?: number | string | null) { if (value == null || value === "") return ""; return <Badge variant="primary">{value}/10</Badge>; }
 function registrationLabel(status: number) { return status === 1 ? "Tham gia" : status === 2 ? "Từ chối" : status === 3 ? "Bổ sung" : status === 4 ? "Hoãn" : "Chưa xác nhận"; }
@@ -294,4 +313,9 @@ const styles = StyleSheet.create({
   recordMeta: { textAlign: "right", fontSize: 12, lineHeight: 17 },
   emptyInfoText: { marginHorizontal: 16, marginBottom: 12, flexShrink: 1, fontSize: 14, lineHeight: 20 },
   groupTitle: { fontSize: 14, fontWeight: "700", paddingHorizontal: 12, paddingTop: 12 },
+  certificateValue: { alignItems: "flex-end", gap: 4, maxWidth: "100%" },
+  certificateMeta: { fontSize: 14, lineHeight: 19, textAlign: "right" },
+  certificateImage: { width: 180, height: 120, borderRadius: 8 },
+  inlineValue: { flexDirection: "row", alignItems: "center", gap: 6 },
+  inlineValueText: { fontSize: 14, lineHeight: 19, textAlign: "right" },
 });

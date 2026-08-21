@@ -148,6 +148,7 @@ export interface TrainingCourse {
   classRegistrationStartDate?: Date | null;
   classRegistrationEndDate?: Date | null;
   isSharedExam?: boolean;
+  examPeriodName?: string | null;
   courseCategoryName?: string | null;
   hasCertificate?: boolean | null;
   isProposal?: boolean | null;
