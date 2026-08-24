@@ -4,11 +4,11 @@ import { FileBadge } from "@/components/file-badge";
 import { SectionCard } from "@/components/training/training-presentational";
 import { formatTrainingDateTime, useTrainingResource } from "@/hooks/useTraining";
 import { useData } from "@/hooks/zustand/useData";
-import { getTrainingRegistrationApi, getTrainingSessionApi, markTrainingSessionAttendanceApi } from "@/services/training.service";
+import { getTrainingCourseApi, getTrainingRegistrationApi, getTrainingSessionApi, markTrainingSessionAttendanceApi } from "@/services/training.service";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, Divider, Text, useTheme } from "react-native-paper";
+import { Button, Divider, Text, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "@/components/loading-screen";
 import { useToast } from "@/components/dialog/useToast";
@@ -19,22 +19,23 @@ export default function TrainingSessionDetailScreen() {
   const employeeId = user?.employeeId;
   const { showToast } = useToast();
   const { trainingCourseId, sessionId, isOnline } = useLocalSearchParams<{ trainingCourseId?: string; sessionId?: string; isOnline?: string }>();
-  const isOnlineSession = isOnline === "true";
   const [marking, setMarking] = useState(false);
   const load = useCallback(async () => {
-    if (!sessionId || !trainingCourseId || !employeeId) return { session: null, registration: null };
-    const [session, registration] = await Promise.all([
+    if (!sessionId || !trainingCourseId || !employeeId) return { course: null, session: null, registration: null };
+    const [course, session, registration] = await Promise.all([
+      getTrainingCourseApi(trainingCourseId),
       getTrainingSessionApi(sessionId),
       getTrainingRegistrationApi(employeeId, trainingCourseId),
     ]);
-    return { session, registration };
+    return { course, session, registration };
   }, [sessionId, trainingCourseId, employeeId]);
   const { data, loading, error, reload } = useTrainingResource(load, [sessionId, trainingCourseId, employeeId]);
 
   const attendance = data?.registration?.classSessions.find((item) => item.id === sessionId);
   const session = data?.session;
+  const isOnlineSession = data?.course?.type === 0 || isOnline === "true";
   const isPresent = attendance?.isPresent === true;
-  const canMarkAttendance = session?.status === 1 && !isPresent;
+  const canMarkAttendance = !isOnlineSession && session?.status === 1 && !isPresent;
 
   const markAttendance = async () => {
     if (!sessionId || !canMarkAttendance) return;
@@ -62,24 +63,16 @@ export default function TrainingSessionDetailScreen() {
 
   const statusLabel = session.status === 1 ? "Đang diễn ra" : session.status === 2 ? "Đã kết thúc" : "Chưa bắt đầu";
   const statusVariant = session.status === 1 ? "primary" : session.status === 2 ? "success" : "default";
+  const attendanceLabel = session.status === 0 ? "Chưa bắt đầu" : isPresent ? "Đã điểm danh" : "Chưa điểm danh";
+  const attendanceVariant = session.status === 0 ? "default" : isPresent ? "success" : "error";
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
-      <AppHeader title={session.name} subtitle={statusLabel} onBack={() => router.back()} />
+      <AppHeader title={session.name} subtitle={formatTrainingDateTime(session.startDate)} onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void reload()} />}>
-        <Card mode="outlined" style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
-          <Card.Content style={styles.heroContent}>
-            <View style={[styles.statusIcon, { backgroundColor: colors.primaryContainer }]}>
-              <Text style={{ fontSize: 25 }}>📚</Text>
-            </View>
-            <View style={{ flex: 1, gap: 5 }}>
-              <Text variant="titleLarge" style={styles.title}>{session.name}</Text>
-              <Badge variant={statusVariant}>{statusLabel}</Badge>
-            </View>
-          </Card.Content>
-        </Card>
-
         <SectionCard title="Thông tin buổi học" icon="information-outline">
           <View style={styles.infoList}>
+            <InfoRow label="Trạng thái" value={<Badge variant={statusVariant}>{statusLabel}</Badge>} />
+            <Divider />
             <InfoRow label="Thời gian bắt đầu" value={formatTrainingDateTime(session.startDate)} />
             <Divider />
             <InfoRow label="Thời gian kết thúc" value={formatTrainingDateTime(session.endDate)} />
@@ -91,8 +84,8 @@ export default function TrainingSessionDetailScreen() {
         {!isOnlineSession ? <SectionCard title="Điểm danh" icon="calendar-check-outline">
           <View style={styles.attendanceBox}>
             <View style={{ flex: 1, gap: 5 }}>
-              <Text variant="titleSmall" style={styles.title}>{isPresent ? "Bạn đã điểm danh" : attendance ? "Chưa điểm danh" : "Chưa có dữ liệu"}</Text>
-              <Text style={{ color: colors.onSurfaceVariant }}>{attendance?.attendanceTime ? `Lúc ${formatTrainingDateTime(attendance.attendanceTime)}` : "Chỉ có thể điểm danh khi buổi học đang diễn ra."}</Text>
+              <Badge variant={attendanceVariant}>{attendanceLabel}</Badge>
+              <Text style={{ color: colors.onSurfaceVariant }}>{attendance?.attendanceTime ? `Điểm danh lúc ${formatTrainingDateTime(attendance.attendanceTime)}` : "Chỉ có thể điểm danh khi buổi học đang diễn ra."}</Text>
             </View>
             <Button mode={isPresent ? "outlined" : "contained"} disabled={!canMarkAttendance} loading={marking} onPress={() => void markAttendance()}>
               {isPresent ? "Đã điểm danh" : "Điểm danh"}
@@ -110,22 +103,19 @@ export default function TrainingSessionDetailScreen() {
   );
 }
 
-function InfoRow({ label, value, multiline }: { label: string; value: string; multiline?: boolean }) {
-  return <View style={[styles.infoRow, multiline && styles.multiline]}><Text style={styles.infoLabel}>{label}</Text><Text style={styles.infoValue}>{value}</Text></View>;
+function InfoRow({ label, value, multiline }: { label: string; value: React.ReactNode; multiline?: boolean }) {
+  return <View style={[styles.infoRow, multiline && styles.multiline]}><Text style={styles.infoLabel}>{label}</Text><View style={styles.infoValue}>{typeof value === "string" ? <Text style={styles.infoValueText}>{value}</Text> : value}</View></View>;
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 32, gap: 14 },
-  heroCard: { borderRadius: 20 },
-  heroContent: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16 },
-  statusIcon: { width: 56, height: 56, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  title: { fontWeight: "800" },
   infoList: { gap: 13 },
   infoRow: { flexDirection: "row", justifyContent: "space-between", gap: 16 },
   multiline: { alignItems: "flex-start" },
   infoLabel: { color: "#5B667A", flex: 0.9 },
-  infoValue: { fontWeight: "700", flex: 1.3, textAlign: "right", lineHeight: 20 },
+  infoValue: { flex: 1.3, alignItems: "flex-end" },
+  infoValueText: { fontWeight: "700", textAlign: "right", lineHeight: 20 },
   attendanceBox: { flexDirection: "row", alignItems: "center", gap: 12 },
   error: { flex: 1, alignItems: "center", justifyContent: "center" },
 });

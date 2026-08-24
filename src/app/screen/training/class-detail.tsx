@@ -13,7 +13,7 @@ import { trainingHref } from "@/utils/training-navigation";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import { Image, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
-import { Button, Card, Icon, Text, TextInput, useTheme } from "react-native-paper";
+import { Button, Card, Icon, IconButton, Text, TextInput, useTheme } from "react-native-paper";
 import { TabView } from "react-native-tab-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingScreen from "@/components/loading-screen";
@@ -131,6 +131,9 @@ export default function TrainingClassDetailScreen() {
   const canChooseClass = !isPostponed && classRegistrationOpen;
   const activeIndex = Math.min(index, detailRoutes.length - 1);
   const attendanceBySession = new Map((registration?.classSessions ?? []).map((item) => [item.id, item]));
+  const openSession = (sessionId: string) => {
+    router.push(trainingHref(`/screen/training/session-detail?trainingCourseId=${encodeURIComponent(course.id)}&sessionId=${encodeURIComponent(sessionId)}&isOnline=${String(isOnline)}`));
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, marginBottom: insets.bottom }]}>
@@ -144,8 +147,8 @@ export default function TrainingClassDetailScreen() {
       <TabView
         navigationState={{ index: activeIndex, routes: detailRoutes }}
         renderScene={({ route }) => {
-          if (route.key === "functions") return <FunctionTab course={course} trainingClass={trainingClass} registration={registration} availableClasses={availableClasses} exams={exams} isOnline={isOnline} isPostponed={isPostponed} classRegistrationOpen={classRegistrationOpen} canChooseClass={canChooseClass} processingClassId={processingClassId} markingSessionId={markingSessionId} attendanceBySession={attendanceBySession} postponeOpen={postponeOpen} postponeReason={postponeReason} postponing={postponing} onRegisterClass={registerClass} onMarkAttendance={markAttendance} onPostpone={() => setPostponeOpen(true)} onClosePostpone={() => setPostponeOpen(false)} onPostponeReasonChange={setPostponeReason} onSubmitPostpone={() => void requestPostpone()} onOpenExam={(examId) => router.push(trainingHref(`/screen/training/exam-session?examId=${encodeURIComponent(examId)}`))} />;
-          if (route.key === "student-info") return <ReadOnlyInfoTab user={user} course={course} trainingClass={trainingClass} registration={registration} isOnline={isOnline} />;
+          if (route.key === "functions") return <FunctionTab course={course} trainingClass={trainingClass} registration={registration} availableClasses={availableClasses} exams={exams} isOnline={isOnline} isPostponed={isPostponed} classRegistrationOpen={classRegistrationOpen} canChooseClass={canChooseClass} processingClassId={processingClassId} markingSessionId={markingSessionId} attendanceBySession={attendanceBySession} postponeOpen={postponeOpen} postponeReason={postponeReason} postponing={postponing} onRegisterClass={registerClass} onMarkAttendance={markAttendance} onOpenSession={openSession} onPostpone={() => setPostponeOpen(true)} onClosePostpone={() => setPostponeOpen(false)} onPostponeReasonChange={setPostponeReason} onSubmitPostpone={() => void requestPostpone()} onOpenExam={(examId) => router.push(trainingHref(`/screen/training/exam-session?examId=${encodeURIComponent(examId)}`))} />;
+          if (route.key === "student-info") return <ReadOnlyInfoTab user={user} course={course} trainingClass={trainingClass} registration={registration} isOnline={isOnline} onOpenSession={openSession} />;
           return <CourseInfoTab course={course} trainingClass={trainingClass} />;
         }}
         lazy
@@ -158,7 +161,7 @@ export default function TrainingClassDetailScreen() {
   );
 }
 
-function FunctionTab({ course, trainingClass, registration, availableClasses, exams, isOnline, isPostponed, classRegistrationOpen, canChooseClass, processingClassId, markingSessionId, attendanceBySession, postponeOpen, postponeReason, postponing, onRegisterClass, onMarkAttendance, onPostpone, onClosePostpone, onPostponeReasonChange, onSubmitPostpone, onOpenExam }: {
+function FunctionTab({ course, trainingClass, registration, availableClasses, exams, isOnline, isPostponed, classRegistrationOpen, canChooseClass, processingClassId, markingSessionId, attendanceBySession, postponeOpen, postponeReason, postponing, onRegisterClass, onMarkAttendance, onOpenSession, onPostpone, onClosePostpone, onPostponeReasonChange, onSubmitPostpone, onOpenExam }: {
   course: TrainingCourse;
   trainingClass: TrainingClass | null;
   registration: TrainingStudentRegistration | null;
@@ -176,6 +179,7 @@ function FunctionTab({ course, trainingClass, registration, availableClasses, ex
   postponing: boolean;
   onRegisterClass: (classId: string, isRegistered: boolean) => void;
   onMarkAttendance: (sessionId: string) => void;
+  onOpenSession: (sessionId: string) => void;
   onPostpone: () => void;
   onClosePostpone: () => void;
   onPostponeReasonChange: (value: string) => void;
@@ -194,7 +198,7 @@ function FunctionTab({ course, trainingClass, registration, availableClasses, ex
             const attendance = attendanceBySession.get(session.id);
             const isPresent = attendance?.isPresent === true;
             const canMark = !isOnline && session.status === 1;
-            return <ListFields key={session.id} style={styles.groupFields}><View style={styles.actionRow}><View style={styles.actionCopy}><Text style={styles.actionTitle}>{session.name}</Text><Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>{formatTrainingDateTime(session.startDate)}{session.endDate ? ` - ${formatTrainingDateTime(session.endDate)}` : ""}</Text><Text style={[styles.actionMeta, { color: session.status === 1 ? colors.primary : colors.onSurfaceVariant }]}>{sessionStatusLabel(session.status)}</Text></View>{canMark ? <Button mode={isPresent ? "outlined" : "contained"} compact loading={markingSessionId === session.id} disabled={isPresent || !!markingSessionId} onPress={() => onMarkAttendance(session.id)}>{isPresent ? "Đã điểm danh" : "Điểm danh"}</Button> : null}</View></ListFields>;
+            return <ListFields key={session.id} style={styles.groupFields}><View style={styles.actionRow}><View style={styles.actionCopy}><Text style={styles.actionTitle}>{session.name}</Text><Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>{formatTrainingDateTime(session.startDate)}{session.endDate ? ` - ${formatTrainingDateTime(session.endDate)}` : ""}</Text><Text style={[styles.actionMeta, { color: session.status === 1 ? colors.primary : colors.onSurfaceVariant }]}>{sessionStatusLabel(session.status)}</Text></View>{canMark ? <Button mode={isPresent ? "outlined" : "contained"} compact loading={markingSessionId === session.id} disabled={isPresent || !!markingSessionId} onPress={() => onMarkAttendance(session.id)}>{isPresent ? "Đã điểm danh" : "Điểm danh"}</Button> : null}<IconButton icon="chevron-right" size={22} onPress={() => onOpenSession(session.id)} accessibilityLabel="Xem chi tiết buổi học" /></View></ListFields>;
           }) : <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>Chưa có buổi học.</Text>}
 
         <DetailSectionHeader title="Danh sách bài thi" icon="clipboard-text-outline" />
@@ -215,8 +219,8 @@ function FunctionTab({ course, trainingClass, registration, availableClasses, ex
   );
 }
 
-function ReadOnlyInfoTab({ user, course, trainingClass, registration, isOnline }: { user: any; course: TrainingCourse; trainingClass: TrainingClass | null; registration: TrainingStudentRegistration | null; isOnline: boolean }) {
-  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><StudentInfoGroup user={user} registration={registration} /><RegistrationInfoGroup registration={registration} isOnline={isOnline} /><ResultInfoGroup registration={registration} /><SessionsInfoGroup trainingClass={trainingClass} registration={registration} isOnline={isOnline} /><EvaluationInfoGroup registration={registration} course={course} /></ScrollView></DetailTabScreen>;
+function ReadOnlyInfoTab({ user, course, trainingClass, registration, isOnline, onOpenSession }: { user: any; course: TrainingCourse; trainingClass: TrainingClass | null; registration: TrainingStudentRegistration | null; isOnline: boolean; onOpenSession: (sessionId: string) => void }) {
+  return <DetailTabScreen><ScrollView contentContainerStyle={styles.readOnlyTabContent}><StudentInfoGroup user={user} registration={registration} /><RegistrationInfoGroup registration={registration} isOnline={isOnline} /><ResultInfoGroup registration={registration} /><SessionsInfoGroup trainingClass={trainingClass} registration={registration} isOnline={isOnline} onOpenSession={onOpenSession} /><EvaluationInfoGroup registration={registration} course={course} /></ScrollView></DetailTabScreen>;
 }
 
 function StudentInfoGroup({ user, registration }: { user: any; registration: TrainingStudentRegistration | null }) {
@@ -270,12 +274,12 @@ function EvaluationGroups({ title, groups, values }: { title: string; groups: { 
   return <><DetailSectionHeader title={title} icon="format-list-bulleted" />{groups.map((group) => <ListFields key={group.id} style={styles.groupFields}><Text style={styles.groupTitle}>{group.label}</Text>{Object.entries(group.fields ?? {}).map(([key, field]) => <Field key={key} label={field.label} value={field.type === "rating" ? ratingValue(values[key]) : String(values[key] ?? "")} layout="column" />)}</ListFields>)}</>;
 }
 
-function SessionsInfoGroup({ trainingClass, registration, isOnline }: { trainingClass: TrainingClass | null; registration: TrainingStudentRegistration | null; isOnline: boolean }) {
+function SessionsInfoGroup({ trainingClass, registration, isOnline, onOpenSession }: { trainingClass: TrainingClass | null; registration: TrainingStudentRegistration | null; isOnline: boolean; onOpenSession: (sessionId: string) => void }) {
   const { colors } = useTheme();
   const sessions = trainingClass?.sessions ?? [];
   const attendanceBySession = new Map((registration?.classSessions ?? []).map((item) => [item.id, item]));
   if (!sessions.length) return <><DetailSectionHeader title="Ngày học" icon="calendar-outline" /><TrainingEmptyState icon="calendar-outline" title="Chưa có dữ liệu ngày học" /></>;
-  return <><DetailSectionHeader title="Ngày học" icon="calendar-outline" />{sessions.map((session) => { const attendance = attendanceBySession.get(session.id); return <ListFields key={session.id} style={styles.groupFields}><Field label="Buổi học" value={session.name} /><Field label="Bắt đầu" value={formatTrainingDateTime(session.startDate)} /><Field label="Kết thúc" value={formatTrainingDateTime(session.endDate)} /><Field label="Trạng thái" value={<Text style={{ color: session.status === 1 ? colors.primary : colors.onSurface }}>{sessionStatusLabel(session.status)}</Text>} />{!isOnline ? <Field label="Điểm danh" value={attendance?.isPresent == null ? "Chưa điểm danh" : attendance.isPresent ? <Badge variant="success">Có mặt</Badge> : <Badge variant="error">Vắng mặt</Badge>} /> : null}{!isOnline && attendance?.attendanceTime ? <Field label="Thời gian điểm danh" value={formatTrainingDateTime(attendance.attendanceTime)} /> : null}</ListFields>; })}</>;
+  return <><DetailSectionHeader title="Ngày học" icon="calendar-outline" />{sessions.map((session) => { const attendance = attendanceBySession.get(session.id); return <ListFields key={session.id} style={styles.groupFields}><View style={styles.sessionInfoHeader}><Text style={styles.actionTitle}>{session.name}</Text><IconButton icon="chevron-right" size={22} onPress={() => onOpenSession(session.id)} accessibilityLabel="Xem chi tiết buổi học" /></View><Field label="Bắt đầu" value={formatTrainingDateTime(session.startDate)} /><Field label="Kết thúc" value={formatTrainingDateTime(session.endDate)} /><Field label="Trạng thái" value={<Text style={{ color: session.status === 1 ? colors.primary : colors.onSurface }}>{sessionStatusLabel(session.status)}</Text>} />{!isOnline ? <Field label="Điểm danh" value={attendance?.isPresent == null ? "Chưa điểm danh" : attendance.isPresent ? <Badge variant="success">Có mặt</Badge> : <Badge variant="error">Vắng mặt</Badge>} /> : null}{!isOnline && attendance?.attendanceTime ? <Field label="Thời gian điểm danh" value={formatTrainingDateTime(attendance.attendanceTime)} /> : null}</ListFields>; })}</>;
 }
 
 function DetailTabScreen({ children }: { children: React.ReactNode }) {
@@ -318,4 +322,5 @@ const styles = StyleSheet.create({
   certificateImage: { width: 180, height: 120, borderRadius: 8 },
   inlineValue: { flexDirection: "row", alignItems: "center", gap: 6 },
   inlineValueText: { fontSize: 14, lineHeight: 19, textAlign: "right" },
+  sessionInfoHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 },
 });
