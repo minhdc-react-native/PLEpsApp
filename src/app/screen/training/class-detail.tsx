@@ -132,7 +132,7 @@ export default function TrainingClassDetailScreen() {
   const activeIndex = Math.min(index, detailRoutes.length - 1);
   const attendanceBySession = new Map((registration?.classSessions ?? []).map((item) => [item.id, item]));
   const openSession = (sessionId: string) => {
-    router.push(trainingHref(`/screen/training/session-detail?trainingCourseId=${encodeURIComponent(course.id)}&sessionId=${encodeURIComponent(sessionId)}&isOnline=${String(isOnline)}`));
+    router.push(trainingHref(`/screen/training/session-detail?trainingCourseId=${encodeURIComponent(course.id)}&sessionId=${encodeURIComponent(sessionId)}&isOnline=${String(isOnline)}&trainingClassName=${encodeURIComponent(trainingClass?.name ?? registration?.className ?? "")}`));
   };
 
   return (

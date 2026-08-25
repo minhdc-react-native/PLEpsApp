@@ -9,7 +9,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Divider, Text, useTheme } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "@/components/loading-screen";
 import { useToast } from "@/components/dialog/useToast";
 
@@ -18,7 +17,7 @@ export default function TrainingSessionDetailScreen() {
   const user = useData((state) => state.user);
   const employeeId = user?.employeeId;
   const { showToast } = useToast();
-  const { trainingCourseId, sessionId, isOnline } = useLocalSearchParams<{ trainingCourseId?: string; sessionId?: string; isOnline?: string }>();
+  const { trainingCourseId, sessionId, isOnline, trainingClassName } = useLocalSearchParams<{ trainingCourseId?: string; sessionId?: string; isOnline?: string; trainingClassName?: string }>();
   const [marking, setMarking] = useState(false);
   const load = useCallback(async () => {
     if (!sessionId || !trainingCourseId || !employeeId) return { course: null, session: null, registration: null };
@@ -54,10 +53,10 @@ export default function TrainingSessionDetailScreen() {
   if (loading && !data) return <LoadingScreen />;
   if (!session || error) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <AppHeader title="Chi tiết buổi học" onBack={() => router.back()} />
         <View style={styles.error}><Text>Không tìm thấy buổi học.</Text></View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -65,33 +64,39 @@ export default function TrainingSessionDetailScreen() {
   const statusVariant = session.status === 1 ? "primary" : session.status === 2 ? "success" : "default";
   const attendanceLabel = session.status === 0 ? "Chưa bắt đầu" : isPresent ? "Đã điểm danh" : "Chưa điểm danh";
   const attendanceVariant = session.status === 0 ? "default" : isPresent ? "success" : "error";
+  const attendanceTime = formatAttendanceTime(attendance?.attendanceTime);
+  const attendanceDelay = formatAttendanceDelay({ attendanceTime: attendance?.attendanceTime, startDate: session.startDate });
+  const attendanceWindowOpen = !isOnlineSession && session.status === 1;
+  const className = trainingClassName || data?.registration?.className || "Khóa đào tạo";
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
-      <AppHeader title={session.name} subtitle={formatTrainingDateTime(session.startDate)} onBack={() => router.back()} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <AppHeader title={session.name} subtitle={className} onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void reload()} />}>
         <SectionCard title="Thông tin buổi học" icon="information-outline">
           <View style={styles.infoList}>
-            <InfoRow label="Trạng thái" value={<Badge variant={statusVariant}>{statusLabel}</Badge>} />
+            <InfoRow label="Trạng thái" value={<View style={styles.badgeValue}><Badge variant={statusVariant}>{statusLabel}</Badge></View>} />
             <Divider />
             <InfoRow label="Thời gian bắt đầu" value={formatTrainingDateTime(session.startDate)} />
             <Divider />
             <InfoRow label="Thời gian kết thúc" value={formatTrainingDateTime(session.endDate)} />
+            {!isOnlineSession ? <>
+              <Divider />
+              <InfoRow
+                label="Điểm danh"
+                value={
+                  <View style={styles.attendanceValue}>
+                    <Badge variant={attendanceVariant}>{attendanceLabel}</Badge>
+                    {attendanceWindowOpen ? <Button mode={isPresent ? "outlined" : "contained"} compact disabled={isPresent || marking} loading={marking} onPress={() => void markAttendance()}>{isPresent ? "Đã điểm danh" : "Điểm danh"}</Button> : null}
+                  </View>
+                }
+              />
+              <Divider />
+              <InfoRow label="Điểm danh lúc" value={<Text style={styles.infoValueText}>{attendanceTime}{attendanceDelay ? <Text style={{ color: colors.error }}> ({attendanceDelay})</Text> : null}</Text>} />
+            </> : null}
             <Divider />
             <InfoRow label="Mô tả" value={session.description || "Chưa có mô tả."} multiline />
           </View>
         </SectionCard>
-
-        {!isOnlineSession ? <SectionCard title="Điểm danh" icon="calendar-check-outline">
-          <View style={styles.attendanceBox}>
-            <View style={{ flex: 1, gap: 5 }}>
-              <Badge variant={attendanceVariant}>{attendanceLabel}</Badge>
-              <Text style={{ color: colors.onSurfaceVariant }}>{attendance?.attendanceTime ? `Điểm danh lúc ${formatTrainingDateTime(attendance.attendanceTime)}` : "Chỉ có thể điểm danh khi buổi học đang diễn ra."}</Text>
-            </View>
-            <Button mode={isPresent ? "outlined" : "contained"} disabled={!canMarkAttendance} loading={marking} onPress={() => void markAttendance()}>
-              {isPresent ? "Đã điểm danh" : "Điểm danh"}
-            </Button>
-          </View>
-        </SectionCard> : null}
 
         <SectionCard title="Tài liệu" icon="file-document-multiple-outline">
           {session.fileIds.length || session.files.length ? (
@@ -99,12 +104,27 @@ export default function TrainingSessionDetailScreen() {
           ) : <Text style={{ color: colors.onSurfaceVariant }}>Chưa có tài liệu.</Text>}
         </SectionCard>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 function InfoRow({ label, value, multiline }: { label: string; value: React.ReactNode; multiline?: boolean }) {
   return <View style={[styles.infoRow, multiline && styles.multiline]}><Text style={styles.infoLabel}>{label}</Text><View style={styles.infoValue}>{typeof value === "string" ? <Text style={styles.infoValueText}>{value}</Text> : value}</View></View>;
+}
+
+function formatAttendanceTime(value: Date | null | undefined) {
+  if (!value) return "Chưa có";
+  return value.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatAttendanceDelay({ attendanceTime, startDate }: { attendanceTime?: Date | null; startDate?: Date | null }) {
+  if (!attendanceTime || !startDate) return null;
+  const lateSeconds = Math.floor((attendanceTime.getTime() - startDate.getTime()) / 1000);
+  if (lateSeconds <= 0) return null;
+  if (lateSeconds < 60) return `trễ ${lateSeconds} giây`;
+  const lateMinutes = Math.floor(lateSeconds / 60);
+  if (lateMinutes < 60) return `trễ ${lateMinutes} phút`;
+  return `trễ ${Math.floor(lateMinutes / 60)} giờ`;
 }
 
 const styles = StyleSheet.create({
@@ -116,6 +136,7 @@ const styles = StyleSheet.create({
   infoLabel: { color: "#5B667A", flex: 0.9 },
   infoValue: { flex: 1.3, alignItems: "flex-end" },
   infoValueText: { fontWeight: "700", textAlign: "right", lineHeight: 20 },
-  attendanceBox: { flexDirection: "row", alignItems: "center", gap: 12 },
+  badgeValue: { alignSelf: "flex-end" },
+  attendanceValue: { alignItems: "flex-end", gap: 8 },
   error: { flex: 1, alignItems: "center", justifyContent: "center" },
 });
