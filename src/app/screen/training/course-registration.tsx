@@ -27,7 +27,7 @@ export default function TrainingCourseRegistrationScreen() {
 
   const load = useCallback(async () => {
     const [courses, registered] = await Promise.all([
-      getTrainingCoursesApi(year, false),
+      getTrainingCoursesApi(year, false, TRAINING_COURSE_STATUS.REGISTRATION),
       employeeId ? getMyTrainingCoursesApi(employeeId, year, { isDeployedCourse: false }) : Promise.resolve([]),
     ]);
     const registeredById = new Map(registered.map((item) => [item.id, item]));

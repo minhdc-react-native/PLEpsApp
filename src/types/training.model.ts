@@ -7,14 +7,20 @@ export type TrainingCourseType =
   (typeof TRAINING_COURSE_TYPE)[keyof typeof TRAINING_COURSE_TYPE];
 
 export const TRAINING_COURSE_STATUS = {
+  CANCELED: -1,
+  NOT_STARTED: 0,
   REGISTRATION: 10,
+  REGISTRATION_REVIEW: 20,
   AWAITING_DEPLOYMENT: 30,
   CLASS_REGISTRATION: 40,
+  CLASS_REGISTRATION_REVIEW: 50,
   IN_PROGRESS: 60,
+  RESULT_CONFIRMATION: 90,
   FINISHED: 99,
 } as const;
 
-export type TrainingCourseStatus = number;
+export type TrainingCourseStatus =
+  (typeof TRAINING_COURSE_STATUS)[keyof typeof TRAINING_COURSE_STATUS];
 
 export const TRAINING_CLASS_STATUS = {
   NOT_STARTED: 0,

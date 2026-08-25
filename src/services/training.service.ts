@@ -1,6 +1,6 @@
 import { mapEvaluation, mapMyTrainingCourse, mapRegistration, mapTrainingClass, mapTrainingCourse, mapTrainingSession, mapTrainingExamSession, mapTrainingExamAnswer, mapTrainingExamResult, mapTrainingProposal } from "@/mappers/training.mapper";
 import { api } from "@/utils/epsApi";
-import { MyTrainingCourse, TrainingClass, TrainingCourse, TrainingEvaluation, TrainingSession, TrainingStudentRegistration, TrainingExamAnswer, TrainingExamSession, TrainingProposal, TrainingSummary } from "@/types/training.model";
+import { TRAINING_COURSE_STATUS, MyTrainingCourse, TrainingClass, TrainingCourse, TrainingEvaluation, TrainingSession, TrainingStudentRegistration, TrainingExamAnswer, TrainingExamSession, TrainingProposal, TrainingSummary } from "@/types/training.model";
 
 function unwrap<T = any>(value: any): T {
   const payload = value?.data ?? value;
@@ -33,10 +33,14 @@ export async function getMyTrainingSummaryApi(year: number): Promise<TrainingSum
   };
 }
 
-export async function getTrainingCoursesApi(year: number, isDeployedCourse = false) {
+export async function getTrainingCoursesApi(
+  year: number,
+  isDeployedCourse = false,
+  status: number | null = TRAINING_COURSE_STATUS.REGISTRATION,
+) {
   const response = await api.get({
     link: "/training-courses",
-    config: { params: { year, isPlanCourse: null, isDeployedCourse } },
+    config: { params: { year, isPlanCourse: null, status, isDeployedCourse } },
   });
   return asArray(response).map(mapTrainingCourse);
 }
