@@ -366,25 +366,56 @@ function examQuestionType(raw: any): TrainingExamQuestion["type"] {
   return raw?.type === 1 || value.includes("essay") || value.includes("text") ? "essay" : "multiple_choice";
 }
 
+function numericOrder(value: any, fallback: number): number {
+  if (value === null || value === undefined || value === "") return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export function mapTrainingExamSession(raw: any): TrainingExamSession {
   const exam = raw?.exam ?? raw?.trainingExam ?? raw;
   const attempt = raw?.attempt ?? raw?.myAttempt ?? null;
   const questionsRaw = raw?.questions ?? exam?.questions ?? raw?.examQuestions ?? [];
-  const questions = (Array.isArray(questionsRaw) ? questionsRaw : []).map((question: any, index: number) => ({
-    id: String(question?.id ?? question?.questionId ?? ""),
-    order: question?.order ?? question?.sortOrder ?? index + 1,
-    type: examQuestionType(question),
-    title: firstString(question?.title, question?.text, question?.content, question?.question) || `Câu ${index + 1}`,
-    maxScore: Number(question?.maxScore ?? question?.points ?? question?.score ?? 0),
-    options: (question?.options ?? question?.answers ?? []).map((option: any, optionIndex: number) => ({
-      id: String(option?.id ?? option?.optionId ?? ""),
-      label: option?.label ?? String.fromCharCode(65 + optionIndex),
-      content: option?.content ?? option?.text ?? option?.name ?? "",
-    })),
-  })) as TrainingExamQuestion[];
+  const questions = (Array.isArray(questionsRaw) ? questionsRaw : [])
+    .map((question: any, index: number) => ({
+      question,
+      index,
+      order: numericOrder(question?.order ?? question?.sortOrder, index + 1),
+    }))
+    .sort((left, right) => left.order - right.order || left.index - right.index)
+    .map(({ question, order }) => {
+      const optionsRaw = question?.options ?? question?.answers ?? [];
+      const options = (Array.isArray(optionsRaw) ? optionsRaw : [])
+        .map((option: any, index: number) => ({
+          option,
+          index,
+          order: numericOrder(option?.order, 0),
+        }))
+        .sort((left, right) => left.order - right.order || left.index - right.index)
+        .map(({ option }, optionIndex) => ({
+          id: String(option?.id ?? option?.optionId ?? ""),
+          label: String.fromCharCode(65 + optionIndex),
+          content: option?.content ?? option?.text ?? option?.name ?? "",
+        }));
+
+      return {
+        id: String(question?.id ?? question?.questionId ?? ""),
+        order,
+        type: examQuestionType(question),
+        title: firstString(question?.title),
+        content: question?.content ?? question?.text ?? question?.question ?? "",
+        maxScore: Number(question?.maxScore ?? question?.points ?? question?.score ?? 0),
+        gradingGuide: question?.gradingGuide ?? question?.explanation ?? null,
+        options,
+      };
+    }) as TrainingExamQuestion[];
   const answers = (raw?.answers ?? attempt?.answers ?? []).map(mapTrainingExamAnswer);
   const results = (raw?.results ?? raw?.review ?? attempt?.results ?? []).map(mapTrainingExamResult);
   const status = examStatus(raw);
+  const startsAt = raw?.startsAt ?? raw?.scheduleStart ?? raw?.opensAt ?? exam?.startsAt ?? exam?.scheduleStart ?? exam?.opensAt ?? exam?.startDate ?? null;
+  const endsAt = raw?.endsAt ?? raw?.scheduleEnd ?? raw?.closesAt ?? exam?.endsAt ?? exam?.scheduleEnd ?? exam?.closesAt ?? exam?.endDate ?? null;
+  const hasConfiguredStart = startsAt != null && String(startsAt).trim() !== "" && !Number.isNaN(new Date(startsAt).getTime());
+  const backendCanStart = raw?.canStart ?? exam?.canStart;
   const expiresAt = raw?.expiresAt ?? attempt?.expiresAt ?? null;
   return {
     id: String(raw?.id ?? attempt?.id ?? exam?.id ?? ""),
@@ -395,8 +426,8 @@ export function mapTrainingExamSession(raw: any): TrainingExamSession {
     className: raw?.className ?? exam?.className ?? null,
     status,
     stage: status === "result" || status === "submitted" ? "completed" : status,
-    startsAt: raw?.startsAt ?? exam?.startsAt ?? exam?.startDate ?? null,
-    endsAt: raw?.endsAt ?? exam?.endsAt ?? exam?.endDate ?? null,
+    startsAt,
+    endsAt,
     expiresAt,
     attemptId: raw?.attemptId ?? attempt?.id ?? null,
     instructions: raw?.instructions ?? exam?.instructions ?? exam?.description ?? null,
@@ -405,7 +436,7 @@ export function mapTrainingExamSession(raw: any): TrainingExamSession {
     submittedAt: raw?.submittedAt ?? attempt?.submittedAt ?? null,
     totalScore: raw?.totalScore ?? exam?.totalScore ?? null,
     passingScore: raw?.passingScore ?? exam?.passingScore ?? null,
-    canStart: raw?.canStart ?? status === "not_started",
+    canStart: hasConfiguredStart && (backendCanStart ?? status === "not_started") === true,
     durationMinutes: Number(raw?.durationMinutes ?? exam?.durationMinutes ?? exam?.duration ?? 0),
     score: raw?.score ?? attempt?.score ?? null,
     questions,
@@ -433,5 +464,7 @@ export function mapTrainingExamResult(raw: any): TrainingExamResult {
     score: raw?.score ?? null,
     maxScore: raw?.maxScore ?? raw?.points ?? null,
     isCorrect: raw?.isCorrect ?? null,
+    explanation: raw?.explanation ?? null,
+    examinerComment: raw?.examinerComment ?? raw?.comment ?? null,
   };
 }

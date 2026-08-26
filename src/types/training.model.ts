@@ -277,7 +277,7 @@ export interface TrainingExamSession {
   endsAt?: string | null;
   expiresAt?: string | null;
   attemptId?: string | null;
-  instructions?: string | null;
+  instructions?: unknown;
   serverTimeOffsetMs?: number;
   lastSavedAt?: string | null;
   submittedAt?: string | null;
@@ -296,7 +296,9 @@ export interface TrainingExamQuestion {
   order: number;
   type: "multiple_choice" | "essay";
   title: string;
+  content?: unknown;
   maxScore: number;
+  gradingGuide?: unknown;
   options?: { id: string; label: string; content?: unknown }[];
 }
 
@@ -316,4 +318,6 @@ export interface TrainingExamResult {
   score?: number | null;
   maxScore?: number | null;
   isCorrect?: boolean | null;
+  explanation?: unknown;
+  examinerComment?: unknown;
 }

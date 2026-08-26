@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import AppHeader from "@/components/app-header";
 import { Badge } from "@/components/badge";
+import TrainingRichText, { isTrainingRichTextValue } from "@/components/training/training-rich-text";
 import { SectionCard, TrainingEmptyState } from "@/components/training/training-presentational";
 import { formatTrainingDateTime, useTrainingResource } from "@/hooks/useTraining";
 import { getTrainingExamAttemptAnswersApi, getTrainingExamAttemptCorrectAnswersApi, getTrainingExamStudentApi, saveTrainingExamAnswersApi, startTrainingExamAttemptApi } from "@/services/training.service";
@@ -9,12 +10,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { Button, Card, Divider, RadioButton, Text, TextInput, useTheme } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoadingScreen from "@/components/loading-screen";
 import { useToast } from "@/components/dialog/useToast";
 
 export default function TrainingExamSessionScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const { examId } = useLocalSearchParams<{ examId?: string }>();
   const [session, setSession] = useState<TrainingExamSession | null>(null);
@@ -67,7 +69,7 @@ export default function TrainingExamSessionScreen() {
   };
 
   const start = async () => {
-    if (!examId || !effectiveSession || starting) return;
+    if (!examId || !effectiveSession || starting || effectiveSession.canStart !== true) return;
     setStarting(true);
     try {
       const started = await startTrainingExamAttemptApi(examId, effectiveSession);
@@ -112,39 +114,36 @@ export default function TrainingExamSessionScreen() {
 
   if (loading && !effectiveSession) return <LoadingScreen />;
   if (!effectiveSession || error) {
-    return <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}><AppHeader title="Bài thi đào tạo" onBack={() => router.back()} /><View style={styles.error}><TrainingEmptyState title="Không tải được bài thi" description="Vui lòng thử tải lại sau ít phút." /><Button mode="outlined" onPress={() => void reload()}>Thử lại</Button></View></SafeAreaView>;
+    return <View style={[styles.container, { backgroundColor: colors.background }]}><AppHeader title="Bài thi đào tạo" onBack={() => router.back()} /><View style={styles.error}><TrainingEmptyState title="Không tải được bài thi" description="Vui lòng thử tải lại sau ít phút." /><Button mode="outlined" onPress={() => void reload()}>Thử lại</Button></View></View>;
   }
 
-  const statusLabel = effectiveSession.status === "not_started" ? "Chưa bắt đầu" : effectiveSession.status === "in_progress" ? "Đang làm bài" : effectiveSession.status === "grading" ? "Đang chấm" : "Đã có kết quả";
-  const statusVariant = effectiveSession.status === "in_progress" ? "primary" : effectiveSession.status === "result" || effectiveSession.status === "submitted" ? "success" : "default";
   const resultByQuestion = new Map((effectiveSession.results ?? []).map((item) => [item.questionId, item]));
+  const showNavigation = effectiveSession.status !== "not_started" && effectiveSession.status !== "grading" && Boolean(currentQuestion);
+  const saveDescription = effectiveSession.lastSavedAt ? `Lưu lần cuối: ${formatTrainingDateTime(effectiveSession.lastSavedAt)}` : "Chưa lưu";
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
-      <AppHeader title="Bài thi đào tạo" subtitle={effectiveSession.courseName} onBack={() => router.back()} actions={isActive ? <Button mode="contained" compact loading={saving} onPress={() => void save()}>Lưu</Button> : undefined} />
-      <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void reload()} />}>
-        <Card mode="outlined" style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><Card.Content style={styles.heroContent}><View style={{ flex: 1, gap: 7 }}><Text variant="titleLarge" style={styles.title}>{effectiveSession.title}</Text><View style={styles.metaRow}><Badge variant={statusVariant}>{statusLabel}</Badge>{effectiveSession.durationMinutes ? <Text style={{ color: colors.onSurfaceVariant }}>{effectiveSession.durationMinutes} phút</Text> : null}</View>{effectiveSession.instructions ? <Text style={{ color: colors.onSurfaceVariant, lineHeight: 20 }}>{plainText(effectiveSession.instructions)}</Text> : null}</View></Card.Content></Card>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <AppHeader title={effectiveSession.title} subtitle={saveDescription} onBack={() => router.back()} actions={isActive ? <Button mode="contained" compact loading={saving} onPress={() => void save()}>Lưu</Button> : undefined} />
+      <ScrollView contentContainerStyle={[styles.content, showNavigation && styles.contentWithFooter]} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void reload()} />}>
 
-        {effectiveSession.status === "not_started" ? <SectionCard title="Sẵn sàng làm bài" icon="clipboard-text-outline"><Text style={styles.helper}>Khi bắt đầu, hệ thống sẽ ghi nhận lượt làm bài của bạn. Hãy chuẩn bị trước khi tiếp tục.</Text><Button mode="contained" loading={starting} disabled={starting || effectiveSession.canStart === false} onPress={() => void start()}>Bắt đầu làm bài</Button></SectionCard> : null}
+        {effectiveSession.status === "not_started" ? <SectionCard title="Sẵn sàng làm bài" icon="clipboard-text-outline"><Text style={styles.helper}>{effectiveSession.startsAt ? "Khi bắt đầu, hệ thống sẽ ghi nhận lượt làm bài của bạn. Hãy chuẩn bị trước khi tiếp tục." : "Bài thi chưa được thiết lập thời gian bắt đầu."}</Text><Button mode="contained" loading={starting} disabled={starting || effectiveSession.canStart !== true} onPress={() => void start()}>Bắt đầu làm bài</Button></SectionCard> : null}
         {effectiveSession.status === "grading" ? <TrainingEmptyState icon="progress-clock" title="Bài thi đang được chấm" description="Kết quả sẽ hiển thị sau khi hoàn tất chấm điểm." /> : null}
         {effectiveSession.status !== "not_started" && effectiveSession.status !== "grading" && effectiveSession.questions.length ? <>
           <View style={styles.examBar}><Text style={styles.title}>Câu {questionIndex + 1}/{effectiveSession.questions.length}</Text>{isActive ? <Badge variant={remainingSeconds != null && remainingSeconds < 60 ? "error" : "primary"}>{formatRemaining(remainingSeconds)}</Badge> : <Badge variant="default">Chỉ xem</Badge>}</View>
           {currentQuestion ? <QuestionCard question={currentQuestion} answer={answerFor(currentQuestion.id)} result={resultByQuestion.get(currentQuestion.id)} disabled={readOnly} onChange={(changes) => updateAnswer(currentQuestion, changes)} /> : null}
-          <View style={styles.navigation}><Button mode="outlined" disabled={questionIndex === 0} onPress={() => setQuestionIndex((value) => value - 1)}>Câu trước</Button><Button mode="contained" disabled={questionIndex >= effectiveSession.questions.length - 1} onPress={() => setQuestionIndex((value) => value + 1)}>Câu tiếp</Button></View>
-          {effectiveSession.lastSavedAt ? <Text style={[styles.saved, { color: colors.onSurfaceVariant }]}>Lưu lần cuối: {formatTrainingDateTime(effectiveSession.lastSavedAt)}</Text> : null}
         </> : null}
         {effectiveSession.status === "result" || effectiveSession.status === "submitted" ? <SectionCard title="Kết quả" icon="trophy-outline"><View style={styles.resultList}><ResultRow label="Điểm" value={effectiveSession.score == null ? "Đang cập nhật" : String(effectiveSession.score)} /><Divider /><ResultRow label="Điểm đạt" value={effectiveSession.passingScore == null ? "Chưa xác định" : String(effectiveSession.passingScore)} /></View></SectionCard> : null}
       </ScrollView>
-    </SafeAreaView>
+      {showNavigation ? <View style={[styles.navigationBar, { backgroundColor: colors.surface, borderTopColor: colors.outlineVariant, paddingBottom: insets.bottom + 12 }]}><Button mode="outlined" icon="arrow-left" style={styles.navigationButton} disabled={questionIndex === 0} onPress={() => setQuestionIndex((value) => value - 1)}>Câu trước</Button><Button mode="contained" icon="arrow-right" style={styles.navigationButton} disabled={questionIndex >= effectiveSession.questions.length - 1} onPress={() => setQuestionIndex((value) => value + 1)}>Câu tiếp</Button></View> : null}
+    </View>
   );
 }
 
-function QuestionCard({ question, answer, result, disabled, onChange }: { question: TrainingExamQuestion; answer?: TrainingExamAnswer; result?: { correctOptionId?: string | null; isCorrect?: boolean | null; score?: number | null }; disabled: boolean; onChange: (changes: Partial<TrainingExamAnswer>) => void }) {
+function QuestionCard({ question, answer, result, disabled, onChange }: { question: TrainingExamQuestion; answer?: TrainingExamAnswer; result?: { correctOptionId?: string | null; isCorrect?: boolean | null; score?: number | null; explanation?: unknown; examinerComment?: unknown }; disabled: boolean; onChange: (changes: Partial<TrainingExamAnswer>) => void }) {
   const { colors } = useTheme();
-  return <Card mode="outlined" style={[styles.questionCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><Card.Content style={{ gap: 13 }}><Text variant="titleMedium" style={styles.questionTitle}>{question.order}. {plainText(question.title)}</Text>{question.type === "essay" ? <TextInput mode="outlined" label="Câu trả lời" multiline numberOfLines={7} disabled={disabled} value={answer?.essayText ?? ""} onChangeText={(value) => onChange({ essayText: value })} /> : <RadioButton.Group value={answer?.selectedOptionId ?? ""} onValueChange={(value) => onChange({ selectedOptionId: value })}>{(question.options ?? []).map((option) => <View key={option.id} style={styles.option}><RadioButton value={option.id} disabled={disabled} /><Text style={styles.optionText}>{option.label}. {plainText(option.content)}</Text></View>)}</RadioButton.Group>}{result ? <Text style={{ color: result.isCorrect === false ? colors.error : colors.primary }}>Kết quả: {result.isCorrect === false ? "Chưa đúng" : result.isCorrect === true ? "Đúng" : "Đã ghi nhận"}{result.score != null ? ` · ${result.score} điểm` : ""}</Text> : null}</Card.Content></Card>;
+  return <Card mode="outlined" style={[styles.questionCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><Card.Content style={{ gap: 13 }}>{question.title ? <View style={styles.questionHeading}>{isTrainingRichTextValue(question.title) ? <TrainingRichText value={question.title} textStyle={styles.questionTitle} /> : <Text variant="titleMedium" style={styles.questionTitle}>{question.title}</Text>}</View> : null}{question.content ? <TrainingRichText value={question.content} textStyle={styles.questionContent} /> : null}{question.type === "essay" ? <TextInput mode="outlined" label="Câu trả lời" multiline numberOfLines={7} disabled={disabled} value={answer?.essayText ?? ""} onChangeText={(value) => onChange({ essayText: value })} /> : <RadioButton.Group value={answer?.selectedOptionId ?? ""} onValueChange={(value) => onChange({ selectedOptionId: value })}>{(question.options ?? []).map((option) => <View key={option.id} style={styles.option}><RadioButton value={option.id} disabled={disabled} /><View style={styles.optionContent}><Text style={styles.optionLabel}>{option.label}.</Text><TrainingRichText value={option.content ?? ""} textStyle={styles.optionText} /></View></View>)}</RadioButton.Group>}{result ? <View style={styles.resultFeedback}><Text style={{ color: result.isCorrect === false ? colors.error : colors.primary }}>Kết quả: {result.isCorrect === false ? "Chưa đúng" : result.isCorrect === true ? "Đúng" : "Đã ghi nhận"}{result.score != null ? ` · ${result.score} điểm` : ""}</Text>{result.explanation ? <TrainingRichText value={result.explanation} textStyle={{ color: colors.onSurfaceVariant }} /> : null}{result.examinerComment ? <TrainingRichText value={result.examinerComment} textStyle={{ color: colors.onSurfaceVariant }} /> : null}</View> : null}</Card.Content></Card>;
 }
 
 function ResultRow({ label, value }: { label: string; value: string }) { return <View style={styles.resultRow}><Text style={{ color: "#5B667A" }}>{label}</Text><Text style={styles.resultValue}>{value}</Text></View>; }
-function plainText(value: unknown): string { if (typeof value === "string") return value.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim(); if (value == null) return ""; return String(value); }
 function formatRemaining(seconds: number | null) { if (seconds == null) return "Không giới hạn"; return `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`; }
 
-const styles = StyleSheet.create({ container: { flex: 1 }, content: { padding: 16, paddingBottom: 36, gap: 14 }, heroCard: { borderRadius: 20 }, heroContent: { paddingVertical: 16 }, title: { fontWeight: "800" }, metaRow: { flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }, helper: { color: "#5B667A", lineHeight: 20, marginBottom: 14 }, examBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, questionCard: { borderRadius: 20 }, questionTitle: { fontWeight: "800", lineHeight: 24 }, option: { flexDirection: "row", alignItems: "center", gap: 4, paddingVertical: 4 }, optionText: { flex: 1, lineHeight: 21 }, navigation: { flexDirection: "row", justifyContent: "space-between", gap: 12 }, saved: { textAlign: "center", fontSize: 12 }, resultList: { gap: 14 }, resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, resultValue: { fontWeight: "800", fontSize: 16 }, error: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 } });
+const styles = StyleSheet.create({ container: { flex: 1 }, content: { padding: 16, paddingBottom: 36, gap: 14 }, contentWithFooter: { paddingBottom: 112 }, title: { fontWeight: "800" }, helper: { color: "#5B667A", lineHeight: 20, marginBottom: 14 }, examBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, questionCard: { borderRadius: 20 }, questionHeading: { flexDirection: "row", alignItems: "flex-start", gap: 6 }, questionTitle: { fontWeight: "800", lineHeight: 24 }, questionContent: { color: "#182338", fontSize: 16, lineHeight: 25 }, option: { flexDirection: "row", alignItems: "flex-start", gap: 4, paddingVertical: 4 }, optionContent: { flex: 1, flexDirection: "row", alignItems: "flex-start", gap: 4, paddingTop: 7 }, optionLabel: { fontWeight: "700", lineHeight: 21 }, optionText: { flex: 1, lineHeight: 21 }, resultFeedback: { gap: 8 }, navigationBar: { flexDirection: "row", justifyContent: "space-between", gap: 12, borderTopWidth: 1, paddingHorizontal: 16, paddingTop: 10 }, navigationButton: { flex: 1 }, resultList: { gap: 14 }, resultRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, resultValue: { fontWeight: "800", fontSize: 16 }, error: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 } });
