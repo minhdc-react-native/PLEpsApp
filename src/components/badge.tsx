@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { Children, ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useTheme } from "react-native-paper";
 
@@ -28,7 +28,8 @@ export const Badge = ({ variant = "default", children }: BadgeProps) => {
   };
 
   const renderContent = () => {
-    if (typeof children === "string" || typeof children === "number") {
+    const textChildren = Children.toArray(children);
+    if (textChildren.every((child) => typeof child === "string" || typeof child === "number")) {
       return (
         <Text style={[badgeStyles.text, { color: colorMap[variant].color }]}>
           {children}
