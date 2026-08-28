@@ -1,4 +1,6 @@
 import {
+  TRAINING_CLASS_EXAM_STATUS,
+  TRAINING_CLASS_EXAM_STATUS_VALUES,
   TRAINING_COURSE_STATUS,
   TRAINING_REGISTRATION_STATUS,
   TrainingClass,
@@ -15,6 +17,7 @@ import {
   TrainingExamQuestion,
   TrainingExamAnswer,
   TrainingExamResult,
+  TrainingClassExamStatus,
   TrainingProposal,
 } from "@/types/training.model";
 
@@ -353,12 +356,47 @@ export function mapTrainingProposal(raw: any): TrainingProposal {
 }
 
 function examStatus(raw: any): TrainingExamSession["status"] {
-  const value = String(raw?.status ?? raw?.examStatus ?? raw?.attempt?.status ?? "").toLowerCase();
-  if (["result", "completed", "graded"].some((item) => value.includes(item))) return "result";
-  if (value.includes("grading")) return "grading";
-  if (["in_progress", "in-progress", "started", "doing"].some((item) => value.includes(item))) return "in_progress";
-  if (["submitted", "submit"].some((item) => value.includes(item))) return "submitted";
-  return "not_started";
+  const examStatusValue = getTrainingClassExamStatus(raw);
+  const mappedExamStatus = examStatusValue ? sessionStatusByExamStatus[examStatusValue] : undefined;
+  const attempt = getFirstExamAttempt(raw);
+  const attemptValue = String(raw?.attemptStatus ?? attempt?.status ?? "").toLowerCase();
+  const hasAttempt = Boolean(attempt || raw?.attemptId || raw?.hasAttempted);
+  return mappedExamStatus ?? sessionStatusByAttemptValue[attemptValue] ?? (hasAttempt ? "in_progress" : "not_started");
+}
+
+const trainingClassExamStatusByValue: Record<string, TrainingClassExamStatus> = Object.fromEntries(
+  Object.entries(TRAINING_CLASS_EXAM_STATUS_VALUES).flatMap(([status, value]) => [
+    [String(value), status],
+    [status, status],
+  ]),
+) as Record<string, TrainingClassExamStatus>;
+
+const sessionStatusByExamStatus: Partial<Record<TrainingClassExamStatus, TrainingExamSession["status"]>> = {
+  [TRAINING_CLASS_EXAM_STATUS.GRADING]: "grading",
+  [TRAINING_CLASS_EXAM_STATUS.GRADED]: "result",
+};
+
+const sessionStatusByAttemptValue: Record<string, TrainingExamSession["status"]> = {
+  result: "result",
+  completed: "result",
+  graded: "result",
+  grading: "grading",
+  in_progress: "in_progress",
+  "in-progress": "in_progress",
+  started: "in_progress",
+  doing: "in_progress",
+  submitted: "submitted",
+  submit: "submitted",
+};
+
+function getTrainingClassExamStatus(raw: any): TrainingClassExamStatus | null {
+  const value = raw?.examStatus ?? raw?.exam?.status ?? raw?.status;
+  return trainingClassExamStatusByValue[String(value).toLowerCase()] ?? null;
+}
+
+function getFirstExamAttempt(raw: any): any | null {
+  if (Array.isArray(raw?.attempts)) return raw.attempts[0] ?? null;
+  return raw?.attempt ?? raw?.myAttempt ?? null;
 }
 
 function examQuestionType(raw: any): TrainingExamQuestion["type"] {
@@ -374,7 +412,7 @@ function numericOrder(value: any, fallback: number): number {
 
 export function mapTrainingExamSession(raw: any): TrainingExamSession {
   const exam = raw?.exam ?? raw?.trainingExam ?? raw;
-  const attempt = raw?.attempt ?? raw?.myAttempt ?? null;
+  const attempt = getFirstExamAttempt(raw);
   const questionsRaw = raw?.questions ?? exam?.questions ?? raw?.examQuestions ?? [];
   const questions = (Array.isArray(questionsRaw) ? questionsRaw : [])
     .map((question: any, index: number) => ({
@@ -429,12 +467,13 @@ export function mapTrainingExamSession(raw: any): TrainingExamSession {
     startsAt,
     endsAt,
     expiresAt,
-    attemptId: raw?.attemptId ?? attempt?.id ?? null,
+    attemptId: raw?.attemptId ?? attempt?.attemptId ?? attempt?.id ?? null,
     instructions: raw?.instructions ?? exam?.instructions ?? exam?.description ?? null,
     serverTimeOffsetMs: Number(raw?.serverTimeOffsetMs ?? 0),
     lastSavedAt: raw?.lastSavedAt ?? attempt?.lastSavedAt ?? null,
     submittedAt: raw?.submittedAt ?? attempt?.submittedAt ?? null,
-    totalScore: raw?.totalScore ?? exam?.totalScore ?? null,
+    gradedAt: raw?.gradedAt ?? attempt?.gradedAt ?? null,
+    totalScore: raw?.totalPoints ?? raw?.totalScore ?? attempt?.totalPoints ?? attempt?.totalScore ?? exam?.totalPoints ?? exam?.totalScore ?? null,
     passingScore: raw?.passingScore ?? exam?.passingScore ?? null,
     canStart: hasConfiguredStart && (backendCanStart ?? status === "not_started") === true,
     durationMinutes: Number(raw?.durationMinutes ?? exam?.durationMinutes ?? exam?.duration ?? 0),
@@ -449,9 +488,9 @@ export function mapTrainingExamAnswer(raw: any): TrainingExamAnswer {
   return {
     questionId: String(raw?.questionId ?? raw?.id ?? ""),
     selectedOptionId: raw?.selectedOptionId ?? raw?.optionId ?? raw?.selectedAnswerId ?? null,
-    essayText: raw?.essayText ?? raw?.text ?? raw?.answerText ?? null,
+    essayText: raw?.essayText ?? raw?.essayAnswer ?? raw?.text ?? raw?.answerText ?? null,
     isCorrect: raw?.isCorrect ?? null,
-    score: raw?.score ?? null,
+    score: raw?.score ?? raw?.pointsEarned ?? null,
   };
 }
 
@@ -461,7 +500,7 @@ export function mapTrainingExamResult(raw: any): TrainingExamResult {
     selectedOptionId: raw?.selectedOptionId ?? raw?.optionId ?? null,
     correctOptionId: raw?.correctOptionId ?? raw?.answerId ?? null,
     essayText: raw?.essayText ?? raw?.text ?? null,
-    score: raw?.score ?? null,
+    score: raw?.score ?? raw?.pointsEarned ?? null,
     maxScore: raw?.maxScore ?? raw?.points ?? null,
     isCorrect: raw?.isCorrect ?? null,
     explanation: raw?.explanation ?? null,

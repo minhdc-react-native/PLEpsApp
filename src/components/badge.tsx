@@ -12,9 +12,10 @@ interface BadgeProps {
     | "warning"
     | "error";
   children: ReactNode;
+  size?: "default" | "large";
 }
 
-export const Badge = ({ variant = "default", children }: BadgeProps) => {
+export const Badge = ({ variant = "default", children, size = "default" }: BadgeProps) => {
   const { colors } = useTheme();
 
   const colorMap = {
@@ -31,7 +32,7 @@ export const Badge = ({ variant = "default", children }: BadgeProps) => {
     const textChildren = Children.toArray(children);
     if (textChildren.every((child) => typeof child === "string" || typeof child === "number")) {
       return (
-        <Text style={[badgeStyles.text, { color: colorMap[variant].color }]}>
+        <Text style={[badgeStyles.text, size === "large" && badgeStyles.largeText, { color: colorMap[variant].color }]}>
           {children}
         </Text>
       );
@@ -40,7 +41,7 @@ export const Badge = ({ variant = "default", children }: BadgeProps) => {
   };
 
   return (
-    <View style={[badgeStyles.container, colorMap[variant]]}>
+    <View style={[badgeStyles.container, size === "large" && badgeStyles.largeContainer, colorMap[variant]]}>
       {renderContent()}
     </View>
   );
@@ -58,5 +59,14 @@ export const badgeStyles = StyleSheet.create({
   text: {
     fontSize: 12,
     fontWeight: "500",
+  },
+  largeContainer: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  largeText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
 });

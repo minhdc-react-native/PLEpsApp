@@ -36,6 +36,27 @@ export const TRAINING_SESSION_STATUS = {
 
 export type TrainingSessionStatus = number;
 
+// Course-exam lifecycle values from the web/backend contract.
+export const TRAINING_CLASS_EXAM_STATUS = {
+  DRAFT: "draft",
+  NOT_OPENED: "not_opened",
+  PUBLISHED: "published",
+  GRADING: "grading",
+  GRADED: "graded",
+  CANCELED: "canceled",
+} as const;
+
+export type TrainingClassExamStatus = (typeof TRAINING_CLASS_EXAM_STATUS)[keyof typeof TRAINING_CLASS_EXAM_STATUS];
+
+export const TRAINING_CLASS_EXAM_STATUS_VALUES: Record<TrainingClassExamStatus, number> = {
+  [TRAINING_CLASS_EXAM_STATUS.DRAFT]: 0,
+  [TRAINING_CLASS_EXAM_STATUS.NOT_OPENED]: 1,
+  [TRAINING_CLASS_EXAM_STATUS.PUBLISHED]: 2,
+  [TRAINING_CLASS_EXAM_STATUS.GRADING]: 3,
+  [TRAINING_CLASS_EXAM_STATUS.GRADED]: 4,
+  [TRAINING_CLASS_EXAM_STATUS.CANCELED]: 5,
+};
+
 export interface TrainingSummary {
   year: number;
   participatingCount: number;
@@ -281,6 +302,7 @@ export interface TrainingExamSession {
   serverTimeOffsetMs?: number;
   lastSavedAt?: string | null;
   submittedAt?: string | null;
+  gradedAt?: string | null;
   totalScore?: number | null;
   passingScore?: number | null;
   canStart?: boolean;
