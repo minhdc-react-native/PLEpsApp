@@ -4,9 +4,14 @@ import { useData } from "@/hooks/zustand/useData";
 import { useTab } from "@/hooks/zustand/useTab";
 import { api } from "@/utils/epsApi";
 import { epsStorage } from "@/utils/epsStorage";
+import {
+  AUTH_SESSION_EXPIRED_EVENT,
+  resetAuthSessionExpiryNotification,
+} from "@/utils/epsAxios";
 import { router } from "expo-router";
 import React, { createContext, useContext, useEffect, useState } from "react";
-const { getToken, setToken, setLogin, removeLogin } = epsStorage();
+import { DeviceEventEmitter } from "react-native";
+const { clearTokens, getToken, setToken, setLogin, removeLogin } = epsStorage();
 type AuthContextType = {
     isLogin: boolean | null; // null = đang check
     login: (data: ILogin) => Promise<void>;
@@ -53,16 +58,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
     };
     const logout = async () => {
-        await api.post({
-            link: `/auth/logout`,
-            callBack: async () => {
-                setIsLogin(false);
-                setUser(null);
-                setIndex(0);
-                router.replace("/(auth)/login");
-            },
-            setLoading: (loading) => (loading ? show("Đăng xuất...") : hide()),
-        });
+        try {
+            await api.post({
+                link: `/auth/logout`,
+                setLoading: (loading) => (loading ? show("Đăng xuất...") : hide()),
+            });
+        } finally {
+            await clearTokens();
+            setIsLogin(false);
+            setUser(null);
+            setIndex(0);
+            router.replace("/(auth)/login");
+        }
     };
     const login = (login: ILogin) => {
         return new Promise<void>((resolve, reject) => {
@@ -77,7 +84,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             return reject();
                         }
 
-                        await setToken(res);
+                        const authResponse = res as IToken;
+                        await setToken(
+                            authResponse?.access_token
+                                ? authResponse
+                                : { cookie_session: true },
+                        );
+                        resetAuthSessionExpiryNotification();
                         await getDataBegin();
 
                         // eslint-disable-next-line no-unused-expressions
@@ -123,6 +136,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         checkLogin();
     }, []);
+
+    useEffect(() => {
+        const subscription = DeviceEventEmitter.addListener(
+            AUTH_SESSION_EXPIRED_EVENT,
+            () => {
+                setIsLogin(false);
+                setUser(null);
+                setIndex(0);
+            },
+        );
+
+        return () => subscription.remove();
+    }, [setIndex, setUser]);
 
     return (
         <AuthContext.Provider

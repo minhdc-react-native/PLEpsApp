@@ -1,102 +1,140 @@
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { router } from "expo-router";
-import qs from "qs";
-import { Alert } from "react-native";
+import { Alert, DeviceEventEmitter } from "react-native";
 import { BASE_URL, epsStorage } from "./epsStorage";
 
 const { setToken, getToken, clearTokens } = epsStorage();
 
-const epsAxios = axios.create();
+// Keep compatibility with the backend's cookie-backed session response. Native
+// cookie persistence remains platform-dependent; bearer tokens stay supported.
+const epsAxios = axios.create({
+  withCredentials: true,
+});
 
-let isRefreshing = false;
-let failedQueue: any[] = [];
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else prom.resolve(token);
-  });
-  failedQueue = [];
+export const AUTH_SESSION_EXPIRED_EVENT = "eps-auth-session-expired";
+
+type RefreshableRequestConfig = InternalAxiosRequestConfig & {
+  _authRefreshAttempted?: boolean;
+};
+
+let refreshPromise: Promise<IToken> | null = null;
+let sessionExpiryNotified = false;
+
+const isAuthEndpoint = (url?: string) => {
+  if (!url) return false;
+
+  return [
+    "/auth/login",
+    "/auth/loginnotpass",
+    "/auth/refresh-token",
+    "/auth/logout",
+  ].some((path) => url.includes(path));
+};
+
+const isTokenEndpoint = (url?: string) => {
+  if (!url) return false;
+
+  return ["/auth/login", "/auth/loginnotpass", "/auth/refresh-token"].some(
+    (path) => url.includes(path),
+  );
+};
+
+const getHandledError = (error: any) => {
+  const errorMessage = getErrorMessage(error);
+  return {
+    message:
+      typeof errorMessage === "string"
+        ? errorMessage
+        : errorMessage?.message || ERROR_MESSAGES.UNKNOWN,
+    originalError: error,
+    isHandled: true,
+  };
+};
+
+const notifySessionExpired = () => {
+  if (sessionExpiryNotified) return;
+  sessionExpiryNotified = true;
+  DeviceEventEmitter.emit(AUTH_SESSION_EXPIRED_EVENT);
+  Alert.alert(
+    "Phiên đăng nhập hết hạn",
+    "Vui lòng đăng nhập lại để tiếp tục.",
+    [
+      {
+        text: "Đăng nhập",
+        onPress: () => router.replace("/(auth)/login"),
+      },
+    ],
+    { cancelable: false },
+  );
+};
+
+export const resetAuthSessionExpiryNotification = () => {
+  sessionExpiryNotified = false;
+};
+
+const refreshSession = async (token: IToken): Promise<IToken> => {
+  const response = await axios.post(
+    `${BASE_URL}/auth/refresh-token`,
+    { refreshToken: token.refresh_token ?? null },
+    {
+      headers: { "Content-Type": "application/json" },
+      withCredentials: true,
+    },
+  );
+  const refreshedToken = response.data as IToken;
+
+  if (token.cookie_session === true) {
+    await setToken({ cookie_session: true });
+    sessionExpiryNotified = false;
+    return { cookie_session: true };
+  }
+
+  if (!refreshedToken?.access_token) {
+    throw new Error("Refresh response did not contain an access token");
+  }
+
+  await setToken(refreshedToken);
+  sessionExpiryNotified = false;
+  return refreshedToken;
 };
 
 // Hàm xử lý lỗi
 const handleError = async (err: any) => {
-  const originalRequest = err.config;
-  if (err.response?.status === 401 && !originalRequest._retry) {
-    console.log("lỗi ");
-    originalRequest._retry = true;
+  const originalRequest = err.config as RefreshableRequestConfig | undefined;
+  const token = await getToken();
+  const shouldRefresh =
+    err.response?.status === 401 &&
+    !!originalRequest &&
+    !originalRequest._authRefreshAttempted &&
+    !isAuthEndpoint(originalRequest.url) &&
+    (!!token?.refresh_token || token?.cookie_session === true);
 
-    // Kiểm tra xem có token không, nếu chưa đăng nhập thì không xử lý refresh
-    const token = await getToken();
-    if (!token) {
-      // Chưa đăng nhập, return lỗi bình thường không hiện popup
-      let _error = getErrorMessage(err);
-      if (_error) _error = { error: _error };
-      return _error || Promise.reject(err);
-    }
-
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({ resolve, reject });
-      }).then((token) => {
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        return epsAxios(originalRequest);
-      });
-    }
-
-    isRefreshing = true;
-    try {
-      if (!token) throw new Error("No refresh token");
-
-      const data = qs.stringify({
-        // grant_type: 'refresh_token',
-        refresh_token: token.refresh_token,
-        // client_id: 'VacomMartApi_App'
-      });
-      const baseURL = BASE_URL;
-      const response = await axios.post(`${baseURL}/auth/refresh-token`, data, {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      });
-
-      const { access_token, refresh_token } = response.data;
-      await setToken(response.data);
-
-      epsAxios.defaults.headers.common.Authorization = `Bearer ${access_token}`;
-      processQueue(null, access_token);
-
-      originalRequest.headers.Authorization = `Bearer ${access_token}`;
-
-      return epsAxios(originalRequest);
-    } catch (refreshError) {
-      processQueue(refreshError, null);
-      await clearTokens();
-      // Thông báo và điều hướng về login dùng expo-router
-      Alert.alert(
-        "Phiên đăng nhập hết hạn",
-        "Vui lòng đăng nhập lại để tiếp tục.",
-        [
-          {
-            text: "Đăng nhập",
-            onPress: () => {
-              router.replace("/(auth)/login"); // Điều hướng về login
-            },
-          },
-        ],
-        { cancelable: false },
-      );
-      return Promise.reject(refreshError);
-    } finally {
-      isRefreshing = false;
-    }
+  if (!shouldRefresh || !originalRequest || !token) {
+    return Promise.reject(getHandledError(err));
   }
 
-  let _errorMsg = getErrorMessage(err);
+  originalRequest._authRefreshAttempted = true;
 
-  // Ném lỗi ra để try-catch bên ngoài bắt được
-  return Promise.reject({
-    message: _errorMsg.message || _errorMsg,
-    originalError: err,
-    isHandled: true, // Đánh dấu để biết lỗi này đã được xử lý qua interceptor
-  });
+  try {
+    if (!refreshPromise) {
+      refreshPromise = refreshSession(token).finally(() => {
+        refreshPromise = null;
+      });
+    }
+
+    const refreshedToken = await refreshPromise;
+    originalRequest.headers = originalRequest.headers ?? {};
+    if (refreshedToken.access_token) {
+      originalRequest.headers.Authorization = `Bearer ${refreshedToken.access_token}`;
+    } else {
+      delete (originalRequest.headers as Record<string, string>).Authorization;
+    }
+    return epsAxios(originalRequest);
+  } catch (refreshError) {
+    await clearTokens();
+    notifySessionExpired();
+    return Promise.reject(getHandledError(refreshError));
+  }
 };
 
 // Add a request interceptor
@@ -105,7 +143,11 @@ epsAxios.interceptors.request.use(
     const baseURL = BASE_URL;
     if (baseURL) config.baseURL = baseURL;
     const token = await getToken();
-    if (token) config.headers["Authorization"] = `Bearer ${token.access_token}`;
+    if (token?.access_token && !isTokenEndpoint(config.url)) {
+      config.headers = config.headers ?? {};
+      config.headers["Authorization"] = `Bearer ${token.access_token}`;
+    }
+    config.headers = config.headers ?? {};
     config.headers["Accept-language"] =
       "vi-VN,vi;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6,en;q=0.5";
     // config.headers["X-Requested-With"] = "XMLHttpRequest";
@@ -180,7 +222,10 @@ export function setupInterceptors(epsAxios: AxiosInstance) {
   // Setup new one
   interceptorId = epsAxios.interceptors.request.use(async (config) => {
     const token = await getToken();
-    if (token) config.headers["Authorization"] = `Bearer ${token}`;
+    if (token?.access_token && !isTokenEndpoint(config.url)) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token.access_token}`;
+    }
     return config;
   });
 }

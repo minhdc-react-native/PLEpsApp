@@ -4,8 +4,9 @@ export {};
 
 declare global {
   interface IToken {
-    access_token: string;
-    refresh_token: string;
+    access_token?: string;
+    refresh_token?: string;
+    cookie_session?: boolean;
   }
   interface ILogin {
     userName: string;
