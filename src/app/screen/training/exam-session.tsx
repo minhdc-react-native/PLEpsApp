@@ -196,13 +196,15 @@ export default function TrainingExamSessionScreen() {
   const isReviewStatus = effectiveSession.status === "grading" || effectiveSession.status === "result" || effectiveSession.status === "submitted";
   const showOverview = overviewVisible && (effectiveSession.status === "not_started" || isReviewStatus);
   const showNavigation = !showOverview && effectiveSession.status !== "not_started" && Boolean(currentQuestion);
-  const saveDescription = effectiveSession.lastSavedAt ? `Lưu lần cuối: ${formatTrainingDateTime(effectiveSession.lastSavedAt)}` : "Chưa lưu";
-  const totalScoreBadge = isReviewStatus && effectiveSession.score != null && effectiveSession.totalScore != null
+  const detailDescription = isActive
+    ? `Lưu lúc ${effectiveSession.lastSavedAt ? formatTrainingDateTime(effectiveSession.lastSavedAt) : "Chưa lưu"}`
+    : `Nộp lúc ${effectiveSession.submittedAt ? formatTrainingDateTime(effectiveSession.submittedAt) : "Chưa nộp"}`;
+  const totalScoreBadge = !showOverview && isReviewStatus && effectiveSession.score != null && effectiveSession.totalScore != null
     ? <Badge variant="success" size="large">{effectiveSession.score}/{effectiveSession.totalScore} điểm</Badge>
     : undefined;
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <AppHeader title={effectiveSession.title} subtitle={saveDescription} onBack={requestExit} actions={isActive ? <Button mode="contained" compact loading={saving} onPress={() => void save()}>Lưu</Button> : totalScoreBadge} />
+      {showOverview ? <AppHeader title={effectiveSession.title} subtitle="Bài thi đào tạo" onBack={requestExit} bottom={<ExamContext session={effectiveSession} />} /> : <AppHeader title={effectiveSession.title} subtitle={detailDescription} onBack={requestExit} actions={isActive ? <Button mode="contained" compact loading={saving} onPress={() => void save()}>Lưu</Button> : totalScoreBadge} bottom={<ExamContext session={effectiveSession} />} />}
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}
@@ -277,6 +279,11 @@ function ExamOverview({ session, isReview, starting, reviewLoading, onStart, onV
       {instructions ? <TrainingRichText value={instructions} textStyle={styles.instructionText} /> : <Text style={[styles.instructionText, { color: colors.onSurfaceVariant }]}>Chưa có lưu ý hoặc quy định cho bài thi này.</Text>}
     </SectionCard>
   </>;
+}
+
+function ExamContext({ session }: { session: TrainingExamSession }) {
+  const { colors } = useTheme();
+  return <View style={styles.examContext}><Text numberOfLines={1} ellipsizeMode="tail" style={[styles.examContextText, { color: colors.onSurfaceVariant }]}>{session.courseName}{session.className ? ` · ${session.className}` : ""}</Text></View>;
 }
 
 function ExamStatCard({ icon, label, value }: { icon: string; label: string; value: ReactNode }) {
@@ -372,6 +379,8 @@ const styles = StyleSheet.create({
   overviewContent: { gap: 12 },
   overviewTitle: { fontWeight: "800", lineHeight: 30 },
   overviewSubtitle: { fontSize: 15, lineHeight: 21 },
+  examContext: { paddingHorizontal: 64, paddingBottom: 8 },
+  examContextText: { fontSize: 12, lineHeight: 17 },
   statGrid: { gap: 10, marginTop: 4 },
   statRow: { flexDirection: "row", gap: 10 },
   statCard: { flex: 1, borderRadius: 16 },
