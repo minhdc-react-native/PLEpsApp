@@ -30,13 +30,23 @@ export default function TrainingEvaluationFormScreen() {
   }, [data]);
 
   const readOnly = !form || form.hasEvaluated || form.status !== "open" || form.isPostponed === true;
-  const canSubmit = !!form && !readOnly && (form.courseRating ?? 0) >= 1 && form.instructors.every((item) => (item.expertise ?? 0) >= 1 && (item.pedagogy ?? 0) >= 1 && (item.content ?? 0) >= 1);
-  const courseGroups = useMemo(() => (form?.evaluationFormConfig.groups ?? []).filter((group) => group.scope !== "instructor"), [form]);
-  const instructorGroups = useMemo(() => (form?.evaluationFormConfig.groups ?? []).filter((group) => group.scope === "instructor"), [form]);
+  const courseGroups = useMemo(() => form?.evaluationFormConfig.groups ?? [], [form]);
+  const evaluationFieldKeys = useMemo(
+    () => courseGroups.flatMap((group) => Object.keys(group.fields ?? {})),
+    [courseGroups],
+  );
+  const hasConfiguredFields = evaluationFieldKeys.length > 0;
+  const canSubmit = !!form && !readOnly && (
+    hasConfiguredFields
+      ? evaluationFieldKeys.every((key) => {
+          const value = form.courseScores[key];
+          return typeof value === "number" && value >= 1 && value <= 10;
+        })
+      : (form.courseScores.courseQuality ?? form.courseRating ?? 0) >= 1
+  );
 
-  const updateForm = (changes: Partial<TrainingEvaluation>) => setForm((current) => current ? { ...current, ...changes } : current);
-  const updateInstructor = (index: number, changes: Partial<TrainingEvaluation["instructors"][number]>) => setForm((current) => current ? { ...current, instructors: current.instructors.map((item, itemIndex) => itemIndex === index ? { ...item, ...changes } : item) } : current);
-  const updateAdditional = (key: string, value: string | number) => setForm((current) => current ? { ...current, additional: { ...current.additional, [key]: value } } : current);
+  const updateScore = (key: string, value: number) => setForm((current) => current ? { ...current, courseScores: { ...current.courseScores, [key]: value }, courseRating: key === "courseQuality" ? value : current.courseRating } : current);
+  const updateComment = (key: string, value: string) => setForm((current) => current ? { ...current, comments: { ...current.comments, [key]: value } } : current);
 
   const submit = async () => {
     if (!form || !canSubmit) return;
@@ -66,14 +76,11 @@ export default function TrainingEvaluationFormScreen() {
           <Card mode="outlined" style={[styles.headerCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><Card.Content style={{ gap: 7 }}><View style={styles.headerLine}><Text variant="titleLarge" style={styles.title}>{form.courseName}</Text><Badge variant={form.isPostponed ? "warning" : form.hasEvaluated ? "success" : form.status === "open" ? "primary" : "default"}>{statusLabel}</Badge></View><Text style={{ color: colors.onSurfaceVariant }}>{form.className ?? "Khóa đào tạo"} · {formatTrainingDate(form.startDate)} - {formatTrainingDate(form.endDate)}</Text>{form.isPostponed ? <Text style={{ color: colors.onSurfaceVariant, lineHeight: 19 }}>Bạn đã xin hoãn khóa đào tạo nên chưa thể gửi đánh giá.</Text> : readOnly ? <Text style={{ color: colors.onSurfaceVariant, lineHeight: 19 }}>Biểu mẫu ở chế độ chỉ xem.</Text> : null}</Card.Content></Card>
 
           <SectionCard title="I. Đánh giá khóa học" icon="school-outline">
-            <View style={styles.fieldGroup}><Text style={styles.fieldLabel}>1. Chất lượng khóa học</Text><RatingScale value={form.courseRating ?? 0} disabled={readOnly} onChange={(value) => updateForm({ courseRating: value })} /></View>
-            <TextInput mode="outlined" label="Điểm tích cực" multiline numberOfLines={3} value={form.coursePositive ?? ""} disabled={readOnly} onChangeText={(value) => updateForm({ coursePositive: value })} style={styles.input} />
-            <TextInput mode="outlined" label="Điểm chưa tích cực" multiline numberOfLines={3} value={form.courseNegative ?? ""} disabled={readOnly} onChangeText={(value) => updateForm({ courseNegative: value })} style={styles.input} />
-            <TextInput mode="outlined" label="Đề xuất cải thiện" multiline numberOfLines={3} value={form.courseSuggestion ?? ""} disabled={readOnly} onChangeText={(value) => updateForm({ courseSuggestion: value })} style={styles.input} />
-            {courseGroups.map((group) => <EvaluationGroup key={group.id} group={group} values={form.additional} disabled={readOnly} onChange={updateAdditional} />)}
+            {!hasConfiguredFields ? <View style={styles.fieldGroup}><Text style={styles.fieldLabel}>Chất lượng khóa học</Text><RatingScale value={form.courseScores.courseQuality ?? form.courseRating ?? 0} disabled={readOnly} onChange={(value) => updateScore("courseQuality", value)} /></View> : null}
+            {courseGroups.map((group) => <EvaluationGroup key={group.id} group={group} values={form.courseScores} disabled={readOnly} onChange={updateScore} />)}
+            <CommentsSection config={form.evaluationFormConfig} values={form.comments} disabled={readOnly} onChange={updateComment} />
           </SectionCard>
 
-          {form.instructors.map((instructor, index) => <SectionCard key={`${instructor.instructorId}-${index}`} title={`II.${index + 1} Giảng viên ${instructor.instructorName ?? ""}`} icon="account-school-outline"><View style={styles.instructorMeta}><Text style={styles.title}>{instructor.instructorName ?? "Giảng viên"}</Text><Text style={{ color: colors.onSurfaceVariant }}>{[instructor.departmentName, instructor.positionName, instructor.rankName].filter(Boolean).join(" · ")}</Text></View><View style={styles.fieldGroup}><Text style={styles.fieldLabel}>Chất lượng chuyên môn</Text><RatingScale value={instructor.expertise ?? 0} disabled={readOnly} onChange={(value) => updateInstructor(index, { expertise: value })} /></View><View style={styles.fieldGroup}><Text style={styles.fieldLabel}>Chất lượng sư phạm</Text><RatingScale value={instructor.pedagogy ?? 0} disabled={readOnly} onChange={(value) => updateInstructor(index, { pedagogy: value })} /></View><View style={styles.fieldGroup}><Text style={styles.fieldLabel}>Chất lượng nội dung</Text><RatingScale value={instructor.content ?? 0} disabled={readOnly} onChange={(value) => updateInstructor(index, { content: value })} /></View><TextInput mode="outlined" label="Nhận xét thêm" multiline numberOfLines={3} value={instructor.comment ?? ""} disabled={readOnly} onChangeText={(value) => updateInstructor(index, { comment: value })} style={styles.input} />{instructorGroups.map((group) => <EvaluationGroup key={group.id} group={group} values={instructor.additional ?? {}} disabled={readOnly} onChange={(key, value) => setForm((current) => current ? { ...current, instructors: current.instructors.map((item, itemIndex) => itemIndex === index ? { ...item, additional: { ...item.additional, [key]: value } } : item) } : current)} />)}</SectionCard>)}
           {!readOnly ? <Button mode="contained" disabled={!canSubmit} loading={submitting} onPress={() => void submit()} style={styles.submit}>Xác nhận đánh giá</Button> : null}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -86,8 +93,14 @@ function RatingScale({ value, disabled, onChange }: { value: number; disabled: b
   return <View style={styles.ratingWrap}><View style={styles.ratingRow}>{Array.from({ length: 10 }, (_, index) => index + 1).map((rating) => <Button key={rating} compact mode={rating === value ? "contained" : "outlined"} disabled={disabled} onPress={() => onChange(rating)} style={styles.ratingButton} labelStyle={styles.ratingLabel}>{rating}</Button>)}</View><Text style={{ color: colors.onSurfaceVariant, fontSize: 12 }}>1 = Chưa đạt · 10 = Xuất sắc</Text></View>;
 }
 
-function EvaluationGroup({ group, values, disabled, onChange }: { group: TrainingEvaluation["evaluationFormConfig"]["groups"][number]; values: Record<string, string | number | null>; disabled: boolean; onChange: (key: string, value: string | number) => void }) {
-  return <View style={styles.dynamicGroup}><Text variant="titleSmall" style={styles.title}>{group.label}</Text>{Object.entries(group.fields).map(([key, field]) => <View key={key} style={styles.fieldGroup}><Text style={styles.fieldLabel}>{field.label}</Text>{field.description ? <Text style={styles.hint}>{field.description}</Text> : null}{field.type === "rating" ? <RatingScale value={typeof values[key] === "number" ? Number(values[key]) : 0} disabled={disabled} onChange={(value) => onChange(key, value)} /> : <TextInput mode="outlined" label={field.label} multiline numberOfLines={3} value={typeof values[key] === "string" ? values[key] : ""} disabled={disabled} onChangeText={(value) => onChange(key, value)} />}</View>)}</View>;
+function EvaluationGroup({ group, values, disabled, onChange }: { group: TrainingEvaluation["evaluationFormConfig"]["groups"][number]; values: Record<string, number | null>; disabled: boolean; onChange: (key: string, value: number) => void }) {
+  return <View style={styles.dynamicGroup}><Text variant="titleSmall" style={styles.title}>{group.label}</Text>{Object.entries(group.fields).map(([key, field]) => <View key={key} style={styles.fieldGroup}><Text style={styles.fieldLabel}>{field.label}</Text>{field.description ? <Text style={styles.hint}>{field.description}</Text> : null}{field.type === "rating" ? <RatingScale value={typeof values[key] === "number" ? Number(values[key]) : 0} disabled={disabled} onChange={(value) => onChange(key, value)} /> : <TextInput mode="outlined" label={field.label} multiline numberOfLines={3} value={values[key] == null ? "" : String(values[key])} disabled={disabled} />}</View>)}</View>;
+}
+
+function CommentsSection({ config, values, disabled, onChange }: { config: TrainingEvaluation["evaluationFormConfig"]; values: Record<string, string | null>; disabled: boolean; onChange: (key: string, value: string) => void }) {
+  const comments = Object.entries(config.comments ?? {});
+  if (!comments.length) return null;
+  return <View style={styles.commentsSection}>{comments.map(([key, comment]) => <View key={key} style={styles.fieldGroup}><Text style={styles.fieldLabel}>{comment.label}</Text>{comment.description ? <Text style={styles.hint}>{comment.description}</Text> : null}<TextInput mode="outlined" label={comment.label} multiline numberOfLines={3} value={values[key] ?? ""} disabled={disabled} onChangeText={(value) => onChange(key, value)} style={styles.input} /></View>)}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -99,7 +112,7 @@ const styles = StyleSheet.create({
   fieldGroup: { gap: 8, marginBottom: 14 },
   fieldLabel: { fontWeight: "700", lineHeight: 20 },
   input: { marginBottom: 12, backgroundColor: "transparent" },
-  instructorMeta: { gap: 4, marginBottom: 16 },
+  commentsSection: { marginTop: 6 },
   ratingWrap: { gap: 7 },
   ratingRow: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
   ratingButton: { minWidth: 30, margin: 0 },

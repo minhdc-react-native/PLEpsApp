@@ -183,24 +183,25 @@ export async function getTrainingEvaluationApi(
 }
 
 export async function submitTrainingEvaluationApi(evaluation: TrainingEvaluation) {
+  if (!evaluation.trainingClassId || !evaluation.trainingRegistrationId) {
+    throw new Error("Thiếu thông tin lớp hoặc đăng ký đào tạo để gửi đánh giá.");
+  }
+
+  const fieldKeys = evaluation.evaluationFormConfig.groups.flatMap((group) => Object.keys(group.fields ?? {}));
+  const courseScores = fieldKeys.length
+    ? Object.fromEntries(fieldKeys.map((key) => [key, evaluation.courseScores[key]]))
+    : { courseQuality: evaluation.courseScores.courseQuality ?? evaluation.courseRating ?? 0 };
+  const commentKeys = Object.keys(evaluation.evaluationFormConfig.comments ?? {});
+  const comments = Object.fromEntries(commentKeys.map((key) => [key, evaluation.comments[key] ?? null]));
+
   return api.post({
     link: `/training-courses/${evaluation.trainingCourseId}/evaluation`,
     data: {
-      courseScores: { courseQuality: evaluation.courseRating ?? 0 },
-      positives: evaluation.coursePositive ?? null,
-      negatives: evaluation.courseNegative ?? null,
-      improvements: evaluation.courseSuggestion ?? null,
-      additional: evaluation.additional ?? {},
-      teacherEvaluations: evaluation.instructors.map((instructor) => ({
-        teacherId: instructor.instructorId,
-        scores: {
-          teacherExpertise: instructor.expertise ?? 0,
-          teacherPedagogy: instructor.pedagogy ?? 0,
-          teacherContent: instructor.content ?? 0,
-        },
-        comment: instructor.comment ?? null,
-        additional: instructor.additional ?? {},
-      })),
+      trainingCourseId: evaluation.trainingCourseId,
+      trainingClassId: evaluation.trainingClassId,
+      trainingRegistrationId: evaluation.trainingRegistrationId,
+      courseScores,
+      comments,
     },
   });
 }

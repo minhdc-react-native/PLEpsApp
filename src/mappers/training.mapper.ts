@@ -5,6 +5,7 @@ import {
   TRAINING_REGISTRATION_STATUS,
   TrainingClass,
   TrainingCourse,
+  TrainingCourseScope,
   TrainingEvaluation,
   TrainingEvaluationConfig,
   TrainingFile,
@@ -29,6 +30,19 @@ const toDate = (value: any): Date | null => {
 
 const firstString = (...values: any[]) =>
   values.find((value) => typeof value === "string" && value.trim()) ?? "";
+
+const toNullableNumber = (value: any): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+function averageEvaluationScore(scores: Record<string, number | null> | undefined) {
+  const values = Object.values(scores ?? {}).filter(
+    (value): value is number => typeof value === "number" && Number.isFinite(value) && value >= 1 && value <= 10,
+  );
+  return values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
+}
 
 const mapRecord = (raw: any) =>
   raw && raw.status != null
@@ -110,6 +124,14 @@ export function mapTrainingClass(raw: any): TrainingClass {
 }
 
 export function mapTrainingCourse(raw: any): TrainingCourse {
+  const scope = raw?.scope;
+  const normalizedScope =
+    scope === "external" || scope === "EXTERNAL"
+      ? 1
+      : scope === "internal" || scope === "INTERNAL"
+        ? 0
+        : toNullableNumber(scope);
+
   return {
     id: raw?.id ?? raw?.trainingCourseId ?? "",
     name: firstString(raw?.name, raw?.course?.name) || "Khóa đào tạo",
@@ -118,7 +140,11 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
     status: raw?.status ?? TRAINING_COURSE_STATUS.REGISTRATION,
     year: raw?.year ?? null,
     isPlanCourse: raw?.isPlanCourse ?? false,
+    trainingPlanCourseId: raw?.trainingPlanCourseId ?? raw?.trainingPlanCourse?.id ?? null,
     isRegistered: raw?.isRegistered ?? false,
+    startDate: toDate(raw?.startDate),
+    endDate: toDate(raw?.endDate),
+    scope: normalizedScope as TrainingCourseScope | null,
     trainingForm: raw?.trainingForm ?? null,
     organizationForm: raw?.organizationForm ?? null,
     studentCount: raw?.studentCount ?? 0,
@@ -152,6 +178,14 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
     ),
     isSharedExam: raw?.isSharedExam ?? raw?.sharedExam ?? false,
     courseCategoryName: raw?.courseCategoryName ?? raw?.course?.courseCategory?.name ?? null,
+    unit: raw?.unit
+      ? {
+          name: raw.unit.name ?? null,
+          country: raw.unit.country ?? null,
+          address: raw.unit.address ?? null,
+          type: toNullableNumber(raw.unit.type),
+        }
+      : null,
     hasCertificate: raw?.hasCertificate ?? null,
     isProposal: raw?.isProposal ?? null,
   };
@@ -205,6 +239,10 @@ export function mapAttendance(raw: any): TrainingSessionAttendance {
 }
 
 export function mapRegistration(raw: any): TrainingStudentRegistration {
+  const courseQuality = toNullableNumber(raw?.courseQuality);
+  const evaluationScores = raw?.evaluation?.courseScores ?? raw?.evaluationScores ?? {};
+  const evaluationComments = raw?.evaluation?.comments ?? raw?.evaluationComments ?? {};
+
   return {
     id: raw?.id ?? raw?.registrationId ?? "",
     trainingCourseId: raw?.trainingCourseId ?? raw?.courseId ?? "",
@@ -222,13 +260,18 @@ export function mapRegistration(raw: any): TrainingStudentRegistration {
     trainingClassId: raw?.trainingClassId ?? raw?.classId ?? raw?.class?.id ?? null,
     score: raw?.score ?? null,
     hasEvaluated: raw?.hasEvaluated ?? raw?.evaluation?.hasEvaluated ?? false,
-    evaluationRating: raw?.evaluationRating ?? raw?.evaluation?.courseRating ?? null,
+    courseQuality,
+    evaluationRating: courseQuality ?? raw?.evaluationRating ?? raw?.evaluation?.courseRating ?? averageEvaluationScore(evaluationScores),
     evaluationStartDate: toDate(raw?.evaluationStartDate ?? raw?.evaluation?.startDate),
     evaluationEndDate: toDate(raw?.evaluationEndDate ?? raw?.evaluation?.endDate),
     evaluationSubmittedAt: toDate(raw?.evaluationSubmittedAt ?? raw?.evaluation?.submittedAt),
-    evaluationFormConfig: mapEvaluationConfig(
-      raw?.evaluationFormConfig ?? raw?.trainingCourse?.evaluationFormConfig,
+    evaluationFormConfig: mapPreferredEvaluationConfig(
+      raw?.evaluation?.evaluationFormConfig,
+      raw?.evaluationFormConfig,
+      raw?.trainingCourse?.evaluationFormConfig,
     ),
+    evaluationScores,
+    evaluationComments,
     coursePositive: raw?.coursePositive ?? raw?.evaluation?.positives ?? null,
     courseNegative: raw?.courseNegative ?? raw?.evaluation?.negatives ?? null,
     courseSuggestion: raw?.courseSuggestion ?? raw?.evaluation?.improvements ?? null,
@@ -283,6 +326,8 @@ function mapInstructorRating(raw: any) {
 
 export function mapEvaluationConfig(raw: any): TrainingEvaluationConfig {
   const groups = Array.isArray(raw?.groups) ? raw.groups : [];
+  const comments = raw?.comments && typeof raw.comments === "object" ? raw.comments : {};
+
   return {
     groups: groups.map((group: any) => ({
       id: group?.id ?? String(Math.random()),
@@ -290,7 +335,31 @@ export function mapEvaluationConfig(raw: any): TrainingEvaluationConfig {
       scope: group?.scope,
       fields: group?.fields ?? {},
     })),
+    comments: Object.fromEntries(
+      Object.entries(comments)
+        .map(([key, value]: [string, any]) => [
+          key,
+          {
+            label: value?.label ?? key,
+            description: value?.description ?? null,
+          },
+        ] as const)
+        .filter((entry) => Boolean(entry[0] && entry[1].label)),
+    ),
   };
+}
+
+function hasEvaluationConfig(raw: any) {
+  return Boolean(
+    raw &&
+      (Array.isArray(raw.groups) && raw.groups.length > 0 ||
+        raw.comments && typeof raw.comments === "object" && Object.keys(raw.comments).length > 0),
+  );
+}
+
+function mapPreferredEvaluationConfig(...configs: any[]): TrainingEvaluationConfig {
+  const selected = configs.find(hasEvaluationConfig) ?? configs.find(Boolean);
+  return mapEvaluationConfig(selected);
 }
 
 function getEvaluationStatus(startDate: Date | null, endDate: Date | null): TrainingEvaluation["status"] {
@@ -307,20 +376,13 @@ export function mapEvaluation(
 ): TrainingEvaluation {
   const startDate = course?.evaluationStartDate ?? registration.evaluationStartDate ?? null;
   const endDate = course?.evaluationEndDate ?? registration.evaluationEndDate ?? null;
-  const instructors = registration.instructors?.length
-    ? registration.instructors
-    : (trainingClass?.instructors ?? []).map((item) => ({
-        instructorId: item.id,
-        instructorName: item.name,
-        departmentName: item.departmentName,
-        positionName: item.positionName,
-        rankName: item.rankName,
-        expertise: 0,
-        pedagogy: 0,
-        content: 0,
-        comment: "",
-        additional: {},
-      }));
+  const courseScores = Object.keys(registration.evaluationScores ?? {}).length
+    ? registration.evaluationScores!
+    : registration.courseQuality != null
+      ? { courseQuality: registration.courseQuality }
+      : {};
+  const comments = registration.evaluationComments ?? {};
+  const courseRating = registration.courseQuality ?? registration.evaluationRating ?? averageEvaluationScore(courseScores);
   return {
     trainingCourseId: registration.trainingCourseId,
     trainingClassId: registration.trainingClassId,
@@ -332,14 +394,18 @@ export function mapEvaluation(
     endDate,
     hasEvaluated: registration.hasEvaluated,
     isPostponed: registration.isPostponed,
-    courseRating: registration.evaluationRating,
+    courseScores,
+    comments,
+    courseQuality: registration.courseQuality,
+    courseRating,
     coursePositive: registration.coursePositive,
     courseNegative: registration.courseNegative,
     courseSuggestion: registration.courseSuggestion,
     additional: registration.additional ?? {},
-    instructors,
-    evaluationFormConfig:
-      registration.evaluationFormConfig ?? course?.evaluationFormConfig ?? { groups: [] },
+    instructors: registration.instructors ?? [],
+    evaluationFormConfig: hasEvaluationConfig(registration.evaluationFormConfig)
+      ? registration.evaluationFormConfig!
+      : course?.evaluationFormConfig ?? { groups: [], comments: {} },
   };
 }
 

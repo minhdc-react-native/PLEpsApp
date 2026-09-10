@@ -6,6 +6,14 @@ export const TRAINING_COURSE_TYPE = {
 export type TrainingCourseType =
   (typeof TRAINING_COURSE_TYPE)[keyof typeof TRAINING_COURSE_TYPE];
 
+export const TRAINING_COURSE_SCOPE = {
+  INTERNAL: 0,
+  EXTERNAL: 1,
+} as const;
+
+export type TrainingCourseScope =
+  (typeof TRAINING_COURSE_SCOPE)[keyof typeof TRAINING_COURSE_SCOPE];
+
 export const TRAINING_COURSE_STATUS = {
   CANCELED: -1,
   NOT_STARTED: 0,
@@ -160,7 +168,11 @@ export interface TrainingCourse {
   status: TrainingCourseStatus;
   year?: number | null;
   isPlanCourse?: boolean;
+  trainingPlanCourseId?: string | null;
   isRegistered?: boolean;
+  startDate?: Date | null;
+  endDate?: Date | null;
+  scope?: TrainingCourseScope | null;
   trainingForm?: number | null;
   organizationForm?: number | null;
   studentCount?: number;
@@ -177,8 +189,16 @@ export interface TrainingCourse {
   isSharedExam?: boolean;
   examPeriodName?: string | null;
   courseCategoryName?: string | null;
+  unit?: TrainingUnitSnapshot | null;
   hasCertificate?: boolean | null;
   isProposal?: boolean | null;
+}
+
+export interface TrainingUnitSnapshot {
+  name?: string | null;
+  country?: string | null;
+  address?: string | null;
+  type?: number | null;
 }
 
 export interface TrainingCertificateSummary {
@@ -208,11 +228,14 @@ export interface TrainingStudentRegistration {
   trainingClassId?: string | null;
   score?: number | null;
   hasEvaluated?: boolean;
+  courseQuality?: number | null;
   evaluationRating?: number | null;
   evaluationStartDate?: Date | null;
   evaluationEndDate?: Date | null;
   evaluationSubmittedAt?: Date | null;
   evaluationFormConfig?: TrainingEvaluationConfig;
+  evaluationScores?: Record<string, number | null>;
+  evaluationComments?: Record<string, string | null>;
   coursePositive?: string | null;
   courseNegative?: string | null;
   courseSuggestion?: string | null;
@@ -248,6 +271,12 @@ export interface TrainingEvaluationGroup {
 
 export interface TrainingEvaluationConfig {
   groups: TrainingEvaluationGroup[];
+  comments: Record<string, TrainingEvaluationComment>;
+}
+
+export interface TrainingEvaluationComment {
+  label: string;
+  description?: string | null;
 }
 
 export interface TrainingSurveyInstructor {
@@ -274,6 +303,10 @@ export interface TrainingEvaluation {
   endDate: Date | null;
   hasEvaluated?: boolean;
   isPostponed?: boolean;
+  courseScores: Record<string, number | null>;
+  comments: Record<string, string | null>;
+  // Legacy fields are kept for already persisted evaluations and old payloads.
+  courseQuality?: number | null;
   courseRating?: number | null;
   coursePositive?: string | null;
   courseNegative?: string | null;

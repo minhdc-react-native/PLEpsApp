@@ -5,7 +5,7 @@ import DetailSectionHeader from "@/components/detail-section-header";
 import DetailTabBar from "@/components/detail-tab-bar";
 import { ListFields } from "@/components/detail-fields/list-fields";
 import { TrainingEmptyState } from "@/components/training/training-presentational";
-import { formatTrainingDate, formatTrainingDateTime, useTrainingResource } from "@/hooks/useTraining";
+import { formatTrainingDate, formatTrainingDateTime, getTrainingStatusLabel, useTrainingResource } from "@/hooks/useTraining";
 import { useData } from "@/hooks/zustand/useData";
 import { cancelTrainingClassApi, getMyTrainingClassesApi, getTrainingClassApi, getTrainingCourseApi, getTrainingCourseClassesApi, getTrainingExamStudentsApi, getTrainingRegistrationApi, markTrainingSessionAttendanceApi, registerTrainingClassApi, requestTrainingPostponeApi } from "@/services/training.service";
 import { TrainingClass, TrainingCourse, TrainingExamSession, TrainingRegistrationRecord, TrainingStudentRegistration } from "@/types/training.model";
@@ -140,7 +140,7 @@ export default function TrainingClassDetailScreen() {
       <AppHeader
         title={course.name}
         titleIcon={course.type === 0 ? require("@/assets/images/training/video-lesson.png") : require("@/assets/images/training/teacher.png")}
-        subtitle="Chi tiết lớp đào tạo"
+        subtitle={courseStatusSummary(course)}
         onBack={() => router.back()}
         bottom={<DetailTabBar data={detailRoutes.map((route) => ({ id: route.key, value: route.title }))} value={detailRoutes[activeIndex].key} onChange={(value) => setIndex(detailRoutes.findIndex((route) => route.key === value.id))} mode="full" />}
       />
@@ -243,7 +243,7 @@ function CourseInfoTab({ course, trainingClass }: { course: TrainingCourse; trai
 function CourseGeneralInfoGroup({ course }: { course: TrainingCourse }) {
   const { colors } = useTheme();
   const examTypeValue = course.isSharedExam == null ? "" : <View style={styles.inlineValue}><Icon source={course.isSharedExam ? "account-multiple-outline" : "account-group-outline"} size={18} color={colors.primary} /><Text style={[styles.inlineValueText, { color: colors.onSurface }]}>{course.isSharedExam ? "Thi tập trung" : "Thi riêng từng lớp"}</Text></View>;
-  return <><DetailSectionHeader title="Thông tin khóa" icon="information-outline" /><ListFields style={styles.groupFields}><Field label="Tên khóa đào tạo" value={course.name} /><Field label="Danh mục đào tạo" value={course.courseCategoryName ?? ""} /><Field label="Nội dung đào tạo" value={course.description ?? ""} layout="column" /><Field label="Phương pháp giảng dạy" value={trainingCourseTypeLabel(course.type)} /><Field label="Hình thức đào tạo" value={trainingFormLabel(course.trainingForm)} /><Field label="Hình thức tổ chức" value={organizationFormLabel(course.organizationForm)} /><Field label="Loại bài thi" value={examTypeValue} /><Field label="Kỳ thi" value={course.examPeriodName ?? ""} /><Field label="Khóa đề xuất" value={yesNo(course.isProposal)} /><Field label="Khóa bổ sung" value={yesNo(course.isAdditional)} /><Field label="Ngày mở đánh giá" value={formatTrainingDate(course.evaluationStartDate)} /><Field label="Ngày kết thúc đánh giá" value={formatTrainingDate(course.evaluationEndDate)} /></ListFields></>;
+  return <><DetailSectionHeader title="Thông tin khóa" icon="information-outline" /><ListFields style={styles.groupFields}><Field label="Tên khóa đào tạo" value={course.name} /><Field label="Danh mục đào tạo" value={course.courseCategoryName ?? ""} /><Field label="Nội dung đào tạo" value={course.description ?? ""} layout="column" /><Field label="Phạm vi khóa" value={trainingScopeLabel(course.scope)} /><Field label="Ngày triển khai" value={formatTrainingDate(course.startDate)} /><Field label="Ngày kết thúc" value={formatTrainingDate(course.endDate)} /><Field label="Đơn vị tổ chức" value={course.unit?.name ?? ""} /><Field label="Địa chỉ tổ chức" value={course.unit?.address ?? ""} /><Field label="Phương pháp giảng dạy" value={trainingCourseTypeLabel(course.type)} /><Field label="Hình thức đào tạo" value={trainingFormLabel(course.trainingForm)} /><Field label="Hình thức tổ chức" value={organizationFormLabel(course.organizationForm)} /><Field label="Loại bài thi" value={examTypeValue} /><Field label="Kỳ thi" value={course.examPeriodName ?? ""} /><Field label="Khóa đề xuất" value={yesNo(course.isProposal)} /><Field label="Khóa bổ sung" value={yesNo(course.isAdditional)} /><Field label="Ngày mở đánh giá" value={formatTrainingDate(course.evaluationStartDate)} /><Field label="Ngày kết thúc đánh giá" value={formatTrainingDate(course.evaluationEndDate)} /></ListFields></>;
 }
 
 function RegistrationInfoGroup({ registration, isOnline }: { registration: TrainingStudentRegistration | null; isOnline: boolean }) {
@@ -263,15 +263,22 @@ function ResultInfoGroup({ registration }: { registration: TrainingStudentRegist
 function EvaluationInfoGroup({ registration, course }: { registration: TrainingStudentRegistration | null; course: TrainingCourse }) {
   const { colors } = useTheme();
   const config = registration?.evaluationFormConfig ?? course.evaluationFormConfig;
-  const courseGroups = (config?.groups ?? []).filter((group) => group.scope !== "instructor");
-  const instructorGroups = (config?.groups ?? []).filter((group) => group.scope === "instructor");
-  const hasEvaluation = !!registration?.hasEvaluated || registration?.evaluationRating != null || !!registration?.evaluationSubmittedAt || !!registration?.coursePositive || !!registration?.courseNegative || !!registration?.courseSuggestion || !!registration?.instructors?.length || courseGroups.length > 0;
+  const courseGroups = config?.groups ?? [];
+  const evaluationScores = registration?.evaluationScores ?? {};
+  const evaluationComments = registration?.evaluationComments ?? {};
+  const hasEvaluation = !!registration?.hasEvaluated || registration?.evaluationRating != null || !!registration?.evaluationSubmittedAt || Object.keys(evaluationScores).length > 0 || Object.keys(evaluationComments).length > 0 || !!registration?.coursePositive || !!registration?.courseNegative || !!registration?.courseSuggestion || !!registration?.instructors?.length || courseGroups.length > 0 || Object.keys(config?.comments ?? {}).length > 0;
   if (!hasEvaluation) return <><DetailSectionHeader title="Đánh giá" icon="star-check-outline" /><Text style={[styles.emptyInfoText, { color: colors.onSurfaceVariant }]}>Chưa có dữ liệu đánh giá.</Text></>;
-  return <><DetailSectionHeader title="Đánh giá" icon="star-check-outline" /><ListFields style={styles.groupFields}><Field label="Điểm đánh giá" value={ratingValue(registration?.evaluationRating)} /><Field label="Ngày gửi đánh giá" value={formatTrainingDate(registration?.evaluationSubmittedAt)} /><Field label="Điểm tích cực" value={registration?.coursePositive ?? ""} layout="column" /><Field label="Điểm hạn chế" value={registration?.courseNegative ?? ""} layout="column" /><Field label="Đề xuất" value={registration?.courseSuggestion ?? ""} layout="column" /></ListFields>{courseGroups.length ? <EvaluationGroups title="Tiêu chí bổ sung" groups={courseGroups} values={registration?.additional ?? {}} /> : null}{registration?.instructors?.length ? <><DetailSectionHeader title="Đánh giá giảng viên" icon="account-tie-outline" />{registration.instructors.map((instructor, index) => <ListFields key={`${instructor.instructorId}-${index}`} style={styles.groupFields}><Field label="Giảng viên" value={instructor.instructorName ?? `Giảng viên ${index + 1}`} /><Field label="Chuyên môn" value={ratingValue(instructor.expertise)} /><Field label="Phương pháp" value={ratingValue(instructor.pedagogy)} /><Field label="Nội dung" value={ratingValue(instructor.content)} /><Field label="Nhận xét" value={instructor.comment ?? ""} layout="column" />{instructorGroups.length ? <EvaluationGroups title="Tiêu chí bổ sung" groups={instructorGroups} values={instructor.additional ?? {}} /> : null}</ListFields>)}</> : null}</>;
+  return <><DetailSectionHeader title="Đánh giá" icon="star-check-outline" /><ListFields style={styles.groupFields}><Field label="Điểm đánh giá" value={ratingValue(registration?.evaluationRating)} /><Field label="Ngày gửi đánh giá" value={formatTrainingDate(registration?.evaluationSubmittedAt)} /><Field label="Điểm tích cực" value={registration?.coursePositive ?? ""} layout="column" /><Field label="Điểm hạn chế" value={registration?.courseNegative ?? ""} layout="column" /><Field label="Đề xuất" value={registration?.courseSuggestion ?? ""} layout="column" /></ListFields>{courseGroups.length ? <EvaluationGroups title="Tiêu chí đánh giá" groups={courseGroups} values={evaluationScores} /> : null}<EvaluationComments config={config} values={evaluationComments} />{registration?.instructors?.length ? <><DetailSectionHeader title="Đánh giá giảng viên" icon="account-tie-outline" />{registration.instructors.map((instructor, index) => <ListFields key={`${instructor.instructorId}-${index}`} style={styles.groupFields}><Field label="Giảng viên" value={instructor.instructorName ?? `Giảng viên ${index + 1}`} /><Field label="Chuyên môn" value={ratingValue(instructor.expertise)} /><Field label="Phương pháp" value={ratingValue(instructor.pedagogy)} /><Field label="Nội dung" value={ratingValue(instructor.content)} /><Field label="Nhận xét" value={instructor.comment ?? ""} layout="column" /></ListFields>)}</> : null}</>;
 }
 
 function EvaluationGroups({ title, groups, values }: { title: string; groups: { id: string; label: string; fields: Record<string, { label: string; type: string }> }[]; values: Record<string, string | number | null> }) {
   return <><DetailSectionHeader title={title} icon="format-list-bulleted" />{groups.map((group) => <ListFields key={group.id} style={styles.groupFields}><Text style={styles.groupTitle}>{group.label}</Text>{Object.entries(group.fields ?? {}).map(([key, field]) => <Field key={key} label={field.label} value={field.type === "rating" ? ratingValue(values[key]) : String(values[key] ?? "")} layout="column" />)}</ListFields>)}</>;
+}
+
+function EvaluationComments({ config, values }: { config?: TrainingCourse["evaluationFormConfig"]; values: Record<string, string | null> }) {
+  const comments = Object.entries(config?.comments ?? {}).filter(([key]) => values[key]);
+  if (!comments.length) return null;
+  return <><DetailSectionHeader title="Nhận xét" icon="comment-text-outline" />{comments.map(([key, comment]) => <ListFields key={key} style={styles.groupFields}><Field label={comment.label} value={values[key] ?? ""} layout="column" /></ListFields>)}</>;
 }
 
 function SessionsInfoGroup({ trainingClass, registration, isOnline, onOpenSession }: { trainingClass: TrainingClass | null; registration: TrainingStudentRegistration | null; isOnline: boolean; onOpenSession: (sessionId: string) => void }) {
@@ -290,8 +297,15 @@ function DetailTabScreen({ children }: { children: React.ReactNode }) {
 function trainingCourseTypeLabel(value?: number | null) { if (value == null) return ""; return value === 0 ? "Đào tạo trực tuyến" : value === 1 ? "Giảng viên đào tạo" : ""; }
 function trainingFormLabel(value?: number | null) { if (value == null) return ""; return ({ 0: "Tập trung", 1: "OJT", 2: "Trực tuyến", 3: "Bồi dưỡng NB,GB,KTSHN" } as Record<number, string>)[value] ?? ""; }
 function organizationFormLabel(value?: number | null) { if (value == null) return ""; return ({ 0: "Ngắn hạn", 1: "Dài hạn", 2: "Chuyên gia", 3: "Cán bộ quản lý" } as Record<number, string>)[value] ?? ""; }
+function trainingScopeLabel(value?: number | null) { if (value == null) return ""; return value === 0 ? "Nội bộ" : value === 1 ? "Bên ngoài" : ""; }
 function yesNo(value?: boolean | null) { if (value == null) return ""; return value ? "Có" : "Không"; }
 function ratingValue(value?: number | string | null) { if (value == null || value === "") return ""; return <Badge variant="primary">{value}/10</Badge>; }
+function courseStatusSummary(course: TrainingCourse) {
+  const dates = [course.startDate, course.endDate].filter(Boolean).map((value) => formatTrainingDate(value));
+  const period = dates.length ? dates.join(" - ") : "Chưa thiết lập thời gian";
+  const plan = course.trainingPlanCourseId || course.isPlanCourse ? "Khóa kế hoạch" : "Khóa ngoài kế hoạch";
+  return `${period} · ${getTrainingStatusLabel(course.status)} · ${plan}`;
+}
 function registrationLabel(status: number) { return status === 1 ? "Tham gia" : status === 2 ? "Từ chối" : status === 3 ? "Bổ sung" : status === 4 ? "Hoãn" : "Chưa xác nhận"; }
 function registrationVariant(status: number): "default" | "primary" | "success" | "warning" | "error" { return status === 1 ? "success" : status === 2 ? "error" : status === 3 ? "primary" : status === 4 ? "warning" : "default"; }
 function sessionStatusLabel(status: number) { return status === 1 ? "Đang diễn ra" : status === 2 ? "Đã kết thúc" : "Chưa bắt đầu"; }
