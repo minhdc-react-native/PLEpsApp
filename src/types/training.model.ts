@@ -80,7 +80,34 @@ export const TRAINING_REGISTRATION_STATUS = {
   REJECTED: 2,
   ADDED: 3,
   POSTPONED: 4,
+  CANCELED: 5,
 } as const;
+
+export const TRAINING_YEAR_PLAN_STATUS = {
+  DRAFT: 0,
+  REGISTRATION: 1,
+  REVIEW: 2,
+  FINISH: 3,
+} as const;
+
+export interface TrainingYearPlan {
+  id: string;
+  year: number;
+  status: number;
+}
+
+export interface TrainingCatalogCourse {
+  id: string;
+  name: string;
+}
+
+export interface TrainingRegistrationSummary {
+  trainingCourseId: string;
+  regStatus: TrainingRegistrationRecord | null;
+  departmentRegStatus: TrainingRegistrationRecord | null;
+  adminRegStatus: TrainingRegistrationRecord | null;
+  finalRegStatus: TrainingRegistrationRecord | null;
+}
 
 export interface TrainingRegistrationRecord {
   status: number;
@@ -162,8 +189,10 @@ export interface TrainingScoreConfig {
 
 export interface TrainingCourse {
   id: string;
+  courseId?: string | null;
   name: string;
   description?: string | null;
+  note?: string | null;
   type: TrainingCourseType;
   status: TrainingCourseStatus;
   year?: number | null;

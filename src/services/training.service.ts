@@ -1,6 +1,6 @@
-import { mapEvaluation, mapMyTrainingCourse, mapRegistration, mapTrainingClass, mapTrainingCourse, mapTrainingSession, mapTrainingExamSession, mapTrainingExamAnswer, mapTrainingExamResult, mapTrainingProposal } from "@/mappers/training.mapper";
+import { mapEvaluation, mapMyTrainingCourse, mapRegistration, mapTrainingClass, mapTrainingCourse, mapTrainingRegistrationSummary, mapTrainingSession, mapTrainingExamSession, mapTrainingExamAnswer, mapTrainingExamResult, mapTrainingProposal } from "@/mappers/training.mapper";
 import { api } from "@/utils/epsApi";
-import { TRAINING_COURSE_STATUS, MyTrainingCourse, TrainingClass, TrainingCourse, TrainingEvaluation, TrainingSession, TrainingStudentRegistration, TrainingExamAnswer, TrainingExamSession, TrainingProposal, TrainingSummary } from "@/types/training.model";
+import { TRAINING_COURSE_STATUS, MyTrainingCourse, TrainingCatalogCourse, TrainingClass, TrainingCourse, TrainingEvaluation, TrainingRegistrationSummary, TrainingSession, TrainingStudentRegistration, TrainingExamAnswer, TrainingExamSession, TrainingProposal, TrainingSummary, TrainingYearPlan } from "@/types/training.model";
 
 function unwrap<T = any>(value: any): T {
   const payload = value?.data ?? value;
@@ -37,12 +37,45 @@ export async function getTrainingCoursesApi(
   year: number,
   isDeployedCourse = false,
   status: number | null = TRAINING_COURSE_STATUS.REGISTRATION,
+  employeeDepartmentId?: string | null,
 ) {
   const response = await api.get({
     link: "/training-courses",
-    config: { params: { year, isPlanCourse: null, status, isDeployedCourse } },
+    config: { params: { year, isPlanCourse: null, status, isDeployedCourse, employeeDepartmentId } },
   });
   return asArray(response).map(mapTrainingCourse);
+}
+
+export async function getMyTrainingRegistrationSummariesApi(
+  employeeId: string,
+  year: number,
+): Promise<TrainingRegistrationSummary[]> {
+  const response = await api.get({
+    link: `/training-registrations/employee/${employeeId}/courses`,
+    config: { params: { year } },
+  });
+  return asArray(response).map(mapTrainingRegistrationSummary);
+}
+
+export async function getTrainingYearPlanApi(year: number): Promise<TrainingYearPlan | null> {
+  const response = await api.get({ link: `/training-plans/${year}` });
+  const data = unwrap<any>(response);
+  if (!data) return null;
+  return {
+    id: data.id ?? "",
+    year: data.year ?? year,
+    status: data.status ?? 0,
+  };
+}
+
+export async function getActiveTrainingCatalogCoursesApi(): Promise<TrainingCatalogCourse[]> {
+  const response = await api.get({
+    link: "/courses",
+    config: { params: { status: "active" } },
+  });
+  return asArray(response)
+    .map((course) => ({ id: course?.id ?? "", name: course?.name ?? "" }))
+    .filter((course) => course.id && course.name);
 }
 
 export async function getMyTrainingCoursesApi(

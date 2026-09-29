@@ -29,17 +29,6 @@ export function ExamRegistrationActionCard() {
     router.navigate("/screen/current-exam/exam-registration-form");
   };
 
-  if (!currentExam.exam.examType.examineeCanRegister) {
-    return (
-      <ExamStatusActionCard
-        title="Đăng ký tham gia"
-        icon="account-plus-outline"
-        step={1}
-        info={<ExamStageStatus label="Chưa mở" />}
-      />
-    );
-  }
-
   const renderBtn = () => {
     if (hasPassedRegistration) {
       const label =

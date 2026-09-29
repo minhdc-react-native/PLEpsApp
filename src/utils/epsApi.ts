@@ -28,6 +28,17 @@ interface IApiParams {
   callError?: (error: any) => void;
 }
 
+function getApiErrorDetails(error: any) {
+  const originalError = error?.originalError ?? error;
+  return {
+    message: originalError?.message ?? error?.message ?? "unknown",
+    code: originalError?.code ?? error?.code ?? null,
+    status: originalError?.response?.status ?? error?.response?.status ?? null,
+    hasResponse: !!(originalError?.response ?? error?.response),
+    hasRequest: !!(originalError?.request ?? error?.request),
+  };
+}
+
 export const api = {
   get: async ({
     link,
@@ -47,7 +58,7 @@ export const api = {
       return res.data || res;
     } catch (error: any) {
       callError?.(error);
-      __DEV__ && console.log("GET error:", error?.response?.data || error);
+      __DEV__ && console.log("GET error:", { link, ...getApiErrorDetails(error) });
       return Promise.reject(error);
     } finally {
       setLoading?.(false);
@@ -73,8 +84,7 @@ export const api = {
       return res;
     } catch (error: any) {
       callError?.(error);
-      console.log("link>>", link, data);
-      __DEV__ && console.log(`POST error:`, error?.response?.data || error);
+      __DEV__ && console.log("POST error:", { link, ...getApiErrorDetails(error) });
       return Promise.reject(error);
     } finally {
       setLoading?.(false);

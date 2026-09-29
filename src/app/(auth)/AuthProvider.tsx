@@ -3,8 +3,9 @@ import { useToast } from "@/components/dialog/useToast";
 import { useData } from "@/hooks/zustand/useData";
 import { useTab } from "@/hooks/zustand/useTab";
 import { api } from "@/utils/epsApi";
-import { epsStorage } from "@/utils/epsStorage";
+import { BASE_URL, epsStorage } from "@/utils/epsStorage";
 import {
+  AUTH_REQUEST_TIMEOUT_MS,
   AUTH_SESSION_EXPIRED_EVENT,
   resetAuthSessionExpiryNotification,
 } from "@/utils/epsAxios";
@@ -12,6 +13,31 @@ import { router } from "expo-router";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { DeviceEventEmitter } from "react-native";
 const { clearTokens, getToken, setToken, setLogin, removeLogin } = epsStorage();
+
+function getSafeBaseUrl() {
+    if (!BASE_URL) return "<unset>";
+    try {
+        const url = new URL(BASE_URL);
+        return `${url.protocol}//${url.host}${url.pathname}`;
+    } catch {
+        return "<invalid>";
+    }
+}
+
+function authDebug(stage: string, details: Record<string, unknown> = {}) {
+    if (__DEV__) console.log("[auth-debug]", stage, { baseUrl: getSafeBaseUrl(), ...details });
+}
+
+function authErrorDetails(error: any) {
+    const originalError = error?.originalError ?? error;
+    return {
+        message: originalError?.message ?? error?.message ?? "unknown",
+        code: originalError?.code ?? error?.code ?? null,
+        status: originalError?.response?.status ?? error?.response?.status ?? null,
+        hasResponse: !!(originalError?.response ?? error?.response),
+        hasRequest: !!(originalError?.request ?? error?.request),
+    };
+}
 type AuthContextType = {
     isLogin: boolean | null; // null = đang check
     login: (data: ILogin) => Promise<void>;
@@ -30,28 +56,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const setIndex = useTab((state) => state.setIndex);
 
     const getDataBegin = async () => {
+        const requestStartedAt = Date.now();
+        authDebug("GET /employees/current-user/ started");
         return new Promise<void>((resolve, reject) => {
             api.get({
                 link: `/employees/current-user/`,
+                config: { timeout: AUTH_REQUEST_TIMEOUT_MS },
                 callBack: (res) => {
                     const currentUser = res?.returnData ?? null;
-                    if (__DEV__) {
-                        console.log("[AuthProvider] current-user avatar debug", {
-                            keys: currentUser && typeof currentUser === "object"
-                                ? Object.keys(currentUser)
-                                : [],
-                            imageUrl: currentUser?.imageUrl ?? null,
-                            employeeImageUrl: currentUser?.employee?.imageUrl ?? null,
-                            userImageUrl: currentUser?.user?.imageUrl ?? null,
-                            avatar: currentUser?.avatar ?? null,
-                            id: currentUser?.id ?? null,
-                            employeeId: currentUser?.employeeId ?? currentUser?.employee?.id ?? null,
-                        });
-                    }
+                    authDebug("GET /employees/current-user/ succeeded", {
+                        elapsedMs: Date.now() - requestStartedAt,
+                        receivedUser: !!currentUser,
+                    });
                     setUser(currentUser);
                     resolve();
                 },
                 callError: (err) => {
+                    authDebug("GET /employees/current-user/ failed", {
+                        elapsedMs: Date.now() - requestStartedAt,
+                        ...authErrorDetails(err),
+                    });
                     reject(err);
                 },
             });
@@ -72,12 +96,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
     const login = (login: ILogin) => {
+        const requestStartedAt = Date.now();
+        let stage = "POST /auth/login";
+        authDebug("login flow started");
         return new Promise<void>((resolve, reject) => {
             api.post({
                 link: `/auth/login`,
                 data: login,
+                config: { timeout: AUTH_REQUEST_TIMEOUT_MS },
                 callBack: async (res) => {
                     try {
+                        authDebug("POST /auth/login succeeded", {
+                            elapsedMs: Date.now() - requestStartedAt,
+                            returnedAccessToken: !!res?.access_token,
+                            returnedMessage: !!res?.message,
+                        });
                         if (res?.message) {
                             showToast(res.message, { type: "error" });
                             hide();
@@ -90,8 +123,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 ? authResponse
                                 : { cookie_session: true },
                         );
+                        authDebug("session stored", {
+                            sessionType: authResponse?.access_token ? "bearer" : "cookie",
+                        });
                         resetAuthSessionExpiryNotification();
+                        stage = "GET /employees/current-user/";
                         await getDataBegin();
+                        authDebug("login current-user step completed", {
+                            elapsedMs: Date.now() - requestStartedAt,
+                        });
 
                         // eslint-disable-next-line no-unused-expressions
                         login.remember ? await setLogin(login) : await removeLogin();
@@ -99,26 +139,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         setIsLogin(true);
                         hide();
                         router.replace("/(tabs)");
+                        authDebug("login flow completed", {
+                            elapsedMs: Date.now() - requestStartedAt,
+                        });
                         resolve();
                     } catch (e) {
+                        authDebug("login flow failed", {
+                            stage,
+                            elapsedMs: Date.now() - requestStartedAt,
+                            ...authErrorDetails(e),
+                        });
                         hide();
                         showToast("Đăng nhập thất bại", { type: "error" });
                         reject(e);
                     }
                 },
                 callError: (err) => {
+                    authDebug("POST /auth/login failed", {
+                        elapsedMs: Date.now() - requestStartedAt,
+                        ...authErrorDetails(err),
+                    });
                     hide();
                     showToast(err.message || "Lỗi đăng nhập", { type: "error" });
                     reject(err);
                 },
-                setLoading: (loading) => loading ? show("Truy cập...") : hide(),
+                setLoading: (loading) => {
+                    authDebug("login request loading", { visible: loading });
+                    loading ? show("Truy cập...") : hide();
+                },
             });
         });
     };
 
     const checkLogin = async () => {
+        authDebug("startup session check started");
         try {
             const token = await getToken();
+            authDebug("startup session read", {
+                hasStoredSession: !!token,
+                sessionType: token?.access_token ? "bearer" : token?.cookie_session ? "cookie" : "none",
+            });
             if (!token) {
                 setIsLogin(false);
                 router.replace("/(auth)/login");
@@ -127,7 +187,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await getDataBegin();
             setIsLogin(true);
             router.replace("/(tabs)");
-        } catch {
+            authDebug("startup session check completed");
+        } catch (error) {
+            authDebug("startup session check failed", authErrorDetails(error));
             setIsLogin(false);
             router.replace("/(auth)/login");
         }

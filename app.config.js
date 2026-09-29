@@ -23,7 +23,10 @@ function loadDotEnvFile(fileName) {
       value = value.slice(1, -1);
     }
 
-    process.env[key] = value;
+    // Keep Expo/EAS/terminal-provided values; use the local .env as a fallback.
+    if (process.env[key] === undefined || process.env[key] === "") {
+      process.env[key] = value;
+    }
   }
 }
 

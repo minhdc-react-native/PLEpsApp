@@ -156,6 +156,9 @@ export function mapExaminee(schema: any): IExaminee {
       reason: schema.reason,
       note: schema.note,
     },
+    registrationFileIds: normalizeFileIds(
+      schema.fileIds ?? schema.registrationFileIds ?? schema.files,
+    ),
     departmentRegStatus:
       schema.departmentStatus != null
         ? {
@@ -194,6 +197,13 @@ export function mapExaminee(schema: any): IExaminee {
         : null,
     stage: schema.stage as ExamineeStage,
   };
+}
+
+function normalizeFileIds(value: any): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((file) => (typeof file === "string" ? file : file?.id ?? file?.fileId))
+    .filter((id): id is string => typeof id === "string" && !!id);
 }
 
 export function mapExamScores(schema: any): IExamScore {

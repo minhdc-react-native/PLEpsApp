@@ -36,6 +36,11 @@ const menuItems: Array<{
     badgeKey: "openRegistrationCount",
   },
   {
+    icon: "lightbulb-on-outline",
+    title: "Đề xuất nội dung đào tạo",
+    route: "/screen/training/content-proposal",
+  },
+  {
     icon: "account-school-outline",
     title: "Lớp học của tôi",
     route: "/screen/training/classes",

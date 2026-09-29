@@ -4,6 +4,7 @@ import { Alert, DeviceEventEmitter } from "react-native";
 import { BASE_URL, epsStorage } from "./epsStorage";
 
 const { setToken, getToken, clearTokens } = epsStorage();
+export const AUTH_REQUEST_TIMEOUT_MS = 30_000;
 
 // Keep compatibility with the backend's cookie-backed session response. Native
 // cookie persistence remains platform-dependent; bearer tokens stay supported.
@@ -37,6 +38,20 @@ const isTokenEndpoint = (url?: string) => {
   return ["/auth/login", "/auth/loginnotpass", "/auth/refresh-token"].some(
     (path) => url.includes(path),
   );
+};
+
+const isAuthTraceEndpoint = (url?: string) =>
+  isAuthEndpoint(url) || !!url?.includes("/employees/current-user/");
+
+const getSafeRequestUrl = (baseURL?: string, url?: string) => {
+  try {
+    const base = baseURL?.replace(/\/+$/, "") ?? "";
+    const requestPath = url?.replace(/^\/+/, "") ?? "";
+    const target = new URL(requestPath, `${base}/`);
+    return `${target.protocol}//${target.host}${target.pathname}`;
+  } catch {
+    return url?.split("?")[0] ?? "<unknown>";
+  }
 };
 
 const getHandledError = (error: any) => {
@@ -79,6 +94,7 @@ const refreshSession = async (token: IToken): Promise<IToken> => {
     {
       headers: { "Content-Type": "application/json" },
       withCredentials: true,
+      timeout: AUTH_REQUEST_TIMEOUT_MS,
     },
   );
   const refreshedToken = response.data as IToken;
@@ -142,6 +158,12 @@ epsAxios.interceptors.request.use(
   async (config: any) => {
     const baseURL = BASE_URL;
     if (baseURL) config.baseURL = baseURL;
+    if (__DEV__ && isAuthTraceEndpoint(config.url)) {
+      console.log("[auth-http] request", {
+        method: String(config.method ?? "get").toUpperCase(),
+        url: getSafeRequestUrl(config.baseURL, config.url),
+      });
+    }
     const token = await getToken();
     if (token?.access_token && !isTokenEndpoint(config.url)) {
       config.headers = config.headers ?? {};
@@ -161,6 +183,13 @@ epsAxios.interceptors.request.use(
 // Add a response interceptor
 epsAxios.interceptors.response.use(
   (res) => {
+    if (__DEV__ && isAuthTraceEndpoint(res.config?.url)) {
+      console.log("[auth-http] response", {
+        method: String(res.config?.method ?? "get").toUpperCase(),
+        url: getSafeRequestUrl(res.config?.baseURL, res.config?.url),
+        status: res.status,
+      });
+    }
     // Kiểm tra nếu trạng thái trả về là 401 (không có quyền truy cập)
     if (res.status === 401) {
       console.log("lỗi 401", "...");
@@ -206,7 +235,17 @@ epsAxios.interceptors.response.use(
     } catch (e) {
       // ignore
     }
-    console.log("err axios>>", err);
+    if (__DEV__) {
+      console.log("err axios>>", {
+        method: String(err?.config?.method ?? "get").toUpperCase(),
+        url: getSafeRequestUrl(err?.config?.baseURL, err?.config?.url),
+        message: err?.message ?? "unknown",
+        code: err?.code ?? null,
+        status: err?.response?.status ?? null,
+        hasResponse: !!err?.response,
+        hasRequest: !!err?.request,
+      });
+    }
     return handleError(err); // Gọi hàm handleError để xử lý
   },
 );

@@ -20,6 +20,7 @@ import {
   TrainingExamResult,
   TrainingClassExamStatus,
   TrainingProposal,
+  TrainingRegistrationSummary,
 } from "@/types/training.model";
 
 const toDate = (value: any): Date | null => {
@@ -134,8 +135,10 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
 
   return {
     id: raw?.id ?? raw?.trainingCourseId ?? "",
+    courseId: raw?.courseId ?? raw?.course?.id ?? null,
     name: firstString(raw?.name, raw?.course?.name) || "Khóa đào tạo",
     description: raw?.description ?? raw?.course?.description ?? null,
+    note: raw?.note ?? raw?.notes ?? null,
     type: raw?.type ?? 1,
     status: raw?.status ?? TRAINING_COURSE_STATUS.REGISTRATION,
     year: raw?.year ?? null,
@@ -158,10 +161,10 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
       raw?.examName ??
       null,
     registrationStartDate: toDate(
-      raw?.registrationStartDate ?? raw?.registrationDates?.startDate,
+      raw?.registrationStartDate ?? raw?.courseRegistrationStartDate ?? raw?.registrationDates?.startDate,
     ),
     registrationEndDate: toDate(
-      raw?.registrationEndDate ?? raw?.registrationDates?.endDate,
+      raw?.registrationEndDate ?? raw?.courseRegistrationEndDate ?? raw?.registrationDates?.endDate,
     ),
     evaluationStartDate: toDate(raw?.evaluationStartDate ?? raw?.evaluationStart),
     evaluationEndDate: toDate(raw?.evaluationEndDate ?? raw?.evaluationEnd),
@@ -224,7 +227,17 @@ export function mapMyTrainingCourse(raw: any): MyTrainingCourse {
             }
           : null),
     ),
-    finalRegStatus: mapRecord(raw?.finalRegStatus),
+    finalRegStatus: mapRecord(raw?.finalRegStatus ?? raw?.finalRegistration),
+  };
+}
+
+export function mapTrainingRegistrationSummary(raw: any): TrainingRegistrationSummary {
+  return {
+    trainingCourseId: raw?.trainingCourseId ?? raw?.trainingCourse?.id ?? "",
+    regStatus: mapRecord(raw?.regStatus ?? raw?.registration),
+    departmentRegStatus: mapRecord(raw?.departmentRegStatus ?? raw?.departmentRegistration),
+    adminRegStatus: mapRecord(raw?.adminRegStatus ?? raw?.adminRegistration),
+    finalRegStatus: mapRecord(raw?.finalRegStatus ?? raw?.finalRegistration),
   };
 }
 

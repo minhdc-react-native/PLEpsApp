@@ -37,6 +37,7 @@ export interface IExaminee extends IExamineeAttempt {
   id: string;
   employee: Partial<IEmployee>;
   regStatus: IExamRegistrationRecord;
+  registrationFileIds?: string[];
   departmentRegStatus: IExamRegistrationRecord | null;
   adminRegStatus: IExamRegistrationRecord | null;
   finalRegStatus: IExamRegistrationRecord | null;
