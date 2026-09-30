@@ -9,13 +9,12 @@ import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback } from "react";
 import {
-  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   View,
 } from "react-native";
-import { Card, Divider, Icon, Text, useTheme } from "react-native-paper";
+import { Card, Divider, Icon, Text, TouchableRipple, useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TrainingBadgeKey = keyof Pick<
@@ -55,7 +54,7 @@ const menuItems: Array<{
   {
     icon: "history",
     title: "Quá trình đào tạo",
-    route: "/screen/history?tab=training",
+    route: "/screen/history/list?type=training",
   },
 ] as const;
 
@@ -165,25 +164,25 @@ const ManageTraining = () => {
             const badgeCount = item.badgeKey ? summary?.[item.badgeKey] ?? 0 : 0;
             return (
             <View key={item.title}>
-              <Pressable
+              <TouchableRipple
+                accessibilityRole="button"
                 onPress={() => router.push(trainingHref(item.route))}
-                style={({ pressed }) => [
-                  styles.menuItem,
-                  pressed && styles.menuPressed,
-                ]}
+                rippleColor={`${colors.primary}20`}
               >
-                <Icon source={item.icon} size={23} color={colors.primary} />
-                <Text
-                  style={[styles.menuTitle, { color: colors.onSurface }]}
-                  numberOfLines={1}
-                >
-                  {item.title}
-                </Text>
-                <View style={styles.menuActions}>
-                  {badgeCount > 0 ? <Badge variant="error">{badgeCount}</Badge> : null}
-                  <Icon source="chevron-right" size={20} color={colors.onSurfaceVariant} />
+                <View style={styles.menuItem}>
+                  <Icon source={item.icon} size={23} color={colors.primary} />
+                  <Text
+                    style={[styles.menuTitle, { color: colors.onSurface }]}
+                    numberOfLines={1}
+                  >
+                    {item.title}
+                  </Text>
+                  <View style={styles.menuActions}>
+                    {badgeCount > 0 ? <Badge variant="error">{badgeCount}</Badge> : null}
+                    <Icon source="chevron-right" size={20} color={colors.onSurfaceVariant} />
+                  </View>
                 </View>
-              </Pressable>
+              </TouchableRipple>
               {index < menuItems.length - 1 ? <Divider /> : null}
             </View>
             );
@@ -249,7 +248,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
-  menuPressed: { opacity: 0.65 },
   menuTitle: { flex: 1, fontSize: 15, lineHeight: 20, fontWeight: "700" },
   menuActions: { flexDirection: "row", alignItems: "center", gap: 8 },
 });
