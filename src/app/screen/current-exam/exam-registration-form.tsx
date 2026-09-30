@@ -3,6 +3,9 @@ import { useToast } from "@/components/dialog/useToast";
 import AppHeader from "@/components/app-header";
 import FormWrapper from "@/components/formWrapper";
 import { FileBadge } from "@/components/file-badge";
+import { ExamRegistrationStatusBadge } from "@/components/exam/exam-registration-status-badge";
+import ExamRegistrationSchedule from "./exam-registration-schedule";
+import ExamRegistrationSummary from "./exam-registration-summary";
 import {
   appendUploadFilesToFormData,
   fetchFilesByIds,
@@ -27,10 +30,12 @@ import { StyleSheet, View } from "react-native";
 import {
   Appbar,
   Button,
+  Icon,
   IconButton,
   RadioButton,
   Text,
   TextInput,
+  useTheme,
 } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import z from "zod";
@@ -73,6 +78,7 @@ export default function ExamRegistrationForm() {
   const { bottom } = useSafeAreaInsets();
   const { showToast } = useToast();
   const { show, hide } = useLoading();
+  const { colors } = useTheme();
   const { refetch } = useCurrentExam();
   const registrationFileIds = currentExam.examinee.registrationFileIds ?? [];
   const registrationFileIdsKey = registrationFileIds.join("|");
@@ -209,6 +215,10 @@ export default function ExamRegistrationForm() {
           gap: 8,
         }}
       >
+        <ExamRegistrationSchedule
+          start={currentExam.exam.registrationStartDate}
+          end={currentExam.exam.registrationEndDate}
+        />
         <Controller
           control={control}
           name="status"
@@ -242,6 +252,32 @@ export default function ExamRegistrationForm() {
             </RadioButton.Group>
           )}
         />
+
+        {currentExam.examinee.finalRegStatus ? (
+          <View
+            style={[
+              styles.approvalAlert,
+              {
+                backgroundColor: colors.surfaceVariant,
+                borderColor: colors.outlineVariant,
+              },
+            ]}
+          >
+            <Icon
+              source="shield-check-outline"
+              size={22}
+              color={colors.primary}
+            />
+            <View style={styles.approvalAlertContent}>
+              <Text style={[styles.approvalAlertLabel, { color: colors.onSurfaceVariant }]}>
+                Trạng thái phê duyệt trước đó
+              </Text>
+              <ExamRegistrationStatusBadge
+                status={currentExam.examinee.finalRegStatus.status}
+              />
+            </View>
+          </View>
+        ) : null}
 
         {status === EXAM_REGISTRATION_STATUS.POSTPONED && (
           <>
@@ -332,6 +368,7 @@ export default function ExamRegistrationForm() {
             />
           </>
         )}
+        <ExamRegistrationSummary exam={currentExam} />
         <View style={{ height: isReadOnly ? 120 : 240 }} />
       </FormWrapper>
       {!isReadOnly && (
@@ -380,6 +417,22 @@ const styles = StyleSheet.create({
   attachments: {
     gap: 8,
     marginTop: 4,
+  },
+  approvalAlert: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 14,
+  },
+  approvalAlertContent: {
+    flex: 1,
+    gap: 6,
+  },
+  approvalAlertLabel: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   attachmentTitle: {
     fontWeight: "700",

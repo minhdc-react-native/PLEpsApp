@@ -148,7 +148,7 @@ export function mapExaminee(schema: any): IExaminee {
     id: schema.id,
     employee: mapExamineeEmployee(schema.employee),
     ...attempt,
-    isPass: schema.isPass !== null ? schema.isPass : null,
+    isPass: schema.isPass ?? schema.isPassed ?? null,
     failedColumns: schema.failedColumns,
     isBelowAverageMinimum: schema.isBelowAverageMinimum ?? null,
     regStatus: {

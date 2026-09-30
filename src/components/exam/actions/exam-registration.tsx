@@ -95,10 +95,10 @@ export function ExamRegistrationActionCard() {
   return (
     <ExamStatusActionCard
       title="Đăng ký tham gia"
-      icon="account-plus-outline"
       step={1}
       first
       last={false}
+      completed={currentExam.examinee.stage > EXAMINEE_STAGES.REGISTRATION}
       action={renderBtn()}
       info={
         <ExamStageStatus

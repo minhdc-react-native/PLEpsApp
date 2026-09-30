@@ -36,7 +36,7 @@ export default function ExamDetailExamineeGeneralInfo() {
               <Text style={[styles.resultLabel, { textAlign: "center" }]}>
                 Kết quả
               </Text>
-              {itemData?.examinee.isPass !== null && (
+              {itemData?.examinee.isPass != null && (
                 <Badge
                   style={[
                     {
@@ -56,32 +56,20 @@ export default function ExamDetailExamineeGeneralInfo() {
           </Card>
         </View>
 
-        <ListFields>
-          <Field
-            label="Ngày xét điều kiện"
-            value={displayDate(itemData?.examinee.conditionDate)}
-          />
-          {itemData.exam.examType.editExamineeSalary && (
-            <>
-              <Field
-                label={`Thời gian hưởng lương đến hết ${displayDate(
-                  itemData?.exam.eventMonth
-                )}`}
-                value={itemData.examinee.salaryPeriod}
-              />
-              <Field
-                label="Thời gian nâng lương theo quy định"
-                value={`${itemData.examinee.salaryYear} năm`}
-              />
-            </>
-          )}
-          <Field
-            label="Trình độ (cao nhất)"
-            value={
-              itemData?.examinee.employee.educationInfo?.highestEducationLevel
-            }
-          />
-        </ListFields>
+        {itemData.exam.examType.editExamineeSalary && (
+          <ListFields>
+            <Field
+              label={`Thời gian hưởng lương đến hết ${displayDate(
+                itemData?.exam.eventMonth
+              )}`}
+              value={itemData.examinee.salaryPeriod}
+            />
+            <Field
+              label="Thời gian nâng lương theo quy định"
+              value={`${itemData.examinee.salaryYear} năm`}
+            />
+          </ListFields>
+        )}
         <ListFields>
           <Field
             label="Bậc trước thi"
@@ -133,6 +121,10 @@ export default function ExamDetailExamineeGeneralInfo() {
               itemData.examinee.examArea?.name ??
               itemData.examinee.employee.area?.name
             }
+          />
+          <Field
+            label="Ngày xét điều kiện"
+            value={displayDate(itemData?.examinee.conditionDate)}
           />
         </ListFields>
         <View style={{ height: 100 }} />

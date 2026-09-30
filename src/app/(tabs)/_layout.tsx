@@ -1,4 +1,3 @@
-import { useData } from "@/hooks/zustand/useData";
 import { useTab } from "@/hooks/zustand/useTab";
 import React from "react";
 import { StyleSheet } from "react-native";
@@ -13,19 +12,19 @@ import ManageTraining from "./manage-training";
 const routerBase = [
   {
     key: "index",
-    title: "Nhân Viên",
+    title: "Nhân viên",
     focusedIcon: "account-check",
     unfocusedIcon: "account-check-outline",
   },
   {
     key: "exam",
-    title: "Kỳ Thi",
+    title: "Kỳ thi",
     focusedIcon: "trophy-variant",
     unfocusedIcon: "trophy-variant-outline",
   },
   {
     key: "manage-training",
-    title: "Đào Tạo",
+    title: "Đào tạo",
     focusedIcon: "book-open-page-variant",
     unfocusedIcon: "book-open-page-variant-outline",
   },
@@ -33,17 +32,8 @@ const routerBase = [
 export default function TabLayout() {
   const index = useTab((state) => state.index);
   const setIndex = useTab((state) => state.setIndex);
-  const currentExam = useData((state) => state.currentExam);
   const { colors } = useTheme();
-  const routes = React.useMemo<BottomNavigationRoute[]>(
-    () =>
-      routerBase.map((el) =>
-        el.key === "exam"
-          ? { ...el, badge: currentExam ? "1" : undefined }
-          : el
-      ),
-    [currentExam]
-  );
+  const routes = React.useMemo<BottomNavigationRoute[]>(() => routerBase, []);
 
   const renderScene = BottomNavigation.SceneMap({
     index: EmployeeInfo,

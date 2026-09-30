@@ -16,6 +16,11 @@ interface HistoryListItemProps {
     label: string;
     color: string;
   };
+  statusDetails?: {
+    label: string;
+    value: string;
+    valueColor?: string;
+  }[];
   onPress?: () => void;
   last?: boolean;
 }
@@ -44,6 +49,7 @@ export function HistoryListItem({
   iconBackgroundColor,
   iconColor,
   result,
+  statusDetails,
   onPress,
   last = false,
 }: HistoryListItemProps) {
@@ -65,6 +71,23 @@ export function HistoryListItem({
         <Text numberOfLines={1} style={[styles.subtitle, { color: colors.onSurfaceVariant }]}>
           {subtitle}
         </Text>
+        {statusDetails?.map((detail) => (
+          <Text
+            key={detail.label}
+            numberOfLines={1}
+            style={[styles.result, { color: colors.onSurfaceVariant }]}
+          >
+            {detail.label}: {" "}
+            <Text
+              style={[
+                styles.resultValue,
+                { color: detail.valueColor ?? colors.onSurface },
+              ]}
+            >
+              {detail.value}
+            </Text>
+          </Text>
+        ))}
         {result && (
           <Text style={[styles.result, { color: colors.onSurfaceVariant }]}>
             Kết quả:{" "}

@@ -43,7 +43,7 @@ export default function AppHeader({
         ]}
       >
         {onBack && <Appbar.BackAction onPress={onBack} />}
-        <View style={styles.titleBlock}>
+        <View style={[styles.titleBlock, !onBack && styles.titleInset]}>
           <View style={styles.titleRow}>
             {titleIcon ? <Image source={titleIcon} style={styles.titleIcon} resizeMode="contain" /> : null}
             <Text
@@ -87,6 +87,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
     justifyContent: "center",
     gap: 1,
+  },
+  titleInset: {
+    paddingLeft: 16,
   },
   titleRow: {
     flexDirection: "row",

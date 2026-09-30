@@ -19,16 +19,18 @@ export function ExamStageStatus({
   tone = "neutral",
 }: ExamStageStatusProps) {
   const { colors } = useTheme();
-  const toneColors = {
-    primary: colors.primary,
-    success: "#087A52",
-    error: colors.error,
-    neutral: colors.onSurfaceVariant,
+  const tones = {
+    primary: { foreground: colors.primary, background: colors.primaryContainer },
+    success: { foreground: "#087A52", background: "#E3F5EE" },
+    error: { foreground: colors.error, background: colors.errorContainer },
+    neutral: {
+      foreground: colors.onSurfaceVariant,
+      background: colors.surfaceVariant,
+    },
   };
+  const appearance = tones[tone];
 
-  return (
-    <Text style={[styles.status, { color: toneColors[tone] }]}>{label}</Text>
-  );
+  return <Text style={[styles.status, { color: appearance.foreground, backgroundColor: appearance.background }]}>{label}</Text>;
 }
 
 export function ExamStageDateRange({
@@ -36,58 +38,45 @@ export function ExamStageDateRange({
   end,
 }: ExamStageDateRangeProps) {
   const { colors } = useTheme();
-  const { displayDatetimeShort } = helper();
+  const { displayDate } = helper();
   const now = new Date();
   const startDate = start ? new Date(start) : null;
   const endDate = end ? new Date(end) : null;
   const isActive =
     !!startDate && !!endDate && now >= startDate && now <= endDate;
   const isExpired = !!endDate && now > endDate;
-  const valueColor = isActive
-    ? "#087A52"
-    : isExpired
-      ? colors.error
-      : colors.onSurfaceVariant;
+  const valueColor = isActive ? "#087A52" : isExpired ? colors.error : colors.onSurfaceVariant;
 
   return (
     <View style={styles.dateRange}>
-      <View style={styles.dateRow}>
-        <Icon source="calendar" size={16} color={colors.onSurfaceVariant} />
-        <Text style={[styles.dateLabel, { color: colors.onSurface }]}>Từ:</Text>
-        <Text style={[styles.dateValue, { color: valueColor }]}>
-          {displayDatetimeShort(start, "--")}
-        </Text>
-      </View>
-      <View style={styles.dateRow}>
-        <Icon source="calendar" size={16} color={colors.onSurfaceVariant} />
-        <Text style={[styles.dateLabel, { color: colors.onSurface }]}>Đến:</Text>
-        <Text style={[styles.dateValue, { color: valueColor }]}>
-          {displayDatetimeShort(end, "--")}
-        </Text>
-      </View>
+      <Icon source="calendar" size={15} color={colors.onSurfaceVariant} />
+      <Text style={[styles.dateValue, { color: valueColor }]}>
+        {start || end
+          ? `${displayDate(start, "--")} – ${displayDate(end, "--")}`
+          : "Chưa có lịch"}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   status: {
+    overflow: "hidden",
     fontSize: 12,
-    lineHeight: 17,
-    fontWeight: "700",
+    lineHeight: 16,
+    fontWeight: "600",
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
   dateRange: {
-    gap: 4,
-  },
-  dateRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-  },
-  dateLabel: {
-    fontWeight: "700",
+    gap: 7,
   },
   dateValue: {
     flex: 1,
-    textAlign: "right",
+    fontSize: 12,
+    lineHeight: 17,
   },
 });

@@ -25,9 +25,13 @@ export function ExamResultActionCard() {
   return (
     <ExamStatusActionCard
       title="Kết quả"
-      icon="trophy-outline"
-      step={5}
+      step={
+        3 +
+        Number(currentExam.exam.examType.hasTopic) +
+        Number(currentExam.exam.examType.hasTraining)
+      }
       last
+      completed={currentExam.examinee.stage >= EXAMINEE_STAGES.FINISH}
       info={
         <ExamStageStatus
           label={

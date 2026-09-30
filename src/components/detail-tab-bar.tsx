@@ -21,10 +21,14 @@ export default function DetailTabBar({
   mode = "full",
 }: DetailTabBarProps) {
   const { colors } = useTheme();
+  const normalizedData = data.map((tab) => ({
+    ...tab,
+    value: normalizeTabLabel(tab.value),
+  }));
 
   return (
     <VcSelector
-      data={data}
+      data={normalizedData}
       value={value}
       onChange={onChange}
       type="line"
@@ -40,6 +44,17 @@ export default function DetailTabBar({
       tabBackgroundColor={colors.surface}
     />
   );
+}
+
+function normalizeTabLabel(value: string) {
+  const words = value.trim().split(/\s+/);
+  return words
+    .map((word, index) =>
+      index === 0
+        ? `${word.charAt(0).toLocaleUpperCase("vi-VN")}${word.slice(1).toLocaleLowerCase("vi-VN")}`
+        : word.toLocaleLowerCase("vi-VN"),
+    )
+    .join(" ");
 }
 
 const styles = StyleSheet.create({

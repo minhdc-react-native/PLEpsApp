@@ -27,9 +27,9 @@ export function ExamTrainingActionCard() {
   return (
     <ExamStatusActionCard
       title="Đào tạo"
-      icon="school-outline"
       step={currentExam.exam.examType.hasTopic ? 3 : 2}
       last={false}
+      completed={currentExam.examinee.stage > EXAMINEE_STAGES.EDUCATION}
       info={
         <ExamStageStatus
           label={

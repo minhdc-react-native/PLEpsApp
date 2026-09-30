@@ -65,9 +65,9 @@ export function TopicRegistrationActionCard() {
   return (
     <ExamStatusActionCard
       title="Đăng ký đề tài"
-      icon="file-document-edit-outline"
       step={2}
       last={false}
+      completed={currentExam.examinee.stage > EXAMINEE_STAGES.TOPIC}
       action={renderBtn()}
       info={
         currentExam.examinee.stage < EXAMINEE_STAGES.TOPIC ? (

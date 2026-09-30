@@ -24,9 +24,13 @@ export function ExamScheduleActionCard() {
   return (
     <ExamStatusActionCard
       title="Lịch thi"
-      icon="calendar-clock-outline"
-      step={currentExam.exam.examType.hasTopic && currentExam.exam.examType.hasTraining ? 4 : 3}
+      step={
+        2 +
+        Number(currentExam.exam.examType.hasTopic) +
+        Number(currentExam.exam.examType.hasTraining)
+      }
       last={false}
+      completed={currentExam.examinee.stage > EXAMINEE_STAGES.SCHEDULE}
       active={currentExam.exam.status === EXAM_STATUS.EXAM}
       action={
         currentExam.examinee.stage >= EXAMINEE_STAGES.SCHEDULE ? (

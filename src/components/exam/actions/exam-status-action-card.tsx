@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
-import { Card, Icon, Text, useTheme } from "react-native-paper";
+import { Icon, Text, useTheme } from "react-native-paper";
 
 interface Props {
   title: string;
@@ -8,7 +8,7 @@ interface Props {
   info?: ReactNode;
   children?: ReactNode;
   active?: boolean;
-  icon?: string;
+  completed?: boolean;
   subtitle?: string;
   step?: number;
   last?: boolean;
@@ -20,8 +20,8 @@ export function ExamStatusActionCard({
   info,
   action,
   active,
+  completed,
   children,
-  icon = "clipboard-text-outline",
   subtitle,
   step,
   last = false,
@@ -33,101 +33,77 @@ export function ExamStatusActionCard({
     <View style={styles.stageRow}>
       {!first && (
         <View
-          style={[styles.leadingConnector, { backgroundColor: colors.outlineVariant }]}
+          style={[
+            styles.leadingConnector,
+            {
+              backgroundColor:
+                active || completed ? colors.tertiary : colors.outlineVariant,
+            },
+          ]}
         />
       )}
       {!last && (
         <View
-          style={[styles.connector, { backgroundColor: colors.outlineVariant }]}
+          style={[
+            styles.connector,
+            {
+              backgroundColor: completed ? colors.tertiary : colors.outlineVariant,
+            },
+          ]}
         />
       )}
       <View
         style={[
           styles.stepDot,
           {
-            backgroundColor: active ? colors.primary : colors.surfaceVariant,
-            borderWidth: active ? 0 : 1,
-            borderColor: colors.outlineVariant,
+            backgroundColor: completed
+              ? colors.tertiary
+              : active
+                ? colors.surface
+                : colors.surface,
+            borderColor: active ? colors.primary : colors.outlineVariant,
+            borderWidth: completed ? 0 : active ? 2 : 1,
           },
         ]}
       >
-        {step !== undefined ? (
-          <Text
-            style={{
-              color: active ? colors.onPrimary : colors.onSurfaceVariant,
-              fontWeight: "700",
-              fontSize: 12,
-            }}
-          >
-            {step}
-          </Text>
-        ) : (
-          <Icon
-            source="check"
-            size={16}
-            color={active ? colors.onPrimary : colors.onSurfaceVariant}
-          />
-        )}
+        {completed ? (
+          <Icon source="check" size={16} color="#FFFFFF" />
+        ) : active ? (
+          <View style={[styles.activeDot, { backgroundColor: colors.primary }]} />
+        ) : null}
       </View>
 
-      <Card
-        mode="contained"
-        style={[
-          styles.card,
-          {
-            borderColor: active ? colors.primary : colors.outlineVariant,
-            backgroundColor: colors.surface,
-          },
-        ]}
-      >
-        <View style={styles.content}>
-          <View style={styles.headingRow}>
-            <View
-              style={[
-                styles.iconContainer,
-                {
-                  backgroundColor: active
-                    ? colors.primaryContainer
-                    : colors.surfaceVariant,
-                },
-              ]}
+      <View style={styles.content}>
+        <View style={styles.headingRow}>
+          <View style={styles.titleBlock}>
+            <Text
+              variant="titleSmall"
+              style={{
+                fontWeight: "700",
+                color: active ? colors.primary : colors.onSurface,
+              }}
             >
-              <Icon
-                source={icon}
-                size={24}
-                color={active ? colors.primary : colors.onSurfaceVariant}
-              />
-            </View>
-            <View style={styles.titleBlock}>
-              <Text
-                variant="titleMedium"
-                style={{
-                  fontWeight: "700",
-                  color: active ? colors.primary : colors.onSurface,
-                }}
-              >
-                {title}
+              {step != null ? `${step}. ${title}` : title}
+            </Text>
+            {subtitle && (
+              <Text style={[styles.subtitle, { color: colors.onSurfaceVariant }]}>
+                {subtitle}
               </Text>
-              {subtitle && (
-                <Text style={[styles.subtitle, { color: colors.onSurfaceVariant }]}>
-                  {subtitle}
-                </Text>
-              )}
-            </View>
+            )}
           </View>
-
-          {info && <View style={styles.statusRow}>{info}</View>}
-          {children}
-          {action && <View style={styles.action}>{action}</View>}
+          {info}
         </View>
-      </Card>
+
+        {children}
+        {!completed && action && <View style={styles.action}>{action}</View>}
+      </View>
     </View>
   );
 }
 
 export const ExamStatusActionCardStyles = StyleSheet.create({
   actionBtnLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
   },
 });
@@ -135,6 +111,9 @@ export const ExamStatusActionCardStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   stageRow: {
     position: "relative",
+    flexDirection: "row",
+    gap: 10,
+    minHeight: 42,
   },
   connector: {
     position: "absolute",
@@ -152,19 +131,7 @@ const styles = StyleSheet.create({
     width: 2,
     zIndex: 1,
   },
-  card: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 12,
-    marginLeft: 44,
-    elevation: 0,
-    shadowOpacity: 0,
-    shadowRadius: 0,
-  },
   stepDot: {
-    position: "absolute",
-    left: 0,
-    top: 14,
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -172,38 +139,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 2,
   },
+  activeDot: { width: 14, height: 14, borderRadius: 7 },
   content: {
     flex: 1,
     minWidth: 0,
-    gap: 10,
+    gap: 7,
+    paddingBottom: 8,
   },
   headingRow: {
+    minHeight: 28,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    justifyContent: "space-between",
+    gap: 8,
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titleBlock: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  subtitle: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  statusRow: {
-    alignItems: "flex-end",
-    minHeight: 22,
-  },
-  action: {
-    paddingTop: 2,
-    alignItems: "stretch",
-  },
+  titleBlock: { flex: 1, minWidth: 0, gap: 2 },
+  subtitle: { fontSize: 12, lineHeight: 16 },
+  action: { alignItems: "stretch", paddingTop: 1 },
 });
