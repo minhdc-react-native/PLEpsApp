@@ -126,6 +126,7 @@ function getTabItems(items: EmployeeExamPeriodMenuItem[], tab: ExamTabKey) {
   return items.filter(
     (item) =>
       item.exam.status !== EXAM_STATUS.DRAFT &&
+      !isCompleted(item) &&
       !isRegistrationPhase(item) &&
       (item.examinee.regStatus.status === EXAM_REGISTRATION_STATUS.SIGNED ||
         item.examinee.regStatus.status === EXAM_REGISTRATION_STATUS.ADDED),
