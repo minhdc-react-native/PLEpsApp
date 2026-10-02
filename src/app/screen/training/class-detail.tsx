@@ -206,10 +206,38 @@ function FunctionTab({ course, trainingClass, registration, availableClasses, ex
 
         {!trainingClass && !isOnline && course.status !== 30 ? <>
           <DetailSectionHeader title="Đăng ký lớp" icon="account-group-outline" />
-          <ListFields style={styles.groupFields}>
-            <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>{classRegistrationOpen ? "Bạn chưa được xếp lớp. Chọn một lớp phù hợp để đăng ký." : "Thời gian đăng ký lớp chưa mở hoặc đã kết thúc."}</Text>
-            {availableClasses.length ? availableClasses.map((item) => <Card key={item.id} mode="outlined" style={[styles.classOption, { borderColor: colors.outlineVariant, backgroundColor: colors.surface }]}><Card.Content style={styles.optionContent}><View style={styles.actionCopy}><Text style={styles.actionTitle}>{item.name}</Text><Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>{item.studentCount} học viên · {item.sessionCount} buổi</Text><Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>{formatTrainingDate(item.startDate)} - {formatTrainingDate(item.endDate)}</Text></View><Button mode={item.isRegistered ? "outlined" : "contained"} compact loading={processingClassId === item.id} onPress={() => onRegisterClass(item.id, item.isRegistered)} disabled={!!processingClassId || !canChooseClass}>{item.isRegistered ? "Hủy" : "Đăng ký"}</Button></Card.Content></Card>) : <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>Chưa có lớp để đăng ký.</Text>}
-          </ListFields>
+          {availableClasses.length ? (
+            <ListFields style={styles.groupFields}>
+              <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>
+                Bạn chưa được xếp lớp. Chọn một lớp phù hợp để đăng ký.
+              </Text>
+              {availableClasses.map((item) => (
+                <Card key={item.id} mode="outlined" style={[styles.classOption, { borderColor: colors.outlineVariant, backgroundColor: colors.surface }]}>
+                  <Card.Content style={styles.optionContent}>
+                    <View style={styles.actionCopy}>
+                      <Text style={styles.actionTitle}>{item.name}</Text>
+                      <Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>{item.studentCount} học viên · {item.sessionCount} buổi</Text>
+                      <Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>{formatTrainingDate(item.startDate)} - {formatTrainingDate(item.endDate)}</Text>
+                    </View>
+                    <Button mode={item.isRegistered ? "outlined" : "contained"} compact loading={processingClassId === item.id} onPress={() => onRegisterClass(item.id, item.isRegistered)} disabled={!!processingClassId || !canChooseClass}>
+                      {item.isRegistered ? "Hủy" : "Đăng ký"}
+                    </Button>
+                  </Card.Content>
+                </Card>
+              ))}
+            </ListFields>
+          ) : (
+            <View style={styles.registrationEmpty}>
+              <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>
+                {classRegistrationOpen
+                  ? "Bạn chưa được xếp lớp."
+                  : "Thời gian đăng ký lớp chưa mở hoặc đã kết thúc."}
+              </Text>
+              <Text style={[styles.muted, { color: colors.onSurfaceVariant }]}>
+                Chưa có lớp để đăng ký.
+              </Text>
+            </View>
+          )}
         </> : null}
 
         {canRequestPostpone ? <ListFields style={styles.groupFields}><View style={styles.actionRow}><View style={styles.actionCopy}><Text style={styles.actionTitle}>Xin hoãn đào tạo</Text><Text style={[styles.actionMeta, { color: colors.onSurfaceVariant }]}>Gửi yêu cầu để đơn vị đào tạo xem xét.</Text></View><Button mode="outlined" compact onPress={onPostpone}>Xin hoãn</Button></View></ListFields> : null}
@@ -315,6 +343,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   tabScreen: { flex: 1 },
   tabContent: { paddingBottom: 32 },
+  registrationEmpty: { marginHorizontal: 16, marginTop: 12 },
   readOnlyTabContent: { paddingTop: 12, paddingBottom: 32 },
   groupFields: { marginTop: 0, marginBottom: 12 },
   actionRow: { minHeight: 64, paddingVertical: 12, flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: "#E2E8F0" },

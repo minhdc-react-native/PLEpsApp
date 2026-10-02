@@ -50,7 +50,7 @@ export default function TrainingEvaluationsScreen() {
               </Card.Content>
             </Card>
           );
-        }) : <View style={[styles.empty, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}><TrainingEmptyState icon="star-check-outline" title="Chưa có khảo sát" description="Khảo sát sẽ xuất hiện khi khóa học được mở đánh giá." /></View>}
+        }) : <TrainingEmptyState icon="star-check-outline" title="Chưa có khảo sát" description="Khảo sát sẽ xuất hiện khi khóa học được mở đánh giá." />}
       </ScrollView>
     </View>
   );
@@ -68,5 +68,4 @@ const styles = StyleSheet.create({
   card: { borderRadius: 20, marginBottom: 12 },
   cardContent: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14 },
   iconBox: { width: 50, height: 50, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  empty: { borderWidth: 1, borderRadius: 20 },
 });

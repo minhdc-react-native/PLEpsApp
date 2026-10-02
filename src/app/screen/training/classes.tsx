@@ -42,9 +42,7 @@ export default function TrainingClassesScreen() {
         {loading && !data ? <LoadingScreen /> : courses.length ? courses.map((course) => (
           <TrainingClassCard key={course.id} course={course} onPress={() => router.push(trainingHref(`/screen/training/class-detail?trainingCourseId=${encodeURIComponent(course.id)}`))} />
         )) : (
-          <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.outlineVariant }]}>
-            <TrainingEmptyState icon="account-school-outline" title="Chưa có lớp học" description="Các khóa bạn đã đăng ký sẽ xuất hiện tại đây." />
-          </View>
+          <TrainingEmptyState icon="account-school-outline" title="Chưa có lớp học" description="Các khóa bạn đã đăng ký sẽ xuất hiện tại đây." />
         )}
       </ScrollView>
     </View>
@@ -147,5 +145,4 @@ const styles = StyleSheet.create({
   scheduleCopy: { flex: 1, minWidth: 0, gap: 1 },
   scheduleLabel: { fontSize: 12, lineHeight: 17, fontWeight: "700" },
   scheduleDate: { fontSize: 12, lineHeight: 17 },
-  emptyCard: { borderWidth: 1, borderRadius: 20 },
 });
