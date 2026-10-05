@@ -144,6 +144,8 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
     year: raw?.year ?? null,
     isPlanCourse: raw?.isPlanCourse ?? false,
     trainingPlanCourseId: raw?.trainingPlanCourseId ?? raw?.trainingPlanCourse?.id ?? null,
+    approvalStatus: raw?.approvalStatus ?? null,
+    isEmployeeRegistrationAllowed: raw?.isEmployeeRegistrationAllowed ?? false,
     isRegistered: raw?.isRegistered ?? false,
     startDate: toDate(raw?.startDate),
     endDate: toDate(raw?.endDate),

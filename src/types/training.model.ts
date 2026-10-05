@@ -66,7 +66,6 @@ export const TRAINING_CLASS_EXAM_STATUS_VALUES: Record<TrainingClassExamStatus, 
 };
 
 export interface TrainingSummary {
-  year: number;
   participatingCount: number;
   completedCount: number;
   openRegistrationCount: number;
@@ -94,6 +93,8 @@ export interface TrainingYearPlan {
   id: string;
   year: number;
   status: number;
+  startDate?: Date | null;
+  endDate?: Date | null;
 }
 
 export interface TrainingCatalogCourse {
@@ -198,6 +199,8 @@ export interface TrainingCourse {
   year?: number | null;
   isPlanCourse?: boolean;
   trainingPlanCourseId?: string | null;
+  approvalStatus?: string | null;
+  isEmployeeRegistrationAllowed?: boolean;
   isRegistered?: boolean;
   startDate?: Date | null;
   endDate?: Date | null;

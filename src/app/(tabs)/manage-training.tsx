@@ -35,9 +35,9 @@ const menuItems: Array<{
     badgeKey: "openRegistrationCount",
   },
   {
-    icon: "lightbulb-on-outline",
-    title: "Đề xuất nội dung đào tạo",
-    route: "/screen/training/content-proposal",
+    icon: "calendar-edit",
+    title: "Đăng ký kế hoạch năm",
+    route: "/screen/training/year-plan-registration",
   },
   {
     icon: "account-school-outline",
@@ -97,9 +97,8 @@ function TrainingStatCard({
 const ManageTraining = () => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const year = new Date().getFullYear();
-  const load = useCallback(() => getMyTrainingSummaryApi(year), [year]);
-  const { data: summary, loading, reload } = useTrainingResource(load, [year]);
+  const load = useCallback(() => getMyTrainingSummaryApi(), []);
+  const { data: summary, loading, reload } = useTrainingResource(load, []);
 
   return (
     <View

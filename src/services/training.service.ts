@@ -16,15 +16,13 @@ function asCount(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
 }
 
-export async function getMyTrainingSummaryApi(year: number): Promise<TrainingSummary> {
+export async function getMyTrainingSummaryApi(): Promise<TrainingSummary> {
   const response = await api.get({
     link: "/training/me/summary",
-    config: { params: { year } },
   });
   const data = unwrap<Partial<TrainingSummary>>(response) ?? {};
 
   return {
-    year: typeof data.year === "number" ? data.year : year,
     participatingCount: asCount(data.participatingCount),
     completedCount: asCount(data.completedCount),
     openRegistrationCount: asCount(data.openRegistrationCount),
@@ -38,10 +36,21 @@ export async function getTrainingCoursesApi(
   isDeployedCourse = false,
   status: number | null = TRAINING_COURSE_STATUS.REGISTRATION,
   employeeDepartmentId?: string | null,
+  filters: { isPlanCourse?: boolean | null; isEmployeeRegistrationAllowed?: boolean } = {},
 ) {
+  const params: Record<string, unknown> = {
+    year,
+    isPlanCourse: filters.isPlanCourse ?? null,
+    status,
+    isDeployedCourse,
+    employeeDepartmentId,
+  };
+  if (filters.isEmployeeRegistrationAllowed !== undefined) {
+    params.isEmployeeRegistrationAllowed = filters.isEmployeeRegistrationAllowed;
+  }
   const response = await api.get({
     link: "/training-courses",
-    config: { params: { year, isPlanCourse: null, status, isDeployedCourse, employeeDepartmentId } },
+    config: { params },
   });
   return asArray(response).map(mapTrainingCourse);
 }
@@ -65,6 +74,16 @@ export async function getTrainingYearPlanApi(year: number): Promise<TrainingYear
     id: data.id ?? "",
     year: data.year ?? year,
     status: data.status ?? 0,
+    startDate: data.registrationStartDate
+      ? new Date(data.registrationStartDate)
+      : data.startDate
+        ? new Date(data.startDate)
+        : null,
+    endDate: data.registrationEndDate
+      ? new Date(data.registrationEndDate)
+      : data.endDate
+        ? new Date(data.endDate)
+        : null,
   };
 }
 
