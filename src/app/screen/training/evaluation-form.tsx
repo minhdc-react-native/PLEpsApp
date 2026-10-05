@@ -30,10 +30,12 @@ export default function TrainingEvaluationFormScreen() {
   }, [data]);
 
   const readOnly = !form || form.hasEvaluated || form.status !== "open" || form.isPostponed === true;
-  const courseGroups = useMemo(() => form?.evaluationFormConfig.groups ?? [], [form]);
+  const groups = useMemo(() => form?.evaluationFormConfig.groups ?? [], [form]);
+  const courseGroups = useMemo(() => groups.filter((group) => group.target !== "instructor"), [groups]);
+  const instructorGroups = useMemo(() => groups.filter((group) => group.target === "instructor"), [groups]);
   const evaluationFieldKeys = useMemo(
-    () => courseGroups.flatMap((group) => Object.keys(group.fields ?? {})),
-    [courseGroups],
+    () => groups.flatMap((group) => Object.keys(group.fields ?? {})),
+    [groups],
   );
   const hasConfiguredFields = evaluationFieldKeys.length > 0;
   const canSubmit = !!form && !readOnly && (
@@ -78,8 +80,10 @@ export default function TrainingEvaluationFormScreen() {
           <SectionCard title="I. Đánh giá khóa học" icon="school-outline">
             {!hasConfiguredFields ? <View style={styles.fieldGroup}><Text style={styles.fieldLabel}>Chất lượng khóa học</Text><RatingScale value={form.courseScores.courseQuality ?? form.courseRating ?? 0} disabled={readOnly} onChange={(value) => updateScore("courseQuality", value)} /></View> : null}
             {courseGroups.map((group) => <EvaluationGroup key={group.id} group={group} values={form.courseScores} disabled={readOnly} onChange={updateScore} />)}
-            <CommentsSection config={form.evaluationFormConfig} values={form.comments} disabled={readOnly} onChange={updateComment} />
+            <CommentsSection config={form.evaluationFormConfig} target="course" values={form.comments} disabled={readOnly} onChange={updateComment} />
           </SectionCard>
+
+          {instructorGroups.length || Object.values(form.evaluationFormConfig.comments).some((comment) => comment.target === "instructor") ? <SectionCard title="II. Đánh giá giảng viên" icon="account-tie-outline">{instructorGroups.map((group) => <EvaluationGroup key={group.id} group={group} values={form.courseScores} disabled={readOnly} onChange={updateScore} />)}<CommentsSection config={form.evaluationFormConfig} target="instructor" values={form.comments} disabled={readOnly} onChange={updateComment} /></SectionCard> : null}
 
           {!readOnly ? <Button mode="contained" disabled={!canSubmit} loading={submitting} onPress={() => void submit()} style={styles.submit}>Xác nhận đánh giá</Button> : null}
         </ScrollView>
@@ -97,8 +101,8 @@ function EvaluationGroup({ group, values, disabled, onChange }: { group: Trainin
   return <View style={styles.dynamicGroup}><Text variant="titleSmall" style={styles.title}>{group.label}</Text>{Object.entries(group.fields).map(([key, field]) => <View key={key} style={styles.fieldGroup}><Text style={styles.fieldLabel}>{field.label}</Text>{field.description ? <Text style={styles.hint}>{field.description}</Text> : null}{field.type === "rating" ? <RatingScale value={typeof values[key] === "number" ? Number(values[key]) : 0} disabled={disabled} onChange={(value) => onChange(key, value)} /> : <TextInput mode="outlined" label={field.label} multiline numberOfLines={3} value={values[key] == null ? "" : String(values[key])} disabled={disabled} />}</View>)}</View>;
 }
 
-function CommentsSection({ config, values, disabled, onChange }: { config: TrainingEvaluation["evaluationFormConfig"]; values: Record<string, string | null>; disabled: boolean; onChange: (key: string, value: string) => void }) {
-  const comments = Object.entries(config.comments ?? {});
+function CommentsSection({ config, target, values, disabled, onChange }: { config: TrainingEvaluation["evaluationFormConfig"]; target: "course" | "instructor"; values: Record<string, string | null>; disabled: boolean; onChange: (key: string, value: string) => void }) {
+  const comments = Object.entries(config.comments ?? {}).filter(([, comment]) => (comment.target ?? "course") === target);
   if (!comments.length) return null;
   return <View style={styles.commentsSection}>{comments.map(([key, comment]) => <View key={key} style={styles.fieldGroup}><Text style={styles.fieldLabel}>{comment.label}</Text>{comment.description ? <Text style={styles.hint}>{comment.description}</Text> : null}<TextInput mode="outlined" label={comment.label} multiline numberOfLines={3} value={values[key] ?? ""} disabled={disabled} onChangeText={(value) => onChange(key, value)} style={styles.input} /></View>)}</View>;
 }

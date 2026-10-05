@@ -297,7 +297,7 @@ export interface TrainingEvaluationField {
 export interface TrainingEvaluationGroup {
   id: string;
   label: string;
-  scope?: "course" | "instructor";
+  target?: "course" | "instructor";
   fields: Record<string, TrainingEvaluationField>;
 }
 
@@ -308,6 +308,7 @@ export interface TrainingEvaluationConfig {
 
 export interface TrainingEvaluationComment {
   label: string;
+  target?: "course" | "instructor";
   description?: string | null;
 }
 

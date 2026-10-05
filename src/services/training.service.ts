@@ -235,10 +235,6 @@ export async function getTrainingEvaluationApi(
 }
 
 export async function submitTrainingEvaluationApi(evaluation: TrainingEvaluation) {
-  if (!evaluation.trainingClassId || !evaluation.trainingRegistrationId) {
-    throw new Error("Thiếu thông tin lớp hoặc đăng ký đào tạo để gửi đánh giá.");
-  }
-
   const fieldKeys = evaluation.evaluationFormConfig.groups.flatMap((group) => Object.keys(group.fields ?? {}));
   const courseScores = fieldKeys.length
     ? Object.fromEntries(fieldKeys.map((key) => [key, evaluation.courseScores[key]]))
@@ -249,9 +245,6 @@ export async function submitTrainingEvaluationApi(evaluation: TrainingEvaluation
   return api.post({
     link: `/training-courses/${evaluation.trainingCourseId}/evaluation`,
     data: {
-      trainingCourseId: evaluation.trainingCourseId,
-      trainingClassId: evaluation.trainingClassId,
-      trainingRegistrationId: evaluation.trainingRegistrationId,
       courseScores,
       comments,
     },

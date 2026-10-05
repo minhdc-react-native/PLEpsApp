@@ -347,7 +347,7 @@ export function mapEvaluationConfig(raw: any): TrainingEvaluationConfig {
     groups: groups.map((group: any) => ({
       id: group?.id ?? String(Math.random()),
       label: group?.label ?? group?.name ?? "Nội dung đánh giá",
-      scope: group?.scope,
+      target: group?.target === "instructor" || group?.scope === "instructor" ? "instructor" : "course",
       fields: group?.fields ?? {},
     })),
     comments: Object.fromEntries(
@@ -356,6 +356,7 @@ export function mapEvaluationConfig(raw: any): TrainingEvaluationConfig {
           key,
           {
             label: value?.label ?? key,
+            target: value?.target === "instructor" ? "instructor" : "course",
             description: value?.description ?? null,
           },
         ] as const)
