@@ -111,8 +111,10 @@ export interface TrainingRegistrationSummary {
 }
 
 export interface TrainingRegistrationRecord {
-  status: number;
+  status: number | null;
   reason: string | null;
+  classReason?: string | null;
+  preferredClassName?: string | null;
   note: string | null;
   reviewedBy?: string | null;
   reviewedAt?: Date | string | null;
@@ -277,10 +279,6 @@ export interface TrainingStudentRegistration {
   finalRegStatus?: TrainingRegistrationRecord | null;
   departmentRegStatus?: TrainingRegistrationRecord | null;
   adminRegStatus?: TrainingRegistrationRecord | null;
-  classRegStatus?: TrainingRegistrationRecord | null;
-  classDepartmentRegStatus?: TrainingRegistrationRecord | null;
-  classAdminRegStatus?: TrainingRegistrationRecord | null;
-  classFinalRegStatus?: TrainingRegistrationRecord | null;
   result?: boolean | null;
   resultNote?: string | null;
   suspension?: { enabled: boolean; reason?: string | null; date?: Date | null } | null;

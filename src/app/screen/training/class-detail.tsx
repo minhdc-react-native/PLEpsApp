@@ -275,13 +275,18 @@ function CourseGeneralInfoGroup({ course }: { course: TrainingCourse }) {
 }
 
 function RegistrationInfoGroup({ registration, isOnline }: { registration: TrainingStudentRegistration | null; isOnline: boolean }) {
-  return <><DetailSectionHeader title="Đăng ký khóa" icon="clipboard-text-outline" /><ListFields style={styles.groupFields}><RegistrationField label="Học viên đăng ký" record={registration?.regStatus} /><RegistrationField label="Phòng ban rà soát" record={registration?.departmentRegStatus} /><RegistrationField label="Quản trị rà soát" record={registration?.adminRegStatus} /><RegistrationField label="Kết quả đăng ký" record={registration?.finalRegStatus} /></ListFields>{!isOnline ? <><DetailSectionHeader title="Đăng ký lớp" icon="account-group-outline" /><ListFields style={styles.groupFields}><RegistrationField label="Học viên đăng ký" record={registration?.classRegStatus} /><RegistrationField label="Phòng ban rà soát" record={registration?.classDepartmentRegStatus} /><RegistrationField label="Quản trị rà soát" record={registration?.classAdminRegStatus} /><RegistrationField label="Kết quả đăng ký" record={registration?.classFinalRegStatus} /></ListFields></> : null}</>;
+  return <><DetailSectionHeader title="Đăng ký khóa" icon="clipboard-text-outline" /><ListFields style={styles.groupFields}><RegistrationField label="Học viên đăng ký" record={registration?.regStatus} /><RegistrationField label="Phòng ban rà soát" record={registration?.departmentRegStatus} /><RegistrationField label="Quản trị rà soát" record={registration?.adminRegStatus} /><RegistrationField label="Kết quả đăng ký" record={registration?.finalRegStatus} /></ListFields>{!isOnline ? <><DetailSectionHeader title="Đăng ký lớp" icon="account-group-outline" /><ListFields style={styles.groupFields}><ClassRegistrationField label="Học viên đăng ký" record={registration?.regStatus} /><ClassRegistrationField label="Phòng ban rà soát" record={registration?.departmentRegStatus} /><ClassRegistrationField label="Quản trị rà soát" record={registration?.adminRegStatus} /><ClassRegistrationField label="Kết quả đăng ký" record={registration?.finalRegStatus} /></ListFields></> : null}</>;
 }
 
 function RegistrationField({ label, record }: { label: string; record?: TrainingRegistrationRecord | null }) {
   const { colors } = useTheme();
   if (!record) return <Field label={label} value="" />;
-  return <Field label={label} value={<View style={styles.recordValue}><Badge variant={registrationVariant(record.status)}>{registrationLabel(record.status)}</Badge>{record.reason ? <Text style={[styles.recordMeta, { color: colors.onSurfaceVariant }]}>Lý do: {record.reason}</Text> : null}{record.note ? <Text style={[styles.recordMeta, { color: colors.onSurfaceVariant }]}>Ghi chú: {record.note}</Text> : null}{record.reviewedAt ? <Text style={[styles.recordMeta, { color: colors.onSurfaceVariant }]}>Duyệt ngày {formatTrainingDate(record.reviewedAt)}</Text> : null}</View>} />;
+  if (record.status == null && !record.reason && !record.note && !record.reviewedAt) return <Field label={label} value="" />;
+  return <Field label={label} value={<View style={styles.recordValue}>{record.status != null ? <Badge variant={registrationVariant(record.status)}>{registrationLabel(record.status)}</Badge> : null}{record.reason ? <Text style={[styles.recordMeta, { color: colors.onSurfaceVariant }]}>Lý do: {record.reason}</Text> : null}{record.note ? <Text style={[styles.recordMeta, { color: colors.onSurfaceVariant }]}>Ghi chú: {record.note}</Text> : null}{record.reviewedAt ? <Text style={[styles.recordMeta, { color: colors.onSurfaceVariant }]}>Duyệt ngày {formatTrainingDate(record.reviewedAt)}</Text> : null}</View>} />;
+}
+
+function ClassRegistrationField({ label, record }: { label: string; record?: TrainingRegistrationRecord | null }) {
+  return <Field label={label} value={record?.preferredClassName ?? ""} />;
 }
 
 function ResultInfoGroup({ registration }: { registration: TrainingStudentRegistration | null }) {

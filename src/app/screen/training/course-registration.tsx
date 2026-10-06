@@ -116,7 +116,7 @@ export default function TrainingCourseRegistrationScreen() {
 }
 
 function getRegistrationState(course: MyTrainingCourse) {
-  const canCancel = !course.adminRegStatus && !course.departmentRegStatus;
+  const canCancel = course.adminRegStatus?.status == null && course.departmentRegStatus?.status == null;
   const finalStatus = course.finalRegStatus?.status;
   if (finalStatus != null) {
     const finalStatusInfo: Record<number, { label: string; variant: "success" | "warning" | "error" | "default" }> = {

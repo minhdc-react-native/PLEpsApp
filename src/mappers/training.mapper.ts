@@ -45,23 +45,33 @@ function averageEvaluationScore(scores: Record<string, number | null> | undefine
   return values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
 }
 
-const mapRecord = (raw: any) =>
-  raw && raw.status != null
-    ? {
-        status: raw.status,
-        reason: raw.reason ?? null,
-        note: raw.note ?? null,
-        reviewedBy: raw.reviewedBy?.id ?? raw.reviewedBy ?? null,
-        reviewedAt: raw.reviewedAt ?? null,
-      }
-    : null;
+const mapRecord = (raw: any) => {
+  if (!raw) return null;
+
+  const reason = raw.reason ?? null;
+  const classReason = raw.classReason ?? null;
+  const preferredClassName = raw.preferredClass?.name ?? raw.preferredClassName ?? null;
+  const note = raw.note ?? null;
+  if (raw.status == null && reason == null && classReason == null && preferredClassName == null && note == null) {
+    return null;
+  }
+
+  return {
+    status: raw.status ?? null,
+    reason,
+    classReason,
+    preferredClassName,
+    note,
+    reviewedBy: raw.reviewedBy?.id ?? raw.reviewedBy ?? null,
+    reviewedAt: raw.reviewedAt ?? null,
+  };
+};
 
 function registrationIsPostponed(...records: any[]) {
-  return records.some((record) =>
-    [record?.status, record?.value, record?.code].some(
-      (value) => value === TRAINING_REGISTRATION_STATUS.POSTPONED || String(value).toLowerCase() === "postponed",
-    ),
-  );
+  const status = records
+    .map((record) => record?.status)
+    .find((value) => value != null);
+  return status === TRAINING_REGISTRATION_STATUS.POSTPONED || (typeof status === "string" && status.toLowerCase() === "postponed");
 }
 
 export function mapTrainingFile(raw: any): TrainingFile {
@@ -173,13 +183,11 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
     evaluationFormConfig: mapEvaluationConfig(raw?.evaluationFormConfig),
     classRegistrationStartDate: toDate(
       raw?.classRegistrationStartDate ??
-        raw?.classRegistrationDates?.startDate ??
-        raw?.registrationStartDate,
+        raw?.classRegistrationDates?.startDate,
     ),
     classRegistrationEndDate: toDate(
       raw?.classRegistrationEndDate ??
-        raw?.classRegistrationDates?.endDate ??
-        raw?.registrationEndDate,
+        raw?.classRegistrationDates?.endDate,
     ),
     isSharedExam: raw?.isSharedExam ?? raw?.sharedExam ?? false,
     courseCategoryName: raw?.courseCategoryName ?? raw?.course?.courseCategory?.name ?? null,
@@ -297,11 +305,7 @@ export function mapRegistration(raw: any): TrainingStudentRegistration {
     regStatus: mapRecord(raw?.regStatus ?? raw?.registration),
     departmentRegStatus: mapRecord(raw?.departmentRegStatus ?? raw?.departmentRegistration ?? raw?.registration?.departmentRegStatus),
     adminRegStatus: mapRecord(raw?.adminRegStatus ?? raw?.adminRegistration ?? raw?.registration?.adminRegStatus),
-    finalRegStatus: mapRecord(raw?.finalRegStatus),
-    classRegStatus: mapRecord(raw?.classRegStatus ?? raw?.classRegistration),
-    classDepartmentRegStatus: mapRecord(raw?.classDepartmentRegStatus ?? raw?.classDepartmentRegistration),
-    classAdminRegStatus: mapRecord(raw?.classAdminRegStatus ?? raw?.classAdminRegistration),
-    classFinalRegStatus: mapRecord(raw?.classFinalRegStatus),
+    finalRegStatus: mapRecord(raw?.finalRegStatus ?? raw?.finalRegistration),
     result: raw?.result ?? raw?.isPassed ?? raw?.exam?.systemIsPassed ?? null,
     resultNote: raw?.resultNote ?? raw?.note ?? null,
     suspension: raw?.suspension
@@ -312,13 +316,10 @@ export function mapRegistration(raw: any): TrainingStudentRegistration {
         }
       : null,
     isPostponed: registrationIsPostponed(
-      raw?.regStatus,
-      raw?.registration,
-      raw?.finalRegStatus,
-      raw?.classRegStatus,
-      raw?.classFinalRegStatus,
-      raw?.classDepartmentRegStatus,
-      raw?.classAdminRegStatus,
+      raw?.finalRegStatus ?? raw?.finalRegistration,
+      raw?.adminRegStatus ?? raw?.adminRegistration ?? raw?.registration?.adminRegStatus,
+      raw?.departmentRegStatus ?? raw?.departmentRegistration ?? raw?.registration?.departmentRegStatus,
+      raw?.regStatus ?? raw?.registration,
     ),
     classSessions: (raw?.classSessions ?? raw?.sessions ?? []).map(mapAttendance),
   };

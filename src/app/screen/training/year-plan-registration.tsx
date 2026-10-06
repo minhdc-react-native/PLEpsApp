@@ -214,7 +214,7 @@ export default function TrainingYearPlanRegistrationScreen() {
               </Text>
             ) : null}
             {loading && !data ? <LoadingScreen /> : data?.planCourses.length ? data.planCourses.map((course) => {
-              const hasReview = !!course.departmentRegStatus || !!course.adminRegStatus;
+              const hasReview = course.departmentRegStatus?.status != null || course.adminRegStatus?.status != null;
               const finalLabel = getFinalRegistrationLabel(course.finalRegStatus?.status);
               return (
                 <TrainingCourseCard
