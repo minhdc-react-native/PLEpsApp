@@ -122,11 +122,14 @@ export interface TrainingRegistrationRecord {
 
 export interface TrainingProposal {
   id: string;
+  proposalId: string;
   courseId?: string | null;
   courseName?: string | null;
+  courseCategoryName?: string | null;
   content?: string | null;
   status?: number | null;
   statusLabel?: string | null;
+  departmentReviewStatus?: string | null;
   createdAt?: Date | null;
 }
 

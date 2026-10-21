@@ -91,6 +91,32 @@ export const api = {
     }
   },
 
+  patch: async ({
+    link,
+    data,
+    config,
+    setLoading,
+    callBack,
+    callError,
+  }: IApiParams): Promise<any> => {
+    try {
+      setLoading?.(true);
+      const res = await epsAxios.patch(link, data, config);
+      if (res?.data?.error) {
+        callError?.(res.data);
+        return Promise.reject(res.data);
+      }
+      callBack?.(res);
+      return res;
+    } catch (error: any) {
+      callError?.(error);
+      __DEV__ && console.log("PATCH error:", { link, ...getApiErrorDetails(error) });
+      return Promise.reject(error);
+    } finally {
+      setLoading?.(false);
+    }
+  },
+
   put: async ({
     link,
     data,

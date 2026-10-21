@@ -426,14 +426,58 @@ export function mapEvaluation(
   };
 }
 
-export function mapTrainingProposal(raw: any): TrainingProposal {
+export function mapTrainingProposal(raw: any, employeeId?: string): TrainingProposal {
+  const employeeProposal = Array.isArray(raw?.proposals)
+    ? raw.proposals.find(
+        (item: any) => (item?.employee?.id ?? item?.employeeId) === employeeId,
+      ) ?? raw.proposals[0]
+    : null;
+  const status = raw?.status ?? employeeProposal?.status ?? null;
+  const normalizedStatus = typeof status === "string" ? status.toLowerCase() : status;
+  const numericStatus =
+    typeof normalizedStatus === "string" && normalizedStatus.trim() !== ""
+      ? Number(normalizedStatus)
+      : normalizedStatus;
+  const mappedStatus =
+    typeof numericStatus === "number" && Number.isFinite(numericStatus)
+      ? numericStatus
+      : normalizedStatus === "accepted" || normalizedStatus === "approved"
+        ? 2
+        : normalizedStatus === "rejected" ||
+            normalizedStatus === "withdrawn" ||
+            normalizedStatus === "canceled" ||
+            normalizedStatus === "cancelled"
+          ? 1
+          : status == null
+            ? null
+            : 0;
+  const statusLabels: Record<number, string> = {
+    0: "Chưa phê duyệt",
+    1: "Đã rút",
+    2: "Đã phê duyệt",
+  };
+  const departmentReviewStatus =
+    employeeProposal?.departmentReviewStatus ?? raw?.departmentReviewStatus;
   return {
-    id: String(raw?.id ?? raw?.proposalId ?? ""),
-    courseId: raw?.courseId ?? raw?.trainingCourseId ?? null,
+    id: String(
+      raw?.courseId ??
+        raw?.trainingCourseId ??
+        raw?.course?.id ??
+        raw?.id ??
+        raw?.proposalId ??
+        "",
+    ),
+    proposalId: String(raw?.proposalId ?? raw?.id ?? ""),
+    courseId: raw?.courseId ?? raw?.trainingCourseId ?? raw?.course?.id ?? null,
     courseName: raw?.courseName ?? raw?.course?.name ?? raw?.name ?? null,
-    content: raw?.content ?? raw?.note ?? null,
-    status: raw?.status ?? null,
-    statusLabel: raw?.statusLabel ?? null,
+    courseCategoryName:
+      raw?.courseCategory?.name ?? raw?.course?.courseCategory?.name ?? null,
+    content: employeeProposal?.content ?? raw?.content ?? raw?.note ?? null,
+    status: mappedStatus,
+    statusLabel: raw?.statusLabel ?? (mappedStatus == null ? null : statusLabels[mappedStatus]),
+    departmentReviewStatus: departmentReviewStatus
+      ? String(departmentReviewStatus).toLowerCase()
+      : null,
     createdAt: toDate(raw?.createdAt ?? raw?.createdDate),
   };
 }

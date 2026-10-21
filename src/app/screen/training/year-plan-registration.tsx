@@ -13,6 +13,7 @@ import {
   getTrainingYearPlanApi,
   proposeTrainingContentApi,
   registerTrainingCourseApi,
+  updateTrainingProposalApi,
 } from "@/services/training.service";
 import {
   MyTrainingCourse,
@@ -50,6 +51,12 @@ export default function TrainingYearPlanRegistrationScreen() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [tab, setTab] = useState<"plan-courses" | "content-proposals">("plan-courses");
   const [proposalOpen, setProposalOpen] = useState(false);
+  const [duplicateWarningOpen, setDuplicateWarningOpen] = useState(false);
+  const [editingProposal, setEditingProposal] =
+    useState<TrainingProposal | null>(null);
+  const [proposalToDelete, setProposalToDelete] =
+    useState<TrainingProposal | null>(null);
+  const [deletingProposalId, setDeletingProposalId] = useState<string | null>(null);
   const [proposalCourseId, setProposalCourseId] = useState("");
   const [proposalContent, setProposalContent] = useState("");
   const [proposalProcessing, setProposalProcessing] = useState(false);
@@ -79,6 +86,7 @@ export default function TrainingYearPlanRegistrationScreen() {
       proposals,
       trainingPlan,
       catalogCourses,
+      plannedCourseIds: [...existingCourseIds],
       planCourses: registrationCourses
         .filter((course) => course.approvalStatus?.toLowerCase() === "approved" && course.isEmployeeRegistrationAllowed)
         .map((course): MyTrainingCourse => {
@@ -92,9 +100,7 @@ export default function TrainingYearPlanRegistrationScreen() {
             finalRegStatus: registration?.finalRegStatus ?? null,
           };
         }),
-      proposalCourses: catalogCourses.filter(
-        (course) => !existingCourseIds.has(course.id),
-      ),
+      proposalCourses: catalogCourses,
     };
   }, [employeeId, year]);
   const { data, loading, reload } = useTrainingResource(load, [employeeId, year]);
@@ -124,24 +130,43 @@ export default function TrainingYearPlanRegistrationScreen() {
     setProposalOpen(false);
     setProposalCourseId("");
     setProposalContent("");
+    setEditingProposal(null);
   };
 
-  const submitProposal = async () => {
+  const submitProposal = async (confirmedDuplicate = false) => {
     if (
       !canPropose ||
       !data?.trainingPlan?.id ||
-      !proposalCourseId ||
+      (!editingProposal && !proposalCourseId) ||
       proposalProcessing
     ) return;
 
+    if (
+      !editingProposal &&
+      !confirmedDuplicate &&
+      (data?.plannedCourseIds.includes(proposalCourseId) ||
+        proposals.some((proposal) => proposal.courseId === proposalCourseId))
+    ) {
+      setDuplicateWarningOpen(true);
+      return;
+    }
+
     setProposalProcessing(true);
     try {
-      await proposeTrainingContentApi({
-        planId: data.trainingPlan.id,
-        courseId: proposalCourseId,
-        content: proposalContent.trim() || null,
-      });
-      showToast("Gửi đề xuất nội dung thành công", { type: "success" });
+      if (editingProposal) {
+        await updateTrainingProposalApi({
+          proposalId: editingProposal.proposalId,
+          content: proposalContent,
+        });
+        showToast("Cập nhật đề xuất nội dung thành công", { type: "success" });
+      } else {
+        await proposeTrainingContentApi({
+          planId: data.trainingPlan.id,
+          courseId: proposalCourseId,
+          content: proposalContent.trim() || null,
+        });
+        showToast("Gửi đề xuất nội dung thành công", { type: "success" });
+      }
       closeProposal();
       await reload();
     } catch (error: any) {
@@ -152,14 +177,25 @@ export default function TrainingYearPlanRegistrationScreen() {
   };
 
   const removeProposal = async (proposalId: string) => {
-    if (!canPropose) return;
+    if (!canPropose || deletingProposalId) return;
+    setDeletingProposalId(proposalId);
     try {
       await deleteTrainingProposalApi(proposalId);
       showToast("Đã xóa đề xuất", { type: "success" });
+      setProposalToDelete(null);
       await reload();
     } catch (error: any) {
       showToast(error?.message ?? "Không thể xóa đề xuất", { type: "error" });
+    } finally {
+      setDeletingProposalId(null);
     }
+  };
+
+  const openEditProposal = (proposal: TrainingProposal) => {
+    setEditingProposal(proposal);
+    setProposalCourseId(proposal.courseId ?? "");
+    setProposalContent(proposal.content ?? "");
+    setProposalOpen(true);
   };
 
   const openProposal = () => {
@@ -256,11 +292,12 @@ export default function TrainingYearPlanRegistrationScreen() {
             ) : null}
             {loading && !data ? <LoadingScreen /> : proposals.length ? proposals.map((proposal) => (
               <ProposalCard
-                key={proposal.id}
+                key={proposal.proposalId}
                 proposal={proposal}
                 courses={data?.catalogCourses ?? []}
-                canDelete={canPropose}
-                onDelete={() => void removeProposal(proposal.id)}
+                canEdit={canPropose && proposal.status === 0 && proposal.departmentReviewStatus !== "accepted"}
+                onEdit={() => openEditProposal(proposal)}
+                onDelete={() => setProposalToDelete(proposal)}
               />
             )) : (
               <TrainingEmptyState
@@ -275,23 +312,35 @@ export default function TrainingYearPlanRegistrationScreen() {
 
       <Portal>
         <Dialog visible={proposalOpen} onDismiss={closeProposal}>
-          <Dialog.Title>Đề xuất danh mục đào tạo</Dialog.Title>
+          <Dialog.Title>
+            {editingProposal
+              ? "Chỉnh sửa đề xuất nội dung"
+              : "Đề xuất danh mục đào tạo"}
+          </Dialog.Title>
           <Dialog.Content>
             <Text style={[styles.hint, { color: colors.onSurfaceVariant }]}>
-              Chọn danh mục đào tạo và mô tả nội dung bạn muốn đề xuất.
+              {editingProposal
+                ? "Cập nhật nội dung bạn muốn đề xuất."
+                : "Chọn danh mục đào tạo và mô tả nội dung bạn muốn đề xuất."}
             </Text>
             <ScrollView style={styles.courseChoices}>
-              {(data?.proposalCourses ?? []).map((course: TrainingCatalogCourse) => (
-                <Button
-                  key={course.id}
-                  compact
-                  mode={proposalCourseId === course.id ? "contained" : "outlined"}
-                  onPress={() => setProposalCourseId(course.id)}
-                >
-                  {course.name}
-                </Button>
-              ))}
-              {!data?.proposalCourses.length ? (
+              {editingProposal ? (
+                <Text variant="bodyMedium">
+                  Danh mục: {editingProposal.courseName ?? "Danh mục đào tạo"}
+                </Text>
+              ) : (
+                (data?.proposalCourses ?? []).map((course: TrainingCatalogCourse) => (
+                  <Button
+                    key={course.id}
+                    compact
+                    mode={proposalCourseId === course.id ? "contained" : "outlined"}
+                    onPress={() => setProposalCourseId(course.id)}
+                  >
+                    {course.name}
+                  </Button>
+                ))
+              )}
+              {!editingProposal && !data?.proposalCourses.length ? (
                 <Text style={[styles.hint, { color: colors.onSurfaceVariant }]}>
                   Không có danh mục hiện hành để đề xuất.
                 </Text>
@@ -311,11 +360,50 @@ export default function TrainingYearPlanRegistrationScreen() {
             <Button onPress={closeProposal}>Hủy</Button>
             <Button
               loading={proposalProcessing}
-              disabled={!canPropose || !proposalCourseId || proposalProcessing}
+              disabled={
+                !canPropose ||
+                (!editingProposal && !proposalCourseId) ||
+                proposalProcessing
+              }
               onPress={() => void submitProposal()}
             >
-              Gửi đề xuất
+              {editingProposal ? "Lưu thay đổi" : "Gửi đề xuất"}
             </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+      <Portal>
+        <Dialog visible={duplicateWarningOpen} onDismiss={() => setDuplicateWarningOpen(false)}>
+          <Dialog.Title>Danh mục đã có nội dung đề xuất</Dialog.Title>
+          <Dialog.Content>
+            <Text>Danh mục này đã có trong kế hoạch hoặc đã được đề xuất trước đó. Bạn vẫn có thể gửi đề xuất trùng nếu nội dung khác.</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDuplicateWarningOpen(false)}>Quay lại</Button>
+            <Button
+              loading={proposalProcessing}
+              disabled={proposalProcessing}
+              onPress={() => {
+                setDuplicateWarningOpen(false);
+                void submitProposal(true);
+              }}
+            >Tiếp tục gửi</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+      <Portal>
+        <Dialog visible={!!proposalToDelete} onDismiss={() => setProposalToDelete(null)}>
+          <Dialog.Title>Xóa đề xuất</Dialog.Title>
+          <Dialog.Content>
+            <Text>Bạn có chắc muốn xóa đề xuất “{proposalToDelete?.courseName ?? "Danh mục đào tạo"}” không?</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setProposalToDelete(null)}>Hủy</Button>
+            <Button
+              loading={deletingProposalId === proposalToDelete?.proposalId}
+              disabled={!!deletingProposalId}
+              onPress={() => proposalToDelete && void removeProposal(proposalToDelete.proposalId)}
+            >Xóa</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -326,12 +414,14 @@ export default function TrainingYearPlanRegistrationScreen() {
 function ProposalCard({
   proposal,
   courses,
-  canDelete,
+  canEdit,
+  onEdit,
   onDelete,
 }: {
   proposal: TrainingProposal;
   courses: TrainingCatalogCourse[];
-  canDelete: boolean;
+  canEdit: boolean;
+  onEdit: () => void;
   onDelete: () => void;
 }) {
   const { colors } = useTheme();
@@ -342,6 +432,11 @@ function ProposalCard({
       <Card.Content style={styles.proposalContent}>
         <View style={styles.proposalCopy}>
           <Text variant="titleSmall" style={styles.title}>{courseName}</Text>
+          {proposal.courseCategoryName ? (
+            <Text style={[styles.proposalStatus, { color: colors.onSurfaceVariant }]}>
+              Nhóm: {proposal.courseCategoryName}
+            </Text>
+          ) : null}
           <Text style={[styles.proposalDescription, { color: colors.onSurfaceVariant }]}>
             {proposal.content || "Chưa có nội dung mô tả."}
           </Text>
@@ -349,7 +444,7 @@ function ProposalCard({
             {proposal.statusLabel ?? "Đang chờ xử lý"}
           </Text>
         </View>
-        {canDelete ? <IconButton icon="delete-outline" onPress={onDelete} /> : null}
+        {canEdit ? <View style={styles.proposalActions}><IconButton icon="pencil-outline" accessibilityLabel="Chỉnh sửa đề xuất" onPress={onEdit} /><IconButton icon="delete-outline" accessibilityLabel="Xóa đề xuất" onPress={onDelete} /></View> : null}
       </Card.Content>
     </Card>
   );
@@ -394,5 +489,6 @@ const styles = StyleSheet.create({
   proposalCopy: { flex: 1, gap: 5 },
   proposalDescription: { lineHeight: 20 },
   proposalStatus: { fontSize: 12 },
+  proposalActions: { flexDirection: "row", alignItems: "center" },
   courseChoices: { maxHeight: 220, marginBottom: 14 },
 });
