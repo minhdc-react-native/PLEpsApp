@@ -65,7 +65,6 @@ export default function TrainingSessionDetailScreen() {
   const attendanceLabel = session.status === 0 ? "Chưa bắt đầu" : isPresent ? "Đã điểm danh" : "Chưa điểm danh";
   const attendanceVariant = session.status === 0 ? "default" : isPresent ? "success" : "error";
   const attendanceTime = formatAttendanceTime(attendance?.attendanceTime);
-  const attendanceDelay = formatAttendanceDelay({ attendanceTime: attendance?.attendanceTime, startDate: session.startDate });
   const attendanceWindowOpen = !isOnlineSession && session.status === 1;
   const className = trainingClassName || data?.registration?.className || "Khóa đào tạo";
   return (
@@ -91,7 +90,7 @@ export default function TrainingSessionDetailScreen() {
                 }
               />
               <Divider />
-              <InfoRow label="Điểm danh lúc" value={<Text style={styles.infoValueText}>{attendanceTime}{attendanceDelay ? <Text style={{ color: colors.error }}> ({attendanceDelay})</Text> : null}</Text>} />
+              <InfoRow label="Điểm danh lúc" value={attendanceTime} />
             </> : null}
             <Divider />
             <InfoRow label="Mô tả" value={session.description || "Chưa có mô tả."} multiline />
@@ -115,16 +114,6 @@ function InfoRow({ label, value, multiline }: { label: string; value: React.Reac
 function formatAttendanceTime(value: Date | null | undefined) {
   if (!value) return "Chưa có";
   return value.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-}
-
-function formatAttendanceDelay({ attendanceTime, startDate }: { attendanceTime?: Date | null; startDate?: Date | null }) {
-  if (!attendanceTime || !startDate) return null;
-  const lateSeconds = Math.floor((attendanceTime.getTime() - startDate.getTime()) / 1000);
-  if (lateSeconds <= 0) return null;
-  if (lateSeconds < 60) return `trễ ${lateSeconds} giây`;
-  const lateMinutes = Math.floor(lateSeconds / 60);
-  if (lateMinutes < 60) return `trễ ${lateMinutes} phút`;
-  return `trễ ${Math.floor(lateMinutes / 60)} giờ`;
 }
 
 const styles = StyleSheet.create({

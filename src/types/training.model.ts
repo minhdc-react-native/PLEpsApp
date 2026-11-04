@@ -199,6 +199,8 @@ export interface TrainingCourse {
   name: string;
   description?: string | null;
   note?: string | null;
+  durationDays?: number | null;
+  departmentId?: string | null;
   type: TrainingCourseType;
   status: TrainingCourseStatus;
   year?: number | null;

@@ -52,7 +52,17 @@ const mapRecord = (raw: any) => {
   const classReason = raw.classReason ?? null;
   const preferredClassName = raw.preferredClass?.name ?? raw.preferredClassName ?? null;
   const note = raw.note ?? null;
-  if (raw.status == null && reason == null && classReason == null && preferredClassName == null && note == null) {
+  const reviewedBy = raw.reviewedBy?.id ?? raw.reviewedBy ?? null;
+  const reviewedAt = raw.reviewedAt ?? null;
+  if (
+    raw.status == null &&
+    reason == null &&
+    classReason == null &&
+    preferredClassName == null &&
+    note == null &&
+    reviewedBy == null &&
+    reviewedAt == null
+  ) {
     return null;
   }
 
@@ -62,10 +72,22 @@ const mapRecord = (raw: any) => {
     classReason,
     preferredClassName,
     note,
-    reviewedBy: raw.reviewedBy?.id ?? raw.reviewedBy ?? null,
-    reviewedAt: raw.reviewedAt ?? null,
+    reviewedBy,
+    reviewedAt,
   };
 };
+
+function getTrainingCourseDepartmentId(raw: any): string | null {
+  const departmentId =
+    raw?.departmentId ??
+    raw?.trainingCourse?.departmentId ??
+    raw?.course?.departmentId;
+  return departmentId == null || departmentId === "" ? null : String(departmentId);
+}
+
+function isDepartmentOwnedTrainingCourse(raw: any): boolean {
+  return Boolean(getTrainingCourseDepartmentId(raw));
+}
 
 function registrationIsPostponed(...records: any[]) {
   const status = records
@@ -149,6 +171,13 @@ export function mapTrainingCourse(raw: any): TrainingCourse {
     name: firstString(raw?.name, raw?.course?.name) || "Khóa đào tạo",
     description: raw?.description ?? raw?.course?.description ?? null,
     note: raw?.note ?? raw?.notes ?? null,
+    durationDays: toNullableNumber(
+      raw?.durationDays ??
+        raw?.trainingPlanCourse?.durationDays ??
+        raw?.trainingCourse?.durationDays ??
+        raw?.course?.durationDays,
+    ),
+    departmentId: getTrainingCourseDepartmentId(raw),
     type: raw?.type ?? 1,
     status: raw?.status ?? TRAINING_COURSE_STATUS.REGISTRATION,
     year: raw?.year ?? null,
@@ -208,6 +237,20 @@ export function mapMyTrainingCourse(raw: any): MyTrainingCourse {
   const course = mapTrainingCourse(raw);
   const classRaw = raw?.class ?? raw?.registeredClass ?? raw?.trainingClass ?? null;
   const registeredClass = classRaw ? mapTrainingClass(classRaw) : null;
+  const adminRegStatus = isDepartmentOwnedTrainingCourse(raw)
+    ? null
+    : mapRecord(
+        raw?.adminRegStatus ?? raw?.adminRegistration ??
+          raw?.registration?.adminRegStatus ??
+          (raw?.adminStatus != null
+            ? {
+                status: raw.adminStatus,
+                reason: raw.adminReason,
+                note: raw.adminNote,
+                reviewedBy: raw.approvedBy,
+              }
+            : null),
+      );
   return {
     ...course,
     score: raw?.score ?? raw?.registration?.score ?? null,
@@ -225,29 +268,25 @@ export function mapMyTrainingCourse(raw: any): MyTrainingCourse {
             }
           : null),
     ),
-    adminRegStatus: mapRecord(
-      raw?.adminRegStatus ?? raw?.adminRegistration ??
-        raw?.registration?.adminRegStatus ??
-        (raw?.adminStatus != null
-          ? {
-              status: raw.adminStatus,
-              reason: raw.adminReason,
-              note: raw.adminNote,
-              reviewedBy: raw.approvedBy,
-            }
-          : null),
-    ),
-    finalRegStatus: mapRecord(raw?.finalRegStatus ?? raw?.finalRegistration),
+    adminRegStatus,
+    finalRegStatus:
+      mapRecord(raw?.finalRegStatus ?? raw?.finalRegistration) ??
+      mapRecord({ status: raw?.finalStatus }),
   };
 }
 
 export function mapTrainingRegistrationSummary(raw: any): TrainingRegistrationSummary {
+  const adminRegStatus = isDepartmentOwnedTrainingCourse(raw)
+    ? null
+    : mapRecord(raw?.adminRegStatus ?? raw?.adminRegistration);
   return {
     trainingCourseId: raw?.trainingCourseId ?? raw?.trainingCourse?.id ?? "",
     regStatus: mapRecord(raw?.regStatus ?? raw?.registration),
     departmentRegStatus: mapRecord(raw?.departmentRegStatus ?? raw?.departmentRegistration),
-    adminRegStatus: mapRecord(raw?.adminRegStatus ?? raw?.adminRegistration),
-    finalRegStatus: mapRecord(raw?.finalRegStatus ?? raw?.finalRegistration),
+    adminRegStatus,
+    finalRegStatus:
+      mapRecord(raw?.finalRegStatus ?? raw?.finalRegistration) ??
+      mapRecord({ status: raw?.finalStatus }),
   };
 }
 
@@ -262,6 +301,17 @@ export function mapAttendance(raw: any): TrainingSessionAttendance {
 }
 
 export function mapRegistration(raw: any): TrainingStudentRegistration {
+  const isDepartmentOwnedCourse = isDepartmentOwnedTrainingCourse(raw);
+  const regStatus = mapRecord(raw?.regStatus ?? raw?.registration);
+  const departmentRegStatus = mapRecord(
+    raw?.departmentRegStatus ?? raw?.departmentRegistration ?? raw?.registration?.departmentRegStatus,
+  );
+  const adminRegStatus = isDepartmentOwnedCourse
+    ? null
+    : mapRecord(raw?.adminRegStatus ?? raw?.adminRegistration ?? raw?.registration?.adminRegStatus);
+  const finalRegStatus =
+    mapRecord(raw?.finalRegStatus ?? raw?.finalRegistration) ??
+    mapRecord({ status: raw?.finalStatus });
   const courseQuality = toNullableNumber(raw?.courseQuality);
   const evaluationScores = raw?.evaluation?.courseScores ?? raw?.evaluationScores ?? {};
   const evaluationComments = raw?.evaluation?.comments ?? raw?.evaluationComments ?? {};
@@ -302,10 +352,10 @@ export function mapRegistration(raw: any): TrainingStudentRegistration {
     instructors: (raw?.instructors ?? raw?.evaluation?.teacherEvaluations ?? []).map(
       (item: any) => mapInstructorRating(item),
     ),
-    regStatus: mapRecord(raw?.regStatus ?? raw?.registration),
-    departmentRegStatus: mapRecord(raw?.departmentRegStatus ?? raw?.departmentRegistration ?? raw?.registration?.departmentRegStatus),
-    adminRegStatus: mapRecord(raw?.adminRegStatus ?? raw?.adminRegistration ?? raw?.registration?.adminRegStatus),
-    finalRegStatus: mapRecord(raw?.finalRegStatus ?? raw?.finalRegistration),
+    regStatus,
+    departmentRegStatus,
+    adminRegStatus,
+    finalRegStatus,
     result: raw?.result ?? raw?.isPassed ?? raw?.exam?.systemIsPassed ?? null,
     resultNote: raw?.resultNote ?? raw?.note ?? null,
     suspension: raw?.suspension
@@ -316,10 +366,10 @@ export function mapRegistration(raw: any): TrainingStudentRegistration {
         }
       : null,
     isPostponed: registrationIsPostponed(
-      raw?.finalRegStatus ?? raw?.finalRegistration,
-      raw?.adminRegStatus ?? raw?.adminRegistration ?? raw?.registration?.adminRegStatus,
-      raw?.departmentRegStatus ?? raw?.departmentRegistration ?? raw?.registration?.departmentRegStatus,
-      raw?.regStatus ?? raw?.registration,
+      finalRegStatus,
+      adminRegStatus,
+      departmentRegStatus,
+      regStatus,
     ),
     classSessions: (raw?.classSessions ?? raw?.sessions ?? []).map(mapAttendance),
   };

@@ -34,7 +34,9 @@ export default function TrainingCourseRegistrationScreen() {
         isRegistered: !!registeredCourse,
         regStatus: registeredCourse?.regStatus ?? null,
         departmentRegStatus: registeredCourse?.departmentRegStatus ?? null,
-        adminRegStatus: registeredCourse?.adminRegStatus ?? null,
+        adminRegStatus: course.departmentId
+          ? null
+          : registeredCourse?.adminRegStatus ?? null,
         finalRegStatus: registeredCourse?.finalRegStatus ?? null,
       };
     });
@@ -116,7 +118,10 @@ export default function TrainingCourseRegistrationScreen() {
 }
 
 function getRegistrationState(course: MyTrainingCourse) {
-  const canCancel = course.adminRegStatus?.status == null && course.departmentRegStatus?.status == null;
+  const hasRegistrationReview =
+    course.departmentRegStatus != null ||
+    (!course.departmentId && course.adminRegStatus != null);
+  const canCancel = !hasRegistrationReview;
   const finalStatus = course.finalRegStatus?.status;
   if (finalStatus != null) {
     const finalStatusInfo: Record<number, { label: string; variant: "success" | "warning" | "error" | "default" }> = {
@@ -137,10 +142,12 @@ function getRegistrationState(course: MyTrainingCourse) {
   const reviewSources: Array<[
     "admin" | "phòng ban",
     TrainingRegistrationRecord | null | undefined,
-  ]> = [
-    ["admin", course.adminRegStatus],
-    ["phòng ban", course.departmentRegStatus],
-  ];
+  ]> = course.departmentId
+    ? [["phòng ban", course.departmentRegStatus]]
+    : [
+        ["admin", course.adminRegStatus],
+        ["phòng ban", course.departmentRegStatus],
+      ];
   const reviewSource = reviewSources.find(([, record]) => record != null);
 
   if (!reviewSource) {
