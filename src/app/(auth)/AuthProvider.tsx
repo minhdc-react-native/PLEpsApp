@@ -1,14 +1,15 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useLoading } from "@/components/dialog/loadingProvider";
 import { useToast } from "@/components/dialog/useToast";
 import { useData } from "@/hooks/zustand/useData";
 import { useTab } from "@/hooks/zustand/useTab";
 import { api } from "@/utils/epsApi";
-import { BASE_URL, epsStorage } from "@/utils/epsStorage";
 import {
-  AUTH_REQUEST_TIMEOUT_MS,
-  AUTH_SESSION_EXPIRED_EVENT,
-  resetAuthSessionExpiryNotification,
+    AUTH_REQUEST_TIMEOUT_MS,
+    AUTH_SESSION_EXPIRED_EVENT,
+    resetAuthSessionExpiryNotification,
 } from "@/utils/epsAxios";
+import { BASE_URL, epsStorage } from "@/utils/epsStorage";
 import { router } from "expo-router";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { DeviceEventEmitter } from "react-native";

@@ -1,27 +1,27 @@
 import AppHeader from "@/components/app-header";
+import { useToast } from "@/components/dialog/useToast";
 import {
   HistoryListCard,
   HistoryListItem,
 } from "@/components/history/history-list";
-import { useToast } from "@/components/dialog/useToast";
 import { useData } from "@/hooks/zustand/useData";
 import { mapEmployeeExamHistory } from "@/mappers/employee/exam-history.mapper";
-import {
-  EXAM_REGISTRATION_STATUS,
-  EXAM_REGISTRATION_STATUS_LABELS,
-} from "@/types/exam/enums/exam-registration-status.enum";
-import type { ExamRegistrationStatus } from "@/types/exam/enums/exam-registration-status.enum";
-import {
-  EXAMINEE_STAGE_LABELS,
-  EXAMINEE_STAGES,
-  EXAM_STATUS_TO_STAGE_MAPPER,
-} from "@/types/exam/enums/examinee-stage.enum";
-import { EXAM_STATUS } from "@/types/exam/enums/exam-status.enum";
-import type { IEmployeeExam } from "@/types/exam/exam.model";
 import {
   getEmployeeExamPeriodsApi,
   type EmployeeExamPeriodMenuItem,
 } from "@/services/exam.service";
+import type { ExamRegistrationStatus } from "@/types/exam/enums/exam-registration-status.enum";
+import {
+  EXAM_REGISTRATION_STATUS,
+  EXAM_REGISTRATION_STATUS_LABELS,
+} from "@/types/exam/enums/exam-registration-status.enum";
+import { EXAM_STATUS } from "@/types/exam/enums/exam-status.enum";
+import {
+  EXAM_STATUS_TO_STAGE_MAPPER,
+  EXAMINEE_STAGE_LABELS,
+  EXAMINEE_STAGES,
+} from "@/types/exam/enums/examinee-stage.enum";
+import type { IEmployeeExam } from "@/types/exam/exam.model";
 import { api } from "@/utils/epsApi";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
@@ -136,6 +136,7 @@ export default function ExamPeriodListScreen({
   const [loading, setLoading] = useState(false);
   const [openingId, setOpeningId] = useState<string | null>(null);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const refresh = useCallback(async () => {
     if (!user?.employeeId) {
       setItems([]);
@@ -271,49 +272,49 @@ export default function ExamPeriodListScreen({
                     statusDetails={
                       type === "registration"
                         ? [
-                            {
-                              label: "Đăng ký",
-                              value: getRegistrationActionLabel(
-                                item.examinee.regStatus.status,
-                              ),
-                            },
-                            {
-                              label: "Phê duyệt",
-                              value:
-                                finalStatus === null
-                                  ? "..."
-                                  : EXAM_REGISTRATION_STATUS_LABELS[finalStatus],
-                              valueColor: statusColor,
-                            },
-                            ...(registrationTime
-                              ? [
-                                  {
-                                    label: registrationTime.label,
-                                    value: registrationTime.value,
-                                    valueColor:
-                                      registrationTime.tone === "success"
-                                        ? colors.tertiary
-                                        : registrationTime.tone === "error"
-                                          ? colors.error
-                                          : colors.onSurfaceVariant,
-                                  },
-                                ]
-                              : []),
-                          ]
-                        : participationStatus
-                          ? [
+                          {
+                            label: "Đăng ký",
+                            value: getRegistrationActionLabel(
+                              item.examinee.regStatus.status,
+                            ),
+                          },
+                          {
+                            label: "Phê duyệt",
+                            value:
+                              finalStatus === null
+                                ? "..."
+                                : EXAM_REGISTRATION_STATUS_LABELS[finalStatus],
+                            valueColor: statusColor,
+                          },
+                          ...(registrationTime
+                            ? [
                               {
-                                label: "Giai đoạn",
-                                value:
-                                  EXAMINEE_STAGE_LABELS[item.examinee.stage] ??
-                                  "Chưa xác định",
-                              },
-                              {
-                                label: "Trạng thái",
-                                value: participationStatus.value,
-                                valueColor: participationColor,
+                                label: registrationTime.label,
+                                value: registrationTime.value,
+                                valueColor:
+                                  registrationTime.tone === "success"
+                                    ? colors.tertiary
+                                    : registrationTime.tone === "error"
+                                      ? colors.error
+                                      : colors.onSurfaceVariant,
                               },
                             ]
+                            : []),
+                        ]
+                        : participationStatus
+                          ? [
+                            {
+                              label: "Giai đoạn",
+                              value:
+                                EXAMINEE_STAGE_LABELS[item.examinee.stage] ??
+                                "Chưa xác định",
+                            },
+                            {
+                              label: "Trạng thái",
+                              value: participationStatus.value,
+                              valueColor: participationColor,
+                            },
+                          ]
                           : undefined
                     }
                     onPress={() => void openItem(item)}

@@ -26,6 +26,7 @@ export function FileBadge({ file, files }: Props) {
 
   useEffect(() => {
     let active = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setData(fileItems.map((item) => (item.name ? item : null)));
 
     fileItems.forEach((item, index) => {

@@ -63,6 +63,7 @@ export default function NotificationScreen() {
   };
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     getData(true);
   }, []);
 
@@ -161,7 +162,7 @@ export default function NotificationScreen() {
         onEndReachedThreshold={0.5}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyTitle, { color: colors.onSurface }] }>
+            <Text style={[styles.emptyTitle, { color: colors.onSurface }]}>
               {readFilter === "unread"
                 ? "Bạn đã đọc hết thông báo"
                 : "Chưa có thông báo"}
@@ -211,7 +212,7 @@ function NotificationCard({
           {item.title}
         </Text>
       </View>
-      <Text style={[styles.timestamp, { color: colors.onSurfaceVariant }] }>
+      <Text style={[styles.timestamp, { color: colors.onSurfaceVariant }]}>
         {displayDatetime(item.sendAt)}
       </Text>
       <Markdown
